@@ -1,0 +1,41 @@
+{
+  "apiVersion": 1,
+  "name": "ssh",
+  "binary": "aitssh",
+  "short": "SSH client with sessions",
+  "order": 10,
+  "usage": "ssh [ssh-options] destination [cmd ...]",
+  "flags": [
+    {
+      "name": "save",
+      "type": "bool",
+      "help": "persist session"
+    },
+    {
+      "name": "alias",
+      "type": "string",
+      "help": "session alias"
+    },
+    {
+      "name": "tmux",
+      "type": "bool",
+      "help": "enable remote tmux"
+    },
+    {
+      "name": "password",
+      "type": "bool",
+      "help": "prompt for password"
+    },
+    {
+      "name": "help",
+      "short": "h",
+      "type": "bool",
+      "help": "help for ssh"
+    }
+  ],
+  "examples": [
+    "ssh user@host.example.com",
+    "ssh --alias prod user@host.example.com",
+    "ssh --tmux --save user@host.example.com"
+  ]
+}

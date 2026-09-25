@@ -1,0 +1,81 @@
+/**
+ * Copyright 2026 AiT authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+**/
+
+package helpdoc
+
+import (
+	"fmt"
+
+	"github.com/os-artificer/AiT/internal/pkg/toolname"
+)
+
+// Common — shared help section titles and argv tokens.
+const (
+	SectionSubcommands       = "Subcommands"
+	SectionFlags             = "Flags"
+	SectionArguments         = "Arguments"
+	SectionAITFlags          = "AiT flags"
+	SectionCommands          = "Commands"
+	SectionKeys              = "Keys"
+	SectionProviders         = "Providers"
+	SectionREPLCommands      = "REPL commands"
+	SectionPaths             = "Paths"
+	SectionFlagOrder         = "Flag order"
+	SectionOpenSSHFlagsTitle = "OpenSSH-compatible flags"
+	SectionTieredRouting     = "Tiered routing"
+	SectionOutput            = "Output"
+	SectionFlagsOllama       = "Flags (ollama)"
+	// HelpArgH is the short -h help argv token.
+	HelpArgH = "-h"
+	// HelpArgHelp is the long --help argv token.
+	HelpArgHelp = "--help"
+	// HelpArgCmd is the bare help subcommand/positional token.
+	HelpArgCmd = "help"
+	// VersionArgShort is the short -V version argv token.
+	VersionArgShort = "-V"
+	// VersionArgLong is the long --version argv token.
+	VersionArgLong = "--version"
+	// VersionArgCmd is the bare version subcommand token.
+	VersionArgCmd = "version"
+	// VersionFlagShorthand is the Cobra short flag for --version (no leading dash).
+	VersionFlagShorthand = "V"
+	// PlainArg is the ait agent flag that selects the plain Agent Loop UI.
+	PlainArg = "--plain"
+
+	// RootMetaOrder sorts meta commands (e.g. version) after product commands in root help and AttachRoot.
+	RootMetaOrder = 1000
+)
+
+// OpenSSHFlagsBlock returns the shared OpenSSH-compatible flags block (runtime CLI prefix).
+func OpenSSHFlagsBlock() string {
+	return fmt.Sprintf(`  -p port         remote SSH port (overrides ssh_config and -o Port)
+  -l user         remote username (same as ssh_config User)
+  -i path         private key file (IdentityFile)
+  -F path         ssh_config file (default: ~/.ssh/config)
+  -J destination  ProxyJump host(s); comma-separated for a jump chain (e.g. -J bastion,internal)
+  -o key=value    ssh_config option, repeatable (e.g. -o Port=22 -o User=deploy)
+  -4, -6          address family hints (accepted; passed to ssh -G)
+  -t, -T, -C, -v  accepted for ssh compatibility (no extra effect in %s)
+  -A, -a, -q, -Q  accepted for ssh compatibility
+`, toolname.CLI(""))
+}
+
+// OpenSSH — blocks embedded by login and transfer help.
+var (
+	// SectionOpenSSHNotSupported is the shared not-supported flags list for SSH-style commands.
+	SectionOpenSSHNotSupported = `  -L, -R, -D, -X, -Y, -f, -N, -M, -S, -O, -W, -w
+`
+)

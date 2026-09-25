@@ -1,0 +1,54 @@
+# AiT example configuration
+# Copy to AppRoot as config.yaml (see docs/tools/aissh.md#data-directory); or: aissh config init / aissh config edit / aissh config validate
+
+session:
+  # Authentication cache TTL for load/switch without re-entering password
+  auth_ttl: 168h
+  remote_prompt:
+    # short: last path segment (default); absolute: full path with ~ for $HOME
+    path: short
+
+ai:
+  # AI features (ai plugin) are on by default; set false to opt out.
+  # One-process override: AIT_AI_EXPERIMENTAL=0
+  experimental:
+    enabled: true
+  default: deepseek
+  fallback: [minimax]
+  tiered:
+    enabled: true
+    local_provider: ollama
+    max_prompt_chars: 280
+    max_history_turns: 0
+    complex_keywords: ["implement", "refactor", "架构", "debug"]
+  agent:
+    # Maximum Agent mode turns (steps) per user request. 0 uses default (16). Max 64.
+    max_steps: 16
+    # Wall-clock limit for one Agent tool command. Empty uses default (2m). Range 5s..1h.
+    command_timeout: 2m
+  providers:
+    ollama:
+      enabled: true   # ai provider disable ollama to stop local routing
+      api_style: openai
+      base_url: http://127.0.0.1:11434/v1
+      model: llama3.2
+      # models_dir: /path/to/ollama/models   # OLLAMA_MODELS; set via ai ollama setup
+    deepseek:
+      enabled: true
+      api_style: openai
+      base_url: https://api.deepseek.com
+      model: deepseek-chat
+    minimax:
+      enabled: true
+      api_style: openai
+      base_url: https://api.minimaxi.com/v1
+      model: MiniMax-M2.5
+
+# API keys (OS keyring, not in this file):
+#   aissh config set ai.deepseek.api_key <key>
+#   aissh config set ai.minimax.api_key <key>
+# Ollama does not need a key when tiered is enabled.
+# Quick setup: ai ollama setup   (choose models_dir; or --models-dir)
+# Providers: ai provider enable|disable <deepseek|minimax|ollama>
+# Status/service: ai ollama status | start --wait | stop | disable
+# List providers: ai model list

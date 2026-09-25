@@ -1,0 +1,37 @@
+{
+  "apiVersion": 1,
+  "name": "log",
+  "binary": "aitlog",
+  "short": "View and search system logs",
+  "order": 20,
+  "usage": "log [flags] [keywords...]",
+  "flags": [
+    {
+      "name": "json",
+      "type": "bool",
+      "help": "NDJSON output"
+    },
+    {
+      "name": "follow",
+      "short": "f",
+      "type": "bool",
+      "help": "follow log stream"
+    },
+    {
+      "name": "expr",
+      "type": "string",
+      "help": "boolean expression filter"
+    },
+    {
+      "name": "help",
+      "short": "h",
+      "type": "bool",
+      "help": "help for log"
+    }
+  ],
+  "examples": [
+    "log search error",
+    "log --json search kernel",
+    "log sources"
+  ]
+}

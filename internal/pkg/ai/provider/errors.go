@@ -1,0 +1,59 @@
+/**
+ * Copyright 2026 AiT authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+**/
+
+package provider
+
+import (
+	"fmt"
+
+	"github.com/os-artificer/AiT/internal/pkg/errhint"
+)
+
+// ErrNotConfigured is the sentinel when no AI client is available.
+var ErrNotConfigured = errhint.NewSentinel("AI not configured")
+
+// ErrChatMessageRequired is the sentinel when an Agent goal/message is blank.
+var ErrChatMessageRequired = errhint.NewSentinel("agent requires a goal")
+
+// NotConfiguredErr returns a multi-line hint for missing AI configuration.
+func NotConfiguredErr() error {
+	return errhint.WithTry(ErrNotConfigured,
+		hintSetCloudKeysOrOllama,
+		hintSetDeepseekAPIKey,
+		hintSetMinimaxAPIKey,
+		hintEnableOllama,
+		hintAIHelp,
+	)
+}
+
+// ChatMessageRequiredErr returns a multi-line hint for empty Agent goal input.
+func ChatMessageRequiredErr() error {
+	return errhint.WithTry(ErrChatMessageRequired,
+		hintProvideChatMessage,
+		hintAitAgent,
+		hintAitAgentGoal,
+		hintAIHelp,
+	)
+}
+
+// DisabledErr reports a disabled provider override.
+func DisabledErr(id string) error {
+	return errhint.WithTryMsg(fmt.Sprintf("provider %q is disabled", id),
+		hintEnableProviderOverride,
+		ProviderEnableCmd(id),
+		hintAIHelp,
+	)
+}
