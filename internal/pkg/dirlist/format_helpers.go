@@ -21,9 +21,20 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 )
+
+func longListingEntryPath(dir, name string) string {
+	if name != dirDot && name != dirDotDot {
+		return filepath.Join(dir, name)
+	}
+	if name == dirDotDot {
+		return filepath.Dir(dir)
+	}
+	return dir
+}
 
 type entry struct {
 	name string

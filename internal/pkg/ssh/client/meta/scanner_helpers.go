@@ -108,6 +108,122 @@ func completeLine(candidate string, b byte) (line string, done bool) {
 	return finalizeMetaLine(candidate), true
 }
 
+func (s *Scanner) feedOneEditPrefix(b byte, fwd, ech []byte) ([]byte, []byte, bool) {
+	if !s.inEditState() {
+		return fwd, ech, false
+	}
+	if fwd, ech, handled := s.feedOneEditEsc(b, fwd, ech); handled {
+		return fwd, ech, true
+	}
+	if b == keyESC {
+		s.escState = escReceived
+		return fwd, ech, true
+	}
+	return fwd, ech, false
+}
+
+func (s *Scanner) feedOneEditEsc(b byte, fwd, ech []byte) ([]byte, []byte, bool) {
+	if s.escState == escNone {
+		return fwd, ech, false
+	}
+	echOut, handled := s.consumeEscForEdit(b)
+	if !handled {
+		return fwd, ech, false
+	}
+	return fwd, append(ech, echOut...), true
+}
+
+func (s *Scanner) feedOneStateMeta(b byte, fwd, ech []byte) ([]byte, []byte, string, bool) {
+	if len(s.buf) >= maxLine {
+		fwd = append(fwd, s.buf...)
+		s.buf = s.buf[:0]
+		s.cursor = 0
+		s.enterIdle()
+		s.atLineStart = false
+		return s.feedOne(b, fwd, ech)
+	}
+	if b == '\n' || b == '\r' {
+		line := finalizeMetaLine(string(s.buf))
+		s.buf = s.buf[:0]
+		s.cursor = 0
+		s.enterIdle()
+		s.atLineStart = true
+		ech = append(ech, b)
+		return fwd, ech, line, true
+	}
+	ech = s.insertMetaByte(b, ech)
+	return fwd, ech, "", false
+}
+
+func (s *Scanner) feedOneStateHolding(b byte, fwd, ech []byte) ([]byte, []byte, string, bool) {
+	candidate := string(s.buf) + string([]byte{b})
+	if f, e, handled := s.tryLocalBangPassthrough(candidate, b, fwd, ech); handled {
+		return f, e, "", false
+	}
+	if f, e, line, hasLine, handled := s.feedHoldingLoose(candidate, b, fwd, ech); handled {
+		return feedHoldingHandledReturn(f, e, line, hasLine)
+	}
+	if f, e, line, hasLine, handled := s.feedHoldingStrict(candidate, b, fwd, ech); handled {
+		return feedHoldingHandledReturn(f, e, line, hasLine)
+	}
+	return s.feedHoldingPrefixGrow(candidate, b, fwd, ech)
+}
+
+func feedHoldingHandledReturn(f, e []byte, line string, hasLine bool) ([]byte, []byte, string, bool) {
+	if hasLine {
+		return f, e, line, true
+	}
+	return f, e, "", false
+}
+
+func (s *Scanner) feedHoldingPrefixGrow(candidate string, b byte, fwd, ech []byte) ([]byte, []byte, string, bool) {
+	if !prefixCandidate(candidate) || len(s.buf)+1 >= maxLook {
+		ech, fwd = s.flushHoldingToForward(ech, fwd)
+		s.buf = s.buf[:0]
+		s.cursor = 0
+		s.enterIdle()
+		return s.feedOne(b, fwd, ech)
+	}
+	s.buf = append(s.buf, b)
+	s.cursor = len(s.runes())
+	return s.holdingPrefixEcho(b, fwd, ech)
+}
+
+func (s *Scanner) holdingPrefixEcho(b byte, fwd, ech []byte) ([]byte, []byte, string, bool) {
+	if s.shouldDeferHoldingEcho(b) {
+		return s.holdingPrefixDeferredEcho(fwd, ech)
+	}
+	if s.localShellActive {
+		return fwd, s.holdingAppendEcho(ech, b), "", false
+	}
+	return fwd, s.noteHoldingRedraw(ech), "", false
+}
+
+func (s *Scanner) holdingPrefixDeferredEcho(fwd, ech []byte) ([]byte, []byte, string, bool) {
+	if s.localShellActive {
+		return fwd, ech, "", false
+	}
+	return fwd, s.noteHoldingRedraw(ech), "", false
+}
+
+func (s *Scanner) feedOneStateIdle(b byte, fwd, ech []byte) ([]byte, []byte, string, bool) {
+	if b == '!' {
+		s.buf = append(s.buf[:0], b)
+		s.cursor = 1
+		s.state = stateHolding
+		s.deferLocalEcho = true
+		return fwd, ech, "", false
+	}
+	if b == 0x15 { // Ctrl+U idle — forward to remote shell.
+		s.atLineStart = true
+		fwd = append(fwd, b)
+		return fwd, ech, "", false
+	}
+	fwd = append(fwd, b)
+	s.noteForwarded(b)
+	return fwd, ech, "", false
+}
+
 func (s *Scanner) feedHoldingLoose(candidate string, b byte, fwd, ech []byte) (outFwd, outEch []byte, line string, hasLine, handled bool) {
 	if !s.looseBangCapture(candidate, b) {
 		return fwd, ech, "", false, false
@@ -123,13 +239,8 @@ func (s *Scanner) feedHoldingLoose(candidate string, b byte, fwd, ech []byte) (o
 	s.cursor = len(s.runes())
 	// Exact "!ait" still needs space/newline; stay in holding so "!aitssh" can flush.
 	if candidate == toolname.MetaPrefix {
-		if s.shouldDeferHoldingEcho(b) {
-			return fwd, ech, "", false, true
-		}
-		if s.localShellActive {
-			return fwd, s.holdingAppendEcho(ech, b), "", false, true
-		}
-		return fwd, s.noteHoldingRedraw(ech), "", false, true
+		fwd, ech, _, _ := s.holdingPrefixEcho(b, fwd, ech)
+		return fwd, ech, "", false, true
 	}
 	if s.shouldDeferHoldingEcho(b) {
 		return fwd, ech, "", false, true

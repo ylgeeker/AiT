@@ -44,14 +44,7 @@ func WriteLongListing(w io.Writer, dir string) error {
 	}
 
 	for _, e := range entries {
-		path := e.name
-		if e.name != dirDot && e.name != dirDotDot {
-			path = filepath.Join(dir, e.name)
-		} else if e.name == dirDotDot {
-			path = filepath.Dir(dir)
-		} else {
-			path = dir
-		}
+		path := longListingEntryPath(dir, e.name)
 		if err := formatLine(w, path, e.name, e.info); err != nil {
 			return err
 		}

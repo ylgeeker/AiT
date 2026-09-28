@@ -85,23 +85,23 @@ func StopServe(ctx context.Context) error {
 	_ = ctx
 	switch runtime.GOOS {
 	case "windows":
-		cmd := exec.Command("taskkill", "/IM", "ollama.exe", "/F")
-		if err := cmd.Run(); err != nil {
-			if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 128 {
-				return nil
-			}
-			return fmt.Errorf("stop ollama: %w (quit the Ollama desktop app if it is still running)", err)
+		err := exec.Command("taskkill", "/IM", "ollama.exe", "/F").Run()
+		if err == nil {
+			return nil
 		}
-		return nil
+		if code, ok := execExitCode(err); ok && code == 128 {
+			return nil
+		}
+		return fmt.Errorf("stop ollama: %w (quit the Ollama desktop app if it is still running)", err)
 	default:
-		cmd := exec.Command("pkill", "-f", "ollama serve")
-		if err := cmd.Run(); err != nil {
-			if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
-				return nil
-			}
-			return fmt.Errorf("stop ollama: %w", err)
+		err := exec.Command("pkill", "-f", "ollama serve").Run()
+		if err == nil {
+			return nil
 		}
-		return nil
+		if code, ok := execExitCode(err); ok && code == 1 {
+			return nil
+		}
+		return fmt.Errorf("stop ollama: %w", err)
 	}
 }
 

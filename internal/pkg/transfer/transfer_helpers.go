@@ -40,23 +40,48 @@ func copyWithContext(ctx context.Context, dst io.Writer, src io.Reader, total in
 			return err
 		}
 
-		n, err := src.Read(buf)
-		if err != nil && err != io.EOF {
+		done, err := copyOneReadChunk(dst, src, buf, &written, total, progress)
+		if err != nil {
 			return err
 		}
-		if n > 0 {
-			if _, werr := dst.Write(buf[:n]); werr != nil {
-				return werr
-			}
-			written += int64(n)
-			if progress != nil {
-				progress(written, total)
-			}
-		}
-		if err == io.EOF {
+		if done {
 			return nil
 		}
 	}
+}
+
+func copyOneReadChunk(
+	dst io.Writer,
+	src io.Reader,
+	buf []byte,
+	written *int64,
+	total int64,
+	progress CopyProgress,
+) (done bool, err error) {
+	n, err := src.Read(buf)
+	if err != nil && err != io.EOF {
+		return false, err
+	}
+	if n > 0 {
+		if werr := appendCopyChunk(dst, buf[:n], written, total, progress); werr != nil {
+			return false, werr
+		}
+	}
+	if err == io.EOF {
+		return true, nil
+	}
+	return false, nil
+}
+
+func appendCopyChunk(dst io.Writer, chunk []byte, written *int64, total int64, progress CopyProgress) error {
+	if _, err := dst.Write(chunk); err != nil {
+		return err
+	}
+	*written += int64(len(chunk))
+	if progress != nil {
+		progress(*written, total)
+	}
+	return nil
 }
 
 func absLocalPath(localPath string) (string, error) {

@@ -58,17 +58,7 @@ func iterNativePromptCandidates(scroll string) []string {
 
 	var out []string
 	for i := len(lines) - 1; i >= 0; i-- {
-		line := lines[i]
-		if line == "" {
-			continue
-		}
-		parts := strings.Split(line, "\r")
-		for j := len(parts) - 1; j >= 0; j-- {
-			part := strings.TrimSpace(parts[j])
-			if part != "" {
-				out = append(out, part)
-			}
-		}
+		out = appendNativePromptPartsFromLine(out, lines[i])
 	}
 	return out
 }
@@ -251,4 +241,19 @@ func (c *Client) syncNativeRemoteShellAfterMeta(stdin io.Writer) {
 	_ = c.Inject(stdin, nativeRemotePromptRedrawCmd, InjectOpts{SuppressEcho: true})
 	refreshAt := time.Now()
 	c.waitRemoteOutputQuietSince(refreshAt, remoteOutputQuietPeriod, remoteAITPromptRefreshWait)
+}
+
+func appendNativePromptPartsFromLine(out []string, line string) []string {
+	if line == "" {
+		return out
+	}
+	parts := strings.Split(line, "\r")
+	for j := len(parts) - 1; j >= 0; j-- {
+		part := strings.TrimSpace(parts[j])
+		if part == "" {
+			continue
+		}
+		out = append(out, part)
+	}
+	return out
 }

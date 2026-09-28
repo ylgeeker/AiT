@@ -51,59 +51,119 @@ func runReverseSearch(br *bufio.Reader, out io.Writer, prompt string, hist *hist
 			return lineEditResult{err: err, done: true}
 		}
 
-		switch r {
-		case ctrlR:
-			if !found {
-				matchIdx, matchLine, found = hist.ReverseSearch(query, hist.Len())
-			} else {
-				matchIdx, matchLine, found = hist.ReverseSearch(query, matchIdx)
-			}
-			writeReverseSearch(out, query, matchLine, found)
-		case ctrlG:
-			return abortReverseSearch(out, prompt, st, savedRunes, savedCursor)
-		case keyESC:
-			key, err := parseEscapeSeq(br)
-			if err != nil {
-				return lineEditResult{err: err, done: true}
-			}
-			if key == escapeNone {
-				return abortReverseSearch(out, prompt, st, savedRunes, savedCursor)
-			}
-			if key == escapeRight && found {
-				return acceptReverseSearchEdit(out, prompt, st, matchLine)
-			}
-			if key == escapeEnd && found {
-				return acceptReverseSearchEdit(out, prompt, st, matchLine)
-			}
-		case ctrlC:
-			return abortReverseSearch(out, prompt, st, savedRunes, savedCursor)
-		case ctrlE:
-			if found {
-				return acceptReverseSearchEdit(out, prompt, st, matchLine)
-			}
-		case '\r', '\n':
-			if found {
-				st.setLine(matchLine)
-				_, _ = io.WriteString(out, "\r\n")
-				return lineEditResult{line: matchLine, done: true}
-			}
-			return abortReverseSearch(out, prompt, st, savedRunes, savedCursor)
-		case keyBS, keyDEL:
-			if len(query) > 0 {
-				query = query[:len(query)-1]
-				matchIdx, matchLine, found = hist.ReverseSearch(query, hist.Len())
-				writeReverseSearch(out, query, matchLine, found)
-			}
-		default:
-			if !isLineInputRune(r) || r == '\t' {
-				continue
-			}
-			query += string(r)
-			matchIdx, matchLine, found = hist.ReverseSearch(query, hist.Len())
-			writeReverseSearch(out, query, matchLine, found)
+		res, handled := dispatchReverseSearchKey(br, out, prompt, hist, st, savedRunes, savedCursor, &query, &matchIdx, &matchLine, &found, r)
+		if handled {
+			return res
 		}
-		_ = matchIdx
 	}
+}
+
+func dispatchReverseSearchKey(
+	br *bufio.Reader,
+	out io.Writer,
+	prompt string,
+	hist *history.LineHistory,
+	st *editState,
+	saved []rune,
+	savedCursor int,
+	query *string,
+	matchIdx *int,
+	matchLine *string,
+	found *bool,
+	r rune,
+) (lineEditResult, bool) {
+	switch r {
+	case ctrlR:
+		*matchIdx, *matchLine, *found = reverseSearchRepeat(hist, *query, *matchIdx, *found)
+		writeReverseSearch(out, *query, *matchLine, *found)
+		return lineEditResult{}, false
+	case ctrlG, ctrlC:
+		return abortReverseSearch(out, prompt, st, saved, savedCursor), true
+	case keyESC:
+		return handleReverseSearchESC(br, out, prompt, st, saved, savedCursor, *matchLine, *found)
+	case ctrlE:
+		return acceptReverseSearchIfFound(out, prompt, st, *matchLine, *found)
+	case '\r', '\n':
+		return finishReverseSearchEnter(out, prompt, st, saved, savedCursor, *matchLine, *found), true
+	case keyBS, keyDEL:
+		if len(*query) == 0 {
+			return lineEditResult{}, false
+		}
+		applyReverseSearchBackspace(hist, query, matchIdx, matchLine, found)
+		writeReverseSearch(out, *query, *matchLine, *found)
+		return lineEditResult{}, false
+	default:
+		if !isLineInputRune(r) || r == '\t' {
+			return lineEditResult{}, false
+		}
+		applyReverseSearchRune(hist, query, matchIdx, matchLine, found, r)
+		writeReverseSearch(out, *query, *matchLine, *found)
+		return lineEditResult{}, false
+	}
+}
+
+func reverseSearchRepeat(hist *history.LineHistory, query string, matchIdx int, found bool) (int, string, bool) {
+	if !found {
+		return hist.ReverseSearch(query, hist.Len())
+	}
+	return hist.ReverseSearch(query, matchIdx)
+}
+
+func handleReverseSearchESC(
+	br *bufio.Reader,
+	out io.Writer,
+	prompt string,
+	st *editState,
+	saved []rune,
+	savedCursor int,
+	matchLine string,
+	found bool,
+) (lineEditResult, bool) {
+	key, err := parseEscapeSeq(br)
+	if err != nil {
+		return lineEditResult{err: err, done: true}, true
+	}
+	if key == escapeNone {
+		return abortReverseSearch(out, prompt, st, saved, savedCursor), true
+	}
+	if (key == escapeRight || key == escapeEnd) && found {
+		return acceptReverseSearchEdit(out, prompt, st, matchLine), true
+	}
+	return lineEditResult{}, false
+}
+
+func acceptReverseSearchIfFound(out io.Writer, prompt string, st *editState, matchLine string, found bool) (lineEditResult, bool) {
+	if !found {
+		return lineEditResult{}, false
+	}
+	return acceptReverseSearchEdit(out, prompt, st, matchLine), true
+}
+
+func finishReverseSearchEnter(
+	out io.Writer,
+	prompt string,
+	st *editState,
+	saved []rune,
+	savedCursor int,
+	matchLine string,
+	found bool,
+) lineEditResult {
+	if !found {
+		return abortReverseSearch(out, prompt, st, saved, savedCursor)
+	}
+	st.setLine(matchLine)
+	_, _ = io.WriteString(out, "\r\n")
+	return lineEditResult{line: matchLine, done: true}
+}
+
+func applyReverseSearchBackspace(hist *history.LineHistory, query *string, matchIdx *int, matchLine *string, found *bool) {
+	*query = (*query)[:len(*query)-1]
+	*matchIdx, *matchLine, *found = hist.ReverseSearch(*query, hist.Len())
+}
+
+func applyReverseSearchRune(hist *history.LineHistory, query *string, matchIdx *int, matchLine *string, found *bool, r rune) {
+	*query += string(r)
+	*matchIdx, *matchLine, *found = hist.ReverseSearch(*query, hist.Len())
 }
 
 func writeReverseSearch(out io.Writer, query, match string, found bool) {

@@ -69,19 +69,15 @@ func runFiles(ctx context.Context, stdout, stderr io.Writer, paths []string, opt
 			continue
 		}
 
-		if !opts.NoGeocode && info.HasGPS() {
-			if geocodeCalls > 0 {
-				if err := testGeocodeSleep(ctx); err != nil {
-					return err
-				}
-			}
-			addr, gerr := geo.Reverse(ctx, *info.Latitude, *info.Longitude)
-			geocodeCalls++
-			if gerr == nil {
-				info.Address = addr
-			}
+		if opts.NoGeocode || !info.HasGPS() {
+			okInfos = append(okInfos, info)
+			continue
 		}
 
+		info, err = applyGeocode(ctx, geo, info, &geocodeCalls)
+		if err != nil {
+			return err
+		}
 		okInfos = append(okInfos, info)
 	}
 
@@ -89,10 +85,8 @@ func runFiles(ctx context.Context, stdout, stderr io.Writer, paths []string, opt
 		if err := imgmeta.FormatJSON(stdout, okInfos, opts.All); err != nil {
 			return err
 		}
-	} else {
-		if err := writeHumanBlocks(stdout, okInfos, opts.All); err != nil {
-			return err
-		}
+	} else if err := writeHumanBlocks(stdout, okInfos, opts.All); err != nil {
+		return err
 	}
 
 	if anyFailed {
@@ -101,27 +95,47 @@ func runFiles(ctx context.Context, stdout, stderr io.Writer, paths []string, opt
 	return nil
 }
 
+func applyGeocode(ctx context.Context, geo *geocode.Client, info imgmeta.Info, calls *int) (imgmeta.Info, error) {
+	if *calls > 0 {
+		if err := testGeocodeSleep(ctx); err != nil {
+			return info, err
+		}
+	}
+
+	addr, gerr := geo.Reverse(ctx, *info.Latitude, *info.Longitude)
+	*calls++
+	if gerr == nil {
+		info.Address = addr
+	}
+	return info, nil
+}
+
 func writeHumanBlocks(stdout io.Writer, infos []imgmeta.Info, allOut bool) error {
 	for i, info := range infos {
-		if i > 0 {
-			if _, err := fmt.Fprintln(stdout); err != nil {
-				return err
-			}
-		}
-		if err := imgmeta.FormatHuman(stdout, info); err != nil {
-			return err
-		}
-		if !allOut {
-			continue
-		}
-		if _, err := fmt.Fprintln(stdout); err != nil {
-			return err
-		}
-		if err := imgmeta.FormatFullHuman(stdout, info.Exif); err != nil {
+		if err := writeOneHumanBlock(stdout, info, allOut, i > 0); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func writeOneHumanBlock(stdout io.Writer, info imgmeta.Info, allOut, blankBefore bool) error {
+	if blankBefore {
+		if _, err := fmt.Fprintln(stdout); err != nil {
+			return err
+		}
+	}
+	if err := imgmeta.FormatHuman(stdout, info); err != nil {
+		return err
+	}
+	if !allOut {
+		return nil
+	}
+
+	if _, err := fmt.Fprintln(stdout); err != nil {
+		return err
+	}
+	return imgmeta.FormatFullHuman(stdout, info.Exif)
 }
 
 func wrapExtractErr(path string, err error) error {

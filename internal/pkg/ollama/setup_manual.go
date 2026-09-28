@@ -30,18 +30,7 @@ func ManualSetupInstructions(w io.Writer, cfg *config.Config) {
 	if w == nil {
 		return
 	}
-	model := config.DefaultOllamaModel
-	base := config.DefaultOllamaBase
-	if cfg != nil {
-		if pc, ok := cfg.Provider(config.ProviderOllama); ok {
-			if pc.Model != "" {
-				model = pc.Model
-			}
-			if pc.BaseURL != "" {
-				base = pc.BaseURL
-			}
-		}
-	}
+	base, model := ollamaEndpointsFromConfig(cfg, config.DefaultOllamaBase, config.DefaultOllamaModel)
 
 	_, _ = fmt.Fprintln(w, "")
 	_, _ = fmt.Fprintln(w, "Manual Ollama setup:")

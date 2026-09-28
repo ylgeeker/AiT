@@ -1,4 +1,4 @@
-.PHONY: all build build-cross install install-git-hooks release-archives test vet fmt clean test-cross test-e2e test-e2e-smoke test-e2e-mock dupl check-generate
+.PHONY: all build build-cross install install-git-hooks release-archives test vet fmt clean test-cross test-e2e test-e2e-smoke test-e2e-mock dupl check-generate nestscan
 
 TOOLS     := aitssh aitimg aitlog aithost ait
 BUILD_DIR := bin
@@ -192,6 +192,11 @@ install-git-hooks:
 
 vet:
 	go vet ./...
+
+# Fail if production Go has control-flow nesting depth >= 3 (go-structure §9).
+# Not wired into CI yet; run before merge: make nestscan
+nestscan:
+	go run ./scripts/nestscan.go ./internal ./cmd ./pkg
 
 clean:
 	rm -rf $(BUILD_DIR)

@@ -187,10 +187,7 @@ func streamFollow(ctx context.Context, stdout io.Writer, cur logsrc.Cursor,
 			return nil
 		}
 		if !cur.Next(&rec) {
-			if ctx.Err() != nil {
-				return nil
-			}
-			return cur.Err()
+			return streamFollowEnd(ctx, cur)
 		}
 		if filt != nil && !filt.Match(rec) {
 			continue

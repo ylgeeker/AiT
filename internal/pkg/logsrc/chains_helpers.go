@@ -61,12 +61,18 @@ func existingPaths(paths []string) []string {
 		if err != nil {
 			continue
 		}
-		if len(matches) == 0 {
-			if _, err := os.Stat(p); err == nil {
-				matches = []string{p}
-			}
-		}
+		matches = globMatchesOrStatPath(p, matches)
 		out = append(out, matches...)
 	}
 	return out
+}
+
+func globMatchesOrStatPath(p string, matches []string) []string {
+	if len(matches) != 0 {
+		return matches
+	}
+	if _, err := os.Stat(p); err == nil {
+		return []string{p}
+	}
+	return matches
 }

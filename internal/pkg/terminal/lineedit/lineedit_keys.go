@@ -183,36 +183,44 @@ func parseEscapeSeq(br *bufio.Reader) (escapeKey, error) {
 			continue
 		}
 		if c == '~' {
-			switch string(digits) {
-			case "1":
-				return escapeHome, nil
-			case "3":
-				return escapeDelete, nil
-			case "4":
-				return escapeEnd, nil
-			}
-			return escapeNone, nil
+			return parseTildeEscape(digits)
 		}
 		if c >= csiFinalByteMin && c <= csiFinalByteMax {
-			switch c {
-			case 'A':
-				return escapeUp, nil
-			case 'B':
-				return escapeDown, nil
-			case 'C':
-				return escapeRight, nil
-			case 'D':
-				return escapeLeft, nil
-			case 'H':
-				return escapeHome, nil
-			case 'F':
-				return escapeEnd, nil
-			case 'P':
-				return escapeDelete, nil
-			}
-			return escapeNone, nil
+			return parseCSIFinalEscape(c)
 		}
 	}
+}
+
+func parseTildeEscape(digits []byte) (escapeKey, error) {
+	switch string(digits) {
+	case "1":
+		return escapeHome, nil
+	case "3":
+		return escapeDelete, nil
+	case "4":
+		return escapeEnd, nil
+	}
+	return escapeNone, nil
+}
+
+func parseCSIFinalEscape(c byte) (escapeKey, error) {
+	switch c {
+	case 'A':
+		return escapeUp, nil
+	case 'B':
+		return escapeDown, nil
+	case 'C':
+		return escapeRight, nil
+	case 'D':
+		return escapeLeft, nil
+	case 'H':
+		return escapeHome, nil
+	case 'F':
+		return escapeEnd, nil
+	case 'P':
+		return escapeDelete, nil
+	}
+	return escapeNone, nil
 }
 
 func handleEscapeKey(out io.Writer, prompt string, st *editState, hist *history.LineHistory, key escapeKey) {

@@ -101,14 +101,7 @@ func stringifyMessage(m any) string {
 	case string:
 		return v
 	case []any:
-		b := make([]byte, 0, len(v))
-		for _, x := range v {
-			switch n := x.(type) {
-			case float64:
-				b = append(b, byte(n))
-			}
-		}
-		return string(b)
+		return string(bytesFromJournalMessageSlice(v))
 	default:
 		return fmt.Sprint(m)
 	}

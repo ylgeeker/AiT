@@ -71,3 +71,12 @@ func (c *Client) paintClientRemotePrompt(user, host string) bool {
 	}
 	return true
 }
+
+func (c *Client) tryPaintClientRemotePrompt(user, host string) {
+	if c.remotePromptShown.Load() {
+		return
+	}
+	if c.paintClientRemotePrompt(user, host) {
+		c.remotePromptShown.Store(true)
+	}
+}

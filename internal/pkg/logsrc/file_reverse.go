@@ -59,14 +59,10 @@ func (c *fileReverseCursor) Next(rec *Record) bool {
 			c.err = err
 			return false
 		}
+		if !ok && !c.advanceToNextFile() {
+			return false
+		}
 		if !ok {
-			if err := c.openNext(); err != nil {
-				c.finished = true
-				if err != io.EOF {
-					c.err = err
-				}
-				return false
-			}
 			continue
 		}
 		parsed, ok := ParseSyslogLine(line)
@@ -75,6 +71,18 @@ func (c *fileReverseCursor) Next(rec *Record) bool {
 		}
 		*rec = parsed
 		return true
+	}
+	return false
+}
+
+func (c *fileReverseCursor) advanceToNextFile() bool {
+	err := c.openNext()
+	if err == nil {
+		return true
+	}
+	c.finished = true
+	if err != io.EOF {
+		c.err = err
 	}
 	return false
 }
@@ -102,14 +110,13 @@ func (c *fileReverseCursor) openNext() error {
 		path := c.paths[c.idx]
 		c.idx++
 		s, err := newReverseScanner(path)
-		if err != nil {
-			if os.IsPermission(err) {
-				return fmt.Errorf("%w: %s: %v", ErrPermission, path, err)
-			}
-			continue
+		if err == nil {
+			c.scanner = s
+			return nil
 		}
-		c.scanner = s
-		return nil
+		if os.IsPermission(err) {
+			return fmt.Errorf("%w: %s: %v", ErrPermission, path, err)
+		}
 	}
 	return io.EOF
 }

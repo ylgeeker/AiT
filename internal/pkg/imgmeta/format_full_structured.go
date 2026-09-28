@@ -157,18 +157,32 @@ func parseXMLElement(dec *xml.Decoder, start xml.StartElement) (any, error) {
 		if err != nil {
 			return nil, err
 		}
-		switch t := tok.(type) {
-		case xml.StartElement:
-			child, err := parseXMLElement(dec, t)
-			if err != nil {
-				return nil, err
-			}
-			children = append(children, xmlChild{name: t.Name.Local, value: child})
-		case xml.EndElement:
-			return finalizeXMLNode(attrs, text.String(), children), nil
-		case xml.CharData:
-			appendXMLText(&text, t)
+		done, err := consumeXMLElementToken(dec, tok, &text, &children)
+		if err != nil {
+			return nil, err
 		}
+		if done {
+			return finalizeXMLNode(attrs, text.String(), children), nil
+		}
+	}
+}
+
+func consumeXMLElementToken(dec *xml.Decoder, tok xml.Token, text *strings.Builder, children *[]xmlChild) (done bool, err error) {
+	switch t := tok.(type) {
+	case xml.StartElement:
+		child, err := parseXMLElement(dec, t)
+		if err != nil {
+			return false, err
+		}
+		*children = append(*children, xmlChild{name: t.Name.Local, value: child})
+		return false, nil
+	case xml.EndElement:
+		return true, nil
+	case xml.CharData:
+		appendXMLText(text, t)
+		return false, nil
+	default:
+		return false, nil
 	}
 }
 

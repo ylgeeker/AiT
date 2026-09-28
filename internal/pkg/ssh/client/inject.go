@@ -173,12 +173,7 @@ func (c *Client) injectCaptureRetry(stdin io.Writer, cmd string) (string, error)
 
 	var lastErr error
 	for attempt := 0; attempt < attempts; attempt++ {
-		if attempt > 0 {
-			if c.scroll != nil {
-				c.scroll.StripSubstrings(injectStripFragments()...)
-			}
-			time.Sleep(delay)
-		}
+		prepareInjectCaptureRetry(c, attempt, delay)
 
 		out, err := injectCaptureForRetry(c, stdin, cmd)
 		if err == nil {

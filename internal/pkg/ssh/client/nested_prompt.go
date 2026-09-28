@@ -18,7 +18,6 @@ package client
 
 import (
 	"io"
-	"strings"
 	"time"
 )
 
@@ -59,22 +58,7 @@ func (c *Client) noteInteractiveInput(fwd []byte) {
 	}
 
 	for _, b := range fwd {
-		switch b {
-		case '\n', '\r':
-			line := strings.TrimSpace(string(c.forwardLineBuf))
-			c.forwardLineBuf = c.forwardLineBuf[:0]
-			c.onInteractiveLineSubmitted(line)
-		case 0x15:
-			c.forwardLineBuf = c.forwardLineBuf[:0]
-		case 0x7f, 0x08:
-			if len(c.forwardLineBuf) > 0 {
-				c.forwardLineBuf = c.forwardLineBuf[:len(c.forwardLineBuf)-1]
-			}
-		default:
-			if b >= 0x20 || b == '\t' {
-				c.forwardLineBuf = append(c.forwardLineBuf, b)
-			}
-		}
+		c.noteInteractiveInputByte(b)
 	}
 }
 
@@ -239,16 +223,7 @@ func (c *Client) nestedReadyToInject() bool {
 		}
 	}
 
-	if c.nestedMOTDSeen {
-		if !c.nestedShellReadySeen {
-			// MOTD without a detected prompt: fall through after a short wait (NP3).
-			if c.nestedMOTDAt.IsZero() || time.Since(c.nestedMOTDAt) < nestedMOTDReadyFallback {
-				return false
-			}
-		} else if !c.nestedMOTDAt.IsZero() && time.Since(c.nestedMOTDAt) < shellReadyDelay {
-			return false
-		}
-	} else if time.Since(c.nestedAwaitingSince) < nestedPromptMaxWait {
+	if !c.nestedMOTDAllowsInject() {
 		return false
 	}
 

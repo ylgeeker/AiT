@@ -19,9 +19,7 @@ package client
 import (
 	"fmt"
 	"net"
-	"os"
 	"os/user"
-	"path/filepath"
 	"time"
 
 	"github.com/os-artificer/AiT/internal/pkg/ssh/client/dial"
@@ -30,7 +28,6 @@ import (
 	"github.com/os-artificer/AiT/internal/pkg/terminal"
 
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/agent"
 )
 
 // Dial opens a direct TCP SSH connection to opts.Host:opts.Port.
@@ -76,48 +73,15 @@ func buildAuth(opts Options) ([]ssh.AuthMethod, net.Conn, error) {
 		methods = append(methods, ssh.Password(opts.Password))
 	}
 
-	tryDefaultKeys := func() {
-		home, _ := os.UserHomeDir()
-		for _, name := range []string{"id_ed25519", "id_rsa"} {
-			p := filepath.Join(home, ".ssh", name)
-			if opts.IdentityPath != "" && p == opts.IdentityPath {
-				continue
-			}
-			if _, err := os.Stat(p); err == nil {
-				if signer, err := dial.LoadSigner(p, opts.Password); err == nil {
-					methods = append(methods, ssh.PublicKeys(signer))
-					return
-				}
-			}
-		}
+	var err error
+	methods, err = appendIdentityAuth(methods, opts)
+	if err != nil {
+		return nil, agentConn, err
 	}
 
-	if opts.IdentityPath != "" {
-		if _, err := os.Stat(opts.IdentityPath); err != nil {
-			if opts.IdentityExplicit {
-				return nil, agentConn, fmt.Errorf("identity file not found: %s", opts.IdentityPath)
-			}
-			tryDefaultKeys()
-		} else if signer, err := dial.LoadSigner(opts.IdentityPath, opts.Password); err == nil {
-			methods = append(methods, ssh.PublicKeys(signer))
-		} else if opts.IdentityExplicit {
-			return nil, agentConn, err
-		} else {
-			tryDefaultKeys()
-		}
-	} else {
-		tryDefaultKeys()
-	}
-
-	if opts.UseAgent {
-		if sock := os.Getenv("SSH_AUTH_SOCK"); sock != "" {
-			conn, err := net.Dial("unix", sock)
-			if err == nil {
-				agentConn = conn
-				ag := agent.NewClient(conn)
-				methods = append(methods, ssh.PublicKeysCallback(ag.Signers))
-			}
-		}
+	methods, agentConn, err = appendSSHAgentAuth(methods, opts)
+	if err != nil {
+		return nil, agentConn, err
 	}
 
 	if len(methods) == 0 {

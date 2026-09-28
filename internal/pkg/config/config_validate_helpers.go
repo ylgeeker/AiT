@@ -137,22 +137,8 @@ func validateProvider(id string, p ProviderConfig, prefix string) []ValidationIs
 	style := strings.ToLower(strings.TrimSpace(p.APIStyle))
 	if style == "" {
 		style = APIStyleOpenAI
-	} else if style != APIStyleOpenAI && style != APIStyleAnthropic {
-		issues = append(issues, ValidationIssue{
-			Field:   prefix + "api_style",
-			Message: "api_style must be openai or anthropic",
-		})
-	} else if id == ProviderDeepseek && style == APIStyleAnthropic {
-		issues = append(issues, ValidationIssue{
-			Field:   prefix + "api_style",
-			Message: "deepseek provider only supports openai api_style",
-		})
-	} else if id == ProviderOllama && style != APIStyleOpenAI {
-		issues = append(issues, ValidationIssue{
-			Field:   prefix + "api_style",
-			Message: "ollama provider only supports openai api_style",
-		})
 	}
+	issues = append(issues, validateProviderAPIStyle(id, style, prefix)...)
 
 	baseURL := strings.TrimSpace(p.BaseURL)
 	if baseURL == "" {
@@ -172,21 +158,50 @@ func validateProvider(id string, p ProviderConfig, prefix string) []ValidationIs
 		})
 	}
 
-	if p.ModelsDir != "" {
-		if id != ProviderOllama {
-			issues = append(issues, ValidationIssue{
-				Field:   prefix + "models_dir",
-				Message: "models_dir is only valid for provider ollama",
-			})
-		} else if _, err := expandAbsPath(p.ModelsDir); err != nil {
-			issues = append(issues, ValidationIssue{
-				Field:   prefix + "models_dir",
-				Message: err.Error(),
-			})
-		}
-	}
+	issues = append(issues, validateProviderModelsDir(id, p.ModelsDir, prefix)...)
 
 	return issues
+}
+
+func validateProviderAPIStyle(id, style, prefix string) []ValidationIssue {
+	if style != APIStyleOpenAI && style != APIStyleAnthropic {
+		return []ValidationIssue{{
+			Field:   prefix + "api_style",
+			Message: "api_style must be openai or anthropic",
+		}}
+	}
+	if id == ProviderDeepseek && style == APIStyleAnthropic {
+		return []ValidationIssue{{
+			Field:   prefix + "api_style",
+			Message: "deepseek provider only supports openai api_style",
+		}}
+	}
+	if id == ProviderOllama && style != APIStyleOpenAI {
+		return []ValidationIssue{{
+			Field:   prefix + "api_style",
+			Message: "ollama provider only supports openai api_style",
+		}}
+	}
+	return nil
+}
+
+func validateProviderModelsDir(id, modelsDir, prefix string) []ValidationIssue {
+	if modelsDir == "" {
+		return nil
+	}
+	if id != ProviderOllama {
+		return []ValidationIssue{{
+			Field:   prefix + "models_dir",
+			Message: "models_dir is only valid for provider ollama",
+		}}
+	}
+	if _, err := expandAbsPath(modelsDir); err != nil {
+		return []ValidationIssue{{
+			Field:   prefix + "models_dir",
+			Message: err.Error(),
+		}}
+	}
+	return nil
 }
 
 func validateTiered(cfg *Config) []ValidationIssue {

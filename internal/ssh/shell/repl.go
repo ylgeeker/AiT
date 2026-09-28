@@ -68,6 +68,7 @@ func runShellREPLPlain(ctx context.Context, mgr *session.Manager, in io.Reader, 
 
 	sc := bufio.NewScanner(in)
 	hist := terminal.NewReplLineHistory(os.Stderr)
+
 	for {
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -75,10 +76,7 @@ func runShellREPLPlain(ctx context.Context, mgr *session.Manager, in io.Reader, 
 
 		_, _ = io.WriteString(out, shellPrompt())
 		if !sc.Scan() {
-			if err := sc.Err(); err != nil {
-				return err
-			}
-			return nil
+			return sc.Err()
 		}
 
 		exit, err := ExecuteLine(ctx, mgr, sc.Text(), hist)
@@ -94,29 +92,19 @@ func runShellREPLTTY(ctx context.Context, mgr *session.Manager, fd int, out io.W
 	if err != nil {
 		return fmt.Errorf("terminal: %w", err)
 	}
-
 	defer func() { _ = term.Restore(fd, old) }()
 
 	setShellTTYIO(true)
 	defer setShellTTYIO(false)
-
 	prevRunner := externalRunner
-	SetExternalRunner(func(ctx context.Context, path string, argv []string) error {
-		if restoreErr := term.Restore(fd, old); restoreErr != nil {
-			return restoreErr
-		}
-		runErr := shellext.Run(ctx, path, argv, os.Stdin, os.Stdout, os.Stderr)
-		if _, rawErr := term.MakeRaw(fd); rawErr != nil && runErr == nil {
-			return rawErr
-		}
-		return runErr
-	})
+	SetExternalRunner(runExternalWithTTYHandoff(fd, old))
 	defer SetExternalRunner(prevRunner)
 
 	_, _ = io.WriteString(out, "Type help for commands. Use exit or quit to leave.\r\n")
 
 	br := bufio.NewReader(os.Stdin)
 	hist := terminal.NewReplLineHistory(os.Stderr)
+
 	for {
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -125,10 +113,10 @@ func runShellREPLTTY(ctx context.Context, mgr *session.Manager, fd int, out io.W
 		prompt := shellPrompt()
 		_, _ = io.WriteString(out, prompt)
 		line, err := ReadTTYLine(br, out, prompt, hist)
+		if err == io.EOF {
+			return nil
+		}
 		if err != nil {
-			if err == io.EOF {
-				return nil
-			}
 			return err
 		}
 

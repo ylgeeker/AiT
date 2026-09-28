@@ -17,9 +17,31 @@
 package client
 
 import (
+	"github.com/os-artificer/AiT/internal/pkg/ai/models"
 	"github.com/os-artificer/AiT/internal/pkg/config"
 	"github.com/os-artificer/AiT/internal/pkg/creds"
 )
+
+func formatModelsReportOllamaSection(r *ModelsReport) string {
+	if r.TagsNote != "" {
+		return "\n" + r.TagsNote + "\n"
+	}
+	if len(r.OllamaTags) == 0 {
+		return ""
+	}
+	out := "\n" + models.OllamaTagsHeader
+	for _, t := range r.OllamaTags {
+		out += "  " + t + "\n"
+	}
+	return out
+}
+
+func skipModelsListRow(id string, inCfg, hasKey, tieredEnabled bool) bool {
+	if id == ProviderOllama {
+		return !inCfg && !tieredEnabled
+	}
+	return !hasKey && !inCfg
+}
 
 func providerConfigForList(cfg *config.Config, id string) (config.ProviderConfig, bool) {
 	pc, inCfg := cfg.Provider(id)

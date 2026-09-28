@@ -76,30 +76,14 @@ func ChooseModelsDir(in io.Reader, out io.Writer, cfg *config.Config, assumeYes 
 		}
 		dir = opts[idx].Path
 	case fmt.Sprintf("%d", customN):
-		_, _ = fmt.Fprint(out, "Absolute path: ")
-		custom, err := readChoiceLine(in)
-		if err != nil {
-			return "", err
-		}
-		dir, err = expandModelsPath(strings.TrimSpace(custom))
+		dir, err = readCustomModelsDir(in, out)
 		if err != nil {
 			return "", err
 		}
 	default:
-		if n, err := parseChoiceIndex(choice); err == nil && n >= 1 && n <= len(opts) {
-			dir = opts[n-1].Path
-		} else if n == customN {
-			_, _ = fmt.Fprint(out, "Absolute path: ")
-			custom, err := readChoiceLine(in)
-			if err != nil {
-				return "", err
-			}
-			dir, err = expandModelsPath(strings.TrimSpace(custom))
-			if err != nil {
-				return "", err
-			}
-		} else {
-			return "", fmt.Errorf("invalid selection %q", choice)
+		dir, err = dirFromNumericChoice(choice, opts, customN, in, out)
+		if err != nil {
+			return "", err
 		}
 	}
 

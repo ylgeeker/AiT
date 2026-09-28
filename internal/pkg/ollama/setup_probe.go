@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"runtime"
 	"time"
 
 	"github.com/os-artificer/AiT/internal/pkg/platform"
@@ -73,17 +72,8 @@ func WaitReady(ctx context.Context, client *http.Client, baseURL, modelsDir stri
 		}
 	}
 
-	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
-		if _, err := platform.LookPath(binaryName); err == nil {
-			_ = StartServeDetached(modelsDir)
-			waitCtx, cancel := context.WithTimeout(ctx, serveStartWait)
-			defer cancel()
-			<-waitCtx.Done()
-			_, note, err := FetchTags(ctx, client, baseURL, "")
-			if err == nil && note == "" {
-				return nil
-			}
-		}
+	if tryStartServeAndReach(ctx, client, baseURL, modelsDir) {
+		return nil
 	}
 
 	return fmt.Errorf("ollama API not reachable at %s (start Ollama app or run: ollama serve)", TagsBaseURL(baseURL))

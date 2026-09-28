@@ -45,13 +45,15 @@ type anthropicMessage struct {
 	Content string `json:"content"`
 }
 
+type anthropicContentBlock struct {
+	Type     string `json:"type"`
+	Text     string `json:"text"`
+	Thinking string `json:"thinking"`
+}
+
 type anthropicResponse struct {
-	Content []struct {
-		Type     string `json:"type"`
-		Text     string `json:"text"`
-		Thinking string `json:"thinking"`
-	} `json:"content"`
-	Error *struct {
+	Content []anthropicContentBlock `json:"content"`
+	Error   *struct {
 		Message string `json:"message"`
 	} `json:"error"`
 }
@@ -178,20 +180,12 @@ func specializedAnthropic(ctx context.Context, slot *providerSlot, messages []co
 	var parts []string
 	var thinkingParts []string
 	for _, block := range parsed.Content {
-		switch block.Type {
-		case anthropicBlockThinking:
-			content := block.Thinking
-			if content == "" {
-				content = block.Text
-			}
-			if content != "" {
-				thinkingParts = append(thinkingParts, content)
-			}
-		case anthropicBlockRedactedThinking:
-		default:
-			if block.Text != "" {
-				parts = append(parts, block.Text)
-			}
+		text, think := anthropicBlockTextParts(block)
+		if think != "" {
+			thinkingParts = append(thinkingParts, think)
+		}
+		if text != "" {
+			parts = append(parts, text)
 		}
 	}
 	if len(parts) == 0 {
@@ -287,10 +281,7 @@ func splitAnthropicMessages(messages []completionMessage) (system string, out []
 	for _, m := range messages {
 		switch m.Role {
 		case msgRoleSystem:
-			if system != "" {
-				system += "\n\n"
-			}
-			system += m.Content
+			system = appendSystemBlock(system, m.Content)
 		case msgRoleUser:
 			out = append(out, anthropicMessage{Role: anthropicRoleUser, Content: m.Content})
 		case msgRoleAssistant:

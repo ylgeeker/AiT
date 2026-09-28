@@ -31,7 +31,6 @@ import (
 	"github.com/os-artificer/AiT/internal/pkg/errhint"
 	"github.com/os-artificer/AiT/internal/pkg/ssh/client/localmode"
 	"github.com/os-artificer/AiT/internal/pkg/terminal"
-	"github.com/os-artificer/AiT/internal/pkg/tmux"
 	"github.com/os-artificer/AiT/internal/pkg/toolname"
 	"github.com/os-artificer/AiT/internal/pkg/transfer/zmodem"
 
@@ -276,24 +275,7 @@ func (c *Client) RunInteractive(ctx context.Context, opts InteractiveOpts) error
 	go func() { defer wg.Done(); copyOut(stderr) }()
 
 	if opts.TmuxEnabled {
-		if err := c.tmuxEnsure(stdin, opts.TmuxName); err != nil {
-			sess.Close()
-			return err
-		}
-		if err := c.ensureTmuxSessionReady(stdin, opts.TmuxName); err != nil {
-			sess.Close()
-			return err
-		}
-		if setupNeeded {
-			setup, after := partitionInitialCommands(opts.InitialCommands, c.opts.User, c.opts.Host)
-			if err := c.tmuxPreAttachSetup(opts.TmuxName, setup); err != nil {
-				sess.Close()
-				return wrapTmuxPreAttachErr(opts.TmuxName, err)
-			}
-			postAttachCmds = after
-		}
-		if err := sess.Start(tmux.AttachCommand(opts.TmuxName)); err != nil {
-			sess.Close()
+		if err := c.runInteractiveTmuxAttach(sess, stdin, opts, setupNeeded, &postAttachCmds); err != nil {
 			return err
 		}
 	} else {
@@ -407,17 +389,9 @@ func (c *Client) injectInitialCommands(stdin io.Writer, cmds []string) error {
 func (c *Client) forwardStdin(ctx context.Context, stdin io.Writer, stdinCh <-chan stdinByte, opts InteractiveOpts) error {
 	scan := newMetaScanner(c.metaLineEchoPrefix())
 	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case sb, ok := <-stdinCh:
-			if !ok {
-				return io.EOF
-			}
-			res := c.processForwardStdinByte(ctx, stdin, sb, scan, opts)
-			if res.action == fwdStdinReturn {
-				return res.err
-			}
+		err, done := c.waitForwardStdinStep(ctx, stdin, stdinCh, scan, opts)
+		if done {
+			return err
 		}
 	}
 }
@@ -439,33 +413,7 @@ func (c *Client) handleMetaLine(ctx context.Context, stdin io.Writer, line strin
 		return c.handleChainMeta(stdin, line)
 
 	default:
-
-		if chain, ok := ParseMetaChainLine(line, opts.AliasLookup); ok {
-			if err := c.handleSuspendMeta(stdin, opts); err != nil {
-				return err
-			}
-			_ = c.Close()
-			return chain
-		}
-
-		if line == metaLineBare || line == metaLineHelp {
-			return c.runMetaCLI(stdin, opts, nil)
-		}
-		if cmd, args, isXfer := transferArgsFromMetaLine(line); isXfer {
-			switch cmd {
-			case "get":
-				return c.handleTransferGet(ctx, stdin, args)
-			case "put":
-				return c.handleTransferPut(ctx, stdin, args)
-			}
-		}
-		if strings.HasPrefix(line, metaPrefixAitSpace) {
-			args := strings.Fields(strings.TrimPrefix(line, metaPrefixAitSpace))
-			return c.runMetaCLI(stdin, opts, args)
-		}
-		termPrintln(os.Stdout, "AiT: unknown meta command (try "+toolname.MetaLine("help")+")")
-		c.finishMetaInteraction(stdin)
-		return nil
+		return c.handleMetaLineDefault(ctx, stdin, line, opts)
 	}
 }
 

@@ -87,13 +87,8 @@ func NewClient(cfg *config.Config, opts ...ClientOption) (*Client, error) {
 		slots[id] = newProviderSlot(id, pc, key, o.httpClient)
 	}
 
-	if cfg.TieredEnabled() {
-		localID := cfg.LocalProviderID()
-		if cfg.ProviderEnabled(localID) {
-			if slot := initTieredSlot(cfg, localID, o.httpClient); slot != nil {
-				slots[localID] = slot
-			}
-		}
+	if localID, slot := tieredLocalSlot(cfg, o.httpClient); slot != nil {
+		slots[localID] = slot
 	}
 
 	if len(slots) == 0 {
@@ -114,24 +109,11 @@ func NewClient(cfg *config.Config, opts ...ClientOption) (*Client, error) {
 		)
 	}
 
-	if o.providerOverride != "" {
-		if !config.IsCloudProvider(o.providerOverride) {
-			return nil, fmt.Errorf(errProviderOverrideCloudFmt, ProviderDeepseek, ProviderMinimax)
-		}
-		if !cfg.ProviderEnabled(o.providerOverride) {
-			return nil, ProviderDisabledErr(string(o.providerOverride))
-		}
-		if _, ok := slots[o.providerOverride]; !ok {
-			return nil, errhint.WithTryMsg(fmt.Sprintf(errAPIKeyNotSetFmt, o.providerOverride),
-				provider.HintStoreAPIKeyInKeyring,
-				provider.ConfigSetAPIKeyCmd(string(o.providerOverride)),
-				provider.ConfigGetAPIKeyCmd(string(o.providerOverride)),
-			)
-		}
-	} else if cloud := cfg.DefaultProviderID(); hasCloudSlot(slots) {
-		if _, ok := slots[cloud]; !ok {
-			return nil, fmt.Errorf(errAPIKeyNotSetWithHintFmt, cloud, router.APIKeyHint(cloud))
-		}
+	if err := newClientProviderOverrideErr(cfg, o.providerOverride, slots); err != nil {
+		return nil, err
+	}
+	if err := newClientDefaultCloudKeyErr(cfg, o.providerOverride, slots); err != nil {
+		return nil, err
 	}
 
 	return &Client{
@@ -222,20 +204,24 @@ func (c *Client) completionWith(
 	useLocal := router.ClassifyPrompt(c.cfg, user, historyLen, c.sessionProvider, c.skipTiered)
 	localID := c.cfg.LocalProviderID()
 
-	if useLocal {
-		if slot, ok := c.slots[localID]; ok {
-			meta := PromptMeta{Provider: localID, Model: slot.model, Mode: aiModeLocalFirst}
-			reply, thinking, err := complete(ctx, slot, build(meta))
-			if err == nil {
-				c.noteCompletionProvider(localID)
-				return reply, thinking, nil
-			}
-			if order := router.ResolveTryOrder(c.cfg, c.sessionProvider, cloudKeyedSet(c.slots)); len(order) > 0 {
-				router.LogFailover(nil, localID, order[0], err)
-			}
-		}
+	if !useLocal {
+		return c.chatWithFailoverUsing(ctx, build, complete)
+	}
+	slot, ok := c.slots[localID]
+	if !ok {
+		return c.chatWithFailoverUsing(ctx, build, complete)
 	}
 
+	meta := PromptMeta{Provider: localID, Model: slot.model, Mode: aiModeLocalFirst}
+	reply, thinking, err := complete(ctx, slot, build(meta))
+	if err == nil {
+		c.noteCompletionProvider(localID)
+		return reply, thinking, nil
+	}
+	order := router.ResolveTryOrder(c.cfg, c.sessionProvider, cloudKeyedSet(c.slots))
+	if len(order) > 0 {
+		router.LogFailover(nil, localID, order[0], err)
+	}
 	return c.chatWithFailoverUsing(ctx, build, complete)
 }
 

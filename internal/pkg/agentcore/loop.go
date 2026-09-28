@@ -119,19 +119,20 @@ func runAgentSteps(ctx context.Context, cfg Config, st *sessionState, question s
 		if strings.TrimSpace(thinking) != "" {
 			emit(cfg, Event{Kind: EventThinking, Detail: thinking, Provider: eventProvider(cfg)})
 		}
+		if reply != "" && cfg.StreamDelta != nil {
+			cfg.StreamDelta(reply)
+		}
 		if reply != "" {
-			if cfg.StreamDelta != nil {
-				cfg.StreamDelta(reply)
-			}
 			emit(cfg, Event{Kind: EventTokenDelta, Detail: reply})
 		}
 
 		parseResult := pkgagent.ResolveAgentReply(reply)
-		if !parseResult.OK() {
-			userMsg, chatErr = handleAgentParseFailure(st, &parseState, userMsg, reply, parseResult)
-			if chatErr != nil {
-				return "", chatErr
-			}
+		var retry bool
+		userMsg, retry, chatErr = retryAgentParseOrContinue(st, &parseState, userMsg, reply, parseResult)
+		if chatErr != nil {
+			return "", chatErr
+		}
+		if retry {
 			continue
 		}
 
@@ -175,11 +176,11 @@ func waitContinueOrExit(ctx context.Context, cfg Config, st *sessionState) (stri
 		}
 
 		line, err := st.ReadLine(promptAgentContinue)
+		if err == io.EOF {
+			emit(cfg, Event{Kind: EventSessionEnded})
+			return "", nil
+		}
 		if err != nil {
-			if err == io.EOF {
-				emit(cfg, Event{Kind: EventSessionEnded})
-				return "", nil
-			}
 			return "", err
 		}
 
@@ -207,11 +208,11 @@ func runLoopPlain(ctx context.Context, cfg Config, st *sessionState) error {
 		}
 
 		raw, err := st.ReadLine(promptAgent)
+		if err == io.EOF {
+			emit(cfg, Event{Kind: EventSessionEnded})
+			return nil
+		}
 		if err != nil {
-			if err == io.EOF {
-				emit(cfg, Event{Kind: EventSessionEnded})
-				return nil
-			}
 			return err
 		}
 
@@ -265,11 +266,11 @@ func runLoopTTY(ctx context.Context, cfg Config, st *sessionState, fd int) error
 			History:       hist,
 			RecordHistory: true,
 		})
+		if err == io.EOF {
+			emit(cfg, Event{Kind: EventSessionEnded})
+			return nil
+		}
 		if err != nil {
-			if err == io.EOF {
-				emit(cfg, Event{Kind: EventSessionEnded})
-				return nil
-			}
 			return err
 		}
 

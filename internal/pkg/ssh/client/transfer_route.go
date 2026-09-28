@@ -54,22 +54,12 @@ func (c *Client) planTransfer(stdin io.Writer) (route.Plan, string, lrzsz.Target
 
 	if c.ChainMode() {
 		plan.ChainOnly = true
-	} else if c.scroll == nil {
-		plan.Backend = route.BackendSFTP
-		return plan, activeHost, lrzsz.TargetUnknown, nil
-	} else {
-		host, probeErr := c.probeActiveShellHost(stdin)
-		if probeErr != nil {
-			plan.Backend = route.BackendSFTP
+	}
+	if !c.ChainMode() {
+		var done bool
+		activeHost, plan, done = c.planTransferNonChain(stdin, plan)
+		if done {
 			return plan, activeHost, lrzsz.TargetUnknown, nil
-		}
-		activeHost = host
-
-		if activeShellNeedsChain(c.opts.Host, c.opts.LoginDestination, activeHost) {
-			c.SetChainMode(true)
-			plan.ChainOnly = true
-			plan.AutoChain = true
-			autoChainNotice(activeHost, c.opts.Host)
 		}
 	}
 

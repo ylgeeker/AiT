@@ -20,7 +20,6 @@ package zmodem
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -227,67 +226,18 @@ func (s *Session) Wait(ctx context.Context) error {
 			return nil
 		}
 
+		if err := advanceWaitDataPhase(
+			s, ctx, ticker, &dataDone, &teardownDeadline, &teardownStarted,
+			handshakeDeadline, overallDeadline,
+		); err != nil {
+			return err
+		}
 		if !dataDone {
-			select {
-			case <-ctx.Done():
-				s.Abort()
-				return ctx.Err()
-			case err := <-s.done:
-				if err != nil {
-					s.Abort()
-					return err
-				}
-				dataDone = true
-				teardownDeadline = time.Now().Add(s.teardownLimit())
-				teardownStarted = time.Now()
-			case <-ticker.C:
-				now := time.Now()
-				if !s.started.Load() && now.After(handshakeDeadline) {
-					s.Abort()
-					return fmt.Errorf("%w", ErrHandshakeTimeout)
-				}
-				if now.After(overallDeadline) {
-					s.Abort()
-					if !s.started.Load() {
-						return fmt.Errorf("%w", ErrNoProtocolResponse)
-					}
-					return fmt.Errorf("zmodem: transfer timed out")
-				}
-			}
 			continue
 		}
 
-		select {
-		case <-ctx.Done():
-			s.Abort()
-			return ctx.Err()
-		case err := <-s.done:
-			if err != nil {
-				s.Abort()
-				return err
-			}
-		case <-ticker.C:
-			if s.engine.HasUnread() {
-				s.engine.PumpUnread()
-			}
-			if s.isSend && s.engine.SendFileEOF() {
-				if s.engine.TryCompleteSendTeardown() {
-					continue
-				}
-				if !teardownStarted.IsZero() &&
-					time.Since(teardownStarted) >= sendTeardownForceReleaseDuration {
-					s.engine.ForceRelease()
-					continue
-				}
-			}
-			if time.Now().After(teardownDeadline) {
-				s.Abort()
-				return fmt.Errorf("%w", ErrTeardownTimeout)
-			}
-			if time.Now().After(overallDeadline) {
-				s.Abort()
-				return fmt.Errorf("zmodem: transfer timed out")
-			}
+		if _, err := waitTeardownPhaseSelect(s, ctx, ticker, teardownDeadline, teardownStarted, overallDeadline); err != nil {
+			return err
 		}
 	}
 }

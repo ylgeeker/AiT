@@ -17,6 +17,7 @@
 package client
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -28,6 +29,8 @@ import (
 	"github.com/os-artificer/AiT/internal/pkg/errhint"
 	"github.com/os-artificer/AiT/internal/pkg/lrzsz"
 	"github.com/os-artificer/AiT/internal/pkg/toolname"
+	"github.com/os-artificer/AiT/internal/pkg/transfer"
+	"github.com/os-artificer/AiT/internal/pkg/transfer/route"
 	pkgzmodem "github.com/os-artificer/AiT/internal/pkg/transfer/zmodem"
 )
 
@@ -296,4 +299,62 @@ func shouldWrapTransferWrongHop(dialHost, loginDest, activeHost string) bool {
 		return false
 	}
 	return activeShellNeedsChain(dialHost, loginDest, activeHost)
+}
+
+func (c *Client) runTransferZModemBackend(
+	transferCtx context.Context,
+	stdin io.Writer,
+	dir transfer.Direction,
+	resolvedArgs []string,
+	prog *TransferProgress,
+	plan route.Plan,
+	activeHost string,
+) error {
+	err := transferRunPTY(c, transferCtx, stdin, dir, resolvedArgs, prog)
+	if err == nil {
+		return nil
+	}
+	if !plan.ChainOnly && zmodemFallbackEligible(err) {
+		zmodemSftpFallbackNotice(activeHost, c.opts.Host)
+		return transferRunSFTP(c, transferCtx, dir, resolvedArgs, prog)
+	}
+	if errors.Is(err, ErrInjectCaptureNoMarkers) {
+		return wrapPTYCaptureErr(err)
+	}
+	if errors.Is(err, ErrMissingLrzsz) || strings.Contains(err.Error(), "zmodem") {
+		return wrapPTYZModemErr(err)
+	}
+	return err
+}
+
+func (c *Client) runTransferSFTPBackend(
+	transferCtx context.Context,
+	dir transfer.Direction,
+	resolvedArgs []string,
+	prog *TransferProgress,
+	plan route.Plan,
+	activeHost string,
+) error {
+	if !plan.LrzszOK {
+		sftpFallbackNoticeHost(activeHost, c.opts.Host)
+	}
+	err := c.handleTransferSFTP(transferCtx, dir, resolvedArgs, prog)
+	if err == nil {
+		return nil
+	}
+	if !isSFTPNotFoundErr(err) {
+		return err
+	}
+	if !shouldWrapTransferWrongHop(c.opts.Host, c.opts.LoginDestination, activeHost) {
+		return err
+	}
+	return wrapTransferWrongHop(c.opts.Host, err)
+}
+
+func sftpFallbackNoticeHost(activeHost, dialHost string) {
+	if activeHost != "" {
+		sftpFallbackNotice(activeHost)
+		return
+	}
+	sftpFallbackNotice(dialHost)
 }

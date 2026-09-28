@@ -19,7 +19,6 @@ package shell
 import (
 	"bufio"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -28,7 +27,6 @@ import (
 	"github.com/os-artificer/AiT/internal/pkg/errhint"
 	"github.com/os-artificer/AiT/internal/pkg/platform"
 	"github.com/os-artificer/AiT/internal/pkg/pluginbin"
-	"github.com/os-artificer/AiT/internal/pkg/shellext"
 	"github.com/os-artificer/AiT/internal/pkg/terminal"
 
 	"golang.org/x/term"
@@ -63,10 +61,7 @@ func runREPLPlain(ctx context.Context, in io.Reader, out, errOut io.Writer) erro
 
 		_, _ = io.WriteString(out, replPrompt)
 		if !sc.Scan() {
-			if err := sc.Err(); err != nil {
-				return err
-			}
-			return nil
+			return sc.Err()
 		}
 
 		exit, err := ExecuteLine(ctx, sc.Text(), hist, out, errOut)
@@ -85,22 +80,8 @@ func runREPLTTY(ctx context.Context, fd int, out, errOut io.Writer) error {
 	defer func() { _ = term.Restore(fd, old) }()
 
 	cliOut := terminal.NewCRLFWriter(out)
-
-	prev := pluginbin.SetRunner(func(ctx context.Context, path string, argv []string, pluginCMD string) error {
-		if restoreErr := term.Restore(fd, old); restoreErr != nil {
-			return restoreErr
-		}
-		runErr := shellext.RunWithOpts(ctx, path, argv, pluginCMD, os.Stdin, os.Stdout, os.Stderr)
-		_, rawErr := term.MakeRaw(fd)
-		if rawErr != nil {
-			if runErr != nil {
-				return errors.Join(fmt.Errorf("terminal: %w", rawErr), runErr)
-			}
-			return fmt.Errorf("terminal: %w", rawErr)
-		}
-		return runErr
-	})
-	defer pluginbin.SetRunner(prev)
+	prev := pluginbin.SetRunner(runPluginWithTTYHandoff(fd, old))
+	defer func() { _ = pluginbin.SetRunner(prev) }()
 
 	_, _ = io.WriteString(cliOut, "Type help for commands. Use exit or quit to leave.\r\n")
 
@@ -119,10 +100,10 @@ func runREPLTTY(ctx context.Context, fd int, out, errOut io.Writer) error {
 			RecordHistory: true,
 			Completer:     completeREPLLine,
 		})
+		if err == io.EOF {
+			return nil
+		}
 		if err != nil {
-			if err == io.EOF {
-				return nil
-			}
 			return err
 		}
 

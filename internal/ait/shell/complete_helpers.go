@@ -122,14 +122,7 @@ func replaceFirstTokenLCPOrList(runes []rune, tok firstToken, prefix string, mat
 		if m != prefix {
 			continue
 		}
-		hasThirdParty := false
-		for _, other := range matches {
-			if other != prefix && isThirdPartyAIPrefixMatch(other) {
-				hasThirdParty = true
-				break
-			}
-		}
-		if !hasThirdParty {
+		if !thirdPartyAIPrefixAmong(matches, prefix) {
 			return replaceFirstTokenUnique(runes, tok, m, cursor)
 		}
 		break
@@ -176,14 +169,31 @@ func longestCommonPrefix(strs []string) string {
 	}
 	prefix := strs[0]
 	for _, s := range strs[1:] {
-		for !strings.HasPrefix(s, prefix) {
-			if prefix == "" {
-				return ""
-			}
-			prefix = prefix[:len(prefix)-1]
-		}
+		prefix = commonPrefixWith(prefix, s)
 	}
 	return prefix
+}
+
+func commonPrefixWith(prefix, s string) string {
+	for !strings.HasPrefix(s, prefix) {
+		if prefix == "" {
+			return ""
+		}
+		prefix = prefix[:len(prefix)-1]
+	}
+	return prefix
+}
+
+func thirdPartyAIPrefixAmong(matches []string, exclude string) bool {
+	for _, other := range matches {
+		if other == exclude {
+			continue
+		}
+		if isThirdPartyAIPrefixMatch(other) {
+			return true
+		}
+	}
+	return false
 }
 
 func uniqueSortedNames(names []string) []string {

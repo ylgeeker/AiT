@@ -41,6 +41,23 @@ func newAgentParseRetryState(history []client.ChatMessage) agentParseRetryState 
 	}
 }
 
+func retryAgentParseOrContinue(
+	st *sessionState,
+	state *agentParseRetryState,
+	userMsg, reply string,
+	parseResult pkgagent.ParseResult,
+) (nextUserMsg string, retry bool, err error) {
+	if parseResult.OK() {
+		return userMsg, false, nil
+	}
+
+	nextUserMsg, err = handleAgentParseFailure(st, state, userMsg, reply, parseResult)
+	if err != nil {
+		return "", false, err
+	}
+	return nextUserMsg, true, nil
+}
+
 func handleAgentParseFailure(
 	st *sessionState,
 	state *agentParseRetryState,

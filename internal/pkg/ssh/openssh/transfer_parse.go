@@ -55,27 +55,11 @@ func ParseTransfer(argv []string, op TransferOp) (TransferSpec, error) {
 	var positionals []string
 
 	for i := 0; i < len(argv); i++ {
-		arg := argv[i]
-		if arg == "--" {
-			return TransferSpec{}, fmt.Errorf("-- is not supported for aissh %s", cmdLabel)
-		}
-		if !strings.HasPrefix(arg, "-") {
-			positionals = append(positionals, arg)
-			continue
-		}
-		if arg == FlagSession {
-			var err error
-			session, i, err = consumeSessionFlag(argv, i)
-			if err != nil {
-				return TransferSpec{}, err
-			}
-			continue
-		}
-		next, err := applyFlag(&s, argv, i, cmdLabel)
+		var err error
+		i, session, positionals, err = stepParseTransferArgv(&s, argv, i, cmdLabel, session, positionals)
 		if err != nil {
 			return TransferSpec{}, err
 		}
-		i = next
 	}
 
 	if err := applyLegacy(&s); err != nil {

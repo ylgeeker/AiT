@@ -18,6 +18,8 @@ package shell
 
 import (
 	"strings"
+
+	"github.com/os-artificer/AiT/internal/pkg/shellwords"
 )
 
 // parseShellLine splits a REPL line into words, respecting single-quoted segments.
@@ -38,10 +40,7 @@ func parseShellLine(line string) ([]string, error) {
 		case c == '\'' && inQuote:
 			inQuote = false
 		case (c == ' ' || c == '\t') && !inQuote:
-			if cur.Len() > 0 {
-				words = append(words, cur.String())
-				cur.Reset()
-			}
+			shellwords.Append(&words, &cur)
 		default:
 			cur.WriteByte(c)
 		}
@@ -50,8 +49,6 @@ func parseShellLine(line string) ([]string, error) {
 	if inQuote {
 		return nil, unclosedQuoteErr()
 	}
-	if cur.Len() > 0 {
-		words = append(words, cur.String())
-	}
+	shellwords.Append(&words, &cur)
 	return words, nil
 }

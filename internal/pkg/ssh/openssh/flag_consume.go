@@ -106,13 +106,7 @@ func applyFlag(s *Spec, argv []string, i int, cmdLabel string) (int, error) {
 	case FlagIdentity:
 		return applyStringFlag(s, argv, i, FlagIdentity, func(v string) { s.LegacyIdentity = v })
 	default:
-		if strings.HasPrefix(arg, "-o") && len(arg) > 2 {
-			if err := mergeOption(s.Options, arg[2:]); err != nil {
-				return i, err
-			}
-			return i, nil
-		}
-		return i, unknownFlagErr(arg, cmdLabel)
+		return applyUnknownOrGluedOFlag(s, arg, i, cmdLabel)
 	}
 }
 

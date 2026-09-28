@@ -124,18 +124,27 @@ func ParseSyslogLine(line string) (Record, bool) {
 	if parsed, ok := parseRFC3164(line); ok {
 		return parsed, true
 	}
-	if fields := strings.SplitN(line, " ", 2); len(fields) == 2 {
-		for _, layout := range isoLayouts {
-			t, err := time.Parse(layout, fields[0])
-			if err != nil {
-				continue
-			}
-			rec.Time = t
-			rec.Message = fields[1]
-			return rec, true
-		}
+	if rec, ok := parseISO8601Prefix(line, rec); ok {
+		return rec, true
 	}
 	return rec, true
+}
+
+func parseISO8601Prefix(line string, rec Record) (Record, bool) {
+	fields := strings.SplitN(line, " ", 2)
+	if len(fields) != 2 {
+		return rec, false
+	}
+	for _, layout := range isoLayouts {
+		t, err := time.Parse(layout, fields[0])
+		if err != nil {
+			continue
+		}
+		rec.Time = t
+		rec.Message = fields[1]
+		return rec, true
+	}
+	return rec, false
 }
 
 // parseRFC3164 parses "Jan  2 15:04:05 host tag[pid]: message". The format

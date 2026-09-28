@@ -52,28 +52,33 @@ func consumeSessionFlags(argv []string, target string, flagsOnly bool, hints Ses
 	var tmux bool
 
 	for i := 0; i < len(argv); i++ {
-		arg := argv[i]
-		switch arg {
-		case openssh.FlagTmux:
-			tmux = true
-			continue
-		case openssh.FlagPassword:
-			next, pw, err := takePasswordValue(argv, i, hints)
-			if err != nil {
-				return "", "", false, err
-			}
-			password = pw
-			i = next
-			continue
-		}
-
-		newTarget, err := takePositionalTarget(arg, target, flagsOnly, hints)
+		var err error
+		i, target, password, tmux, err = stepSessionFlag(argv, i, target, password, tmux, flagsOnly, hints)
 		if err != nil {
 			return "", "", false, err
 		}
-		target = newTarget
 	}
 	return target, password, tmux, nil
+}
+
+func stepSessionFlag(argv []string, i int, target, password string, tmux, flagsOnly bool, hints SessionFlagHints) (next int, targetOut, passwordOut string, tmuxOut bool, err error) {
+	arg := argv[i]
+	if arg == openssh.FlagTmux {
+		return i, target, password, true, nil
+	}
+	if arg == openssh.FlagPassword {
+		next, pw, err := takePasswordValue(argv, i, hints)
+		if err != nil {
+			return i, "", "", false, err
+		}
+		return next, target, pw, tmux, nil
+	}
+
+	newTarget, err := takePositionalTarget(arg, target, flagsOnly, hints)
+	if err != nil {
+		return i, "", "", false, err
+	}
+	return i, newTarget, password, tmux, nil
 }
 
 func takePasswordValue(argv []string, i int, hints SessionFlagHints) (next int, password string, err error) {

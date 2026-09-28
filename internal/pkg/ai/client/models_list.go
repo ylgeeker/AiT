@@ -60,11 +60,7 @@ func (c *Client) ListModels(ctx context.Context) (*ModelsReport, error) {
 			_, err := creds.GetProviderAPIKey(id)
 			hasKey = err == nil
 		}
-		if id == ProviderOllama {
-			if !inCfg && !c.cfg.TieredEnabled() {
-				continue
-			}
-		} else if !hasKey && !inCfg {
+		if skipModelsListRow(id, inCfg, hasKey, c.cfg.TieredEnabled()) {
 			continue
 		}
 
@@ -106,13 +102,6 @@ func (r *ModelsReport) Format() string {
 		return ""
 	}
 	out := models.FormatTable(r.Rows)
-	if r.TagsNote != "" {
-		out += "\n" + r.TagsNote + "\n"
-	} else if len(r.OllamaTags) > 0 {
-		out += "\n" + models.OllamaTagsHeader
-		for _, t := range r.OllamaTags {
-			out += "  " + t + "\n"
-		}
-	}
+	out += formatModelsReportOllamaSection(r)
 	return out
 }

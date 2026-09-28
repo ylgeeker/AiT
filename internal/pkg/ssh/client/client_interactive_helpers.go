@@ -280,13 +280,7 @@ func (c *Client) handleRemoteOutput(buf []byte) {
 		if UseRemoteSystemPrompt() && !c.remotePromptShown.Load() {
 			c.tryEmitNativePromptIfNeeded(user, host)
 		}
-		if repaintPrompt {
-			if nestedClosed {
-				c.repaintAfterNestedSSHClose(user, host)
-			} else {
-				c.repaintInteractivePrompt(user, host)
-			}
-		}
+		c.repaintInteractiveIfNeeded(repaintPrompt, nestedClosed, user, host)
 		return
 	}
 
@@ -307,13 +301,7 @@ func (c *Client) handleRemoteOutput(buf []byte) {
 		if UseRemoteSystemPrompt() && !c.remotePromptShown.Load() {
 			c.tryEmitNativePromptIfNeeded(user, host)
 		}
-		if repaintPrompt {
-			if nestedClosed {
-				c.repaintAfterNestedSSHClose(user, host)
-			} else {
-				c.repaintInteractivePrompt(user, host)
-			}
-		}
+		c.repaintInteractiveIfNeeded(repaintPrompt, nestedClosed, user, host)
 		return
 	}
 	if c.metaRecoverWhitespaceUntil.Load() > time.Now().UnixNano() && isWhitespaceOnlyPTYOutput(stdoutChunk) {

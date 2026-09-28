@@ -93,16 +93,7 @@ func (c *Client) finishMetaInteraction(stdin io.Writer) {
 	}
 
 	if c.remotePromptShown.Load() {
-		if stdin != nil && !c.localShell.Active() {
-			wasPaused := c.pauseRemoteOut.Load()
-			if !wasPaused {
-				c.pauseRemoteOut.Store(true)
-			}
-			c.resyncRemotePS1AfterMeta(stdin, user, host)
-			if !wasPaused {
-				c.pauseRemoteOut.Store(false)
-			}
-		}
+		c.resyncRemotePS1AfterMetaWithPause(stdin, user, host)
 		c.repaintInteractivePrompt(user, host)
 		return
 	}
@@ -131,4 +122,18 @@ func (c *Client) finishNativePromptAfterMeta(stdin io.Writer) bool {
 		return true
 	}
 	return c.emitScrollDeltaPrompt(beforeLen)
+}
+
+func (c *Client) resyncRemotePS1AfterMetaWithPause(stdin io.Writer, user, host string) {
+	if stdin == nil || c.localShell.Active() {
+		return
+	}
+	wasPaused := c.pauseRemoteOut.Load()
+	if !wasPaused {
+		c.pauseRemoteOut.Store(true)
+	}
+	c.resyncRemotePS1AfterMeta(stdin, user, host)
+	if !wasPaused {
+		c.pauseRemoteOut.Store(false)
+	}
 }

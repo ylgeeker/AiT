@@ -17,10 +17,14 @@
 package shell
 
 import (
+	"context"
 	"io"
 	"os"
 
+	"github.com/os-artificer/AiT/internal/pkg/shellext"
 	"github.com/os-artificer/AiT/internal/pkg/terminal"
+
+	"golang.org/x/term"
 )
 
 // setShellTTYIO configures CRLF stdout and silenced stderr for the duration of aissh shell.
@@ -33,4 +37,23 @@ func setShellTTYIO(enabled bool) {
 
 	shellCLIOut = os.Stdout
 	shellCLIErr = os.Stderr
+}
+
+// runExternalWithTTYHandoff returns an externalRunner that restores the cooked TTY
+// for the child, then re-enters raw mode afterward. fd and old must match the
+// MakeRaw state owned by the REPL. Restore errors return as-is; MakeRaw failure
+// is returned only when runErr is nil (runErr takes precedence when both fail).
+func runExternalWithTTYHandoff(fd int, old *term.State) func(context.Context, string, []string) error {
+	return func(ctx context.Context, path string, argv []string) error {
+		if restoreErr := term.Restore(fd, old); restoreErr != nil {
+			return restoreErr
+		}
+
+		runErr := shellext.Run(ctx, path, argv, os.Stdin, os.Stdout, os.Stderr)
+
+		if _, rawErr := term.MakeRaw(fd); rawErr != nil && runErr == nil {
+			return rawErr
+		}
+		return runErr
+	}
 }

@@ -139,20 +139,7 @@ func renderBlocks(blocks []transcriptBlock, width int, expanded bool) string {
 		case blockTool:
 			writeWrappedLines(&b, toolHeaderStyle, "● ", "  ", blk.title, width)
 			b.WriteString("\n")
-			contentLines := renderPlainBlock(blk.lines, width)
-			for j, ln := range foldLines(contentLines, toolPreviewLines, expanded) {
-				if j > 0 {
-					b.WriteString("\n")
-				}
-				firstPrefix := "└──── "
-				contPrefix := "      "
-				applyStyle := true
-				if strings.HasPrefix(ln, "…") {
-					firstPrefix = "      "
-					applyStyle = false
-				}
-				writePrefixedLines(&b, toolOutputStyle, applyStyle, firstPrefix, contPrefix, []string{ln})
-			}
+			writeToolFoldedLines(&b, renderPlainBlock(blk.lines, width), expanded)
 		case blockFinal:
 			lines := foldLines(renderMarkdownBlock(blk.raw, blk.providerID, width, false), finalPreviewLines, expanded)
 			writePrefixedLines(&b, answerStyle, false, "● ", "  ", lines)

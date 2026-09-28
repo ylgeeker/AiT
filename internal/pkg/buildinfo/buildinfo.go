@@ -69,15 +69,19 @@ func resolveGitCommit(in Inputs) (string, bool) {
 	if in.GitCommit != "" {
 		return in.GitCommit, true
 	}
-	if info, ok := debug.ReadBuildInfo(); ok {
-		for _, s := range info.Settings {
-			if s.Key == "vcs.revision" {
-				if len(s.Value) > 12 {
-					return s.Value[:12], true
-				}
-				return s.Value, true
-			}
+
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return "", false
+	}
+	for _, s := range info.Settings {
+		if s.Key != "vcs.revision" {
+			continue
 		}
+		if len(s.Value) > 12 {
+			return s.Value[:12], true
+		}
+		return s.Value, true
 	}
 	return "", false
 }
@@ -86,11 +90,14 @@ func resolveBuildDate(in Inputs) (string, bool) {
 	if in.BuildDate != "" {
 		return in.BuildDate, true
 	}
-	if info, ok := debug.ReadBuildInfo(); ok {
-		for _, s := range info.Settings {
-			if s.Key == "vcs.time" {
-				return s.Value, true
-			}
+
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return "", false
+	}
+	for _, s := range info.Settings {
+		if s.Key == "vcs.time" {
+			return s.Value, true
 		}
 	}
 	return "", false

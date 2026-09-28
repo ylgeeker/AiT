@@ -142,18 +142,19 @@ func stripQuoted(s string) string {
 
 	for i := 0; i < len(s); i++ {
 		c := s[i]
-		switch {
-		case c == escapeByte && quote != quoteSingle:
+		if c == escapeByte && quote != quoteSingle {
 			i++
-		case quote != 0:
-			if c == quote {
-				quote = 0
-			}
-		case c == quoteSingle || c == quoteDouble:
-			quote = c
-		default:
-			b.WriteByte(c)
+			continue
 		}
+		if quote != 0 {
+			quote = quoteAfterByte(quote, c)
+			continue
+		}
+		if c == quoteSingle || c == quoteDouble {
+			quote = c
+			continue
+		}
+		b.WriteByte(c)
 	}
 	return b.String()
 }

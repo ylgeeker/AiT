@@ -22,7 +22,6 @@ import (
 	"fmt"
 
 	"github.com/os-artificer/AiT/internal/pkg/cliroute"
-	pkghelpdoc "github.com/os-artificer/AiT/internal/pkg/helpdoc"
 	"github.com/os-artificer/AiT/internal/pkg/platform"
 	"github.com/os-artificer/AiT/internal/pkg/session"
 	"github.com/os-artificer/AiT/internal/pkg/shellext"
@@ -45,11 +44,8 @@ func dispatchShellCommand(ctx context.Context, mgr *session.Manager, words []str
 		return runExternal(ctx, path, words)
 	}
 
-	if err := runCLI(words); err == nil {
-		return nil
-	} else if !pkghelpdoc.IsUnknownCommand(err) {
-		return err
-	} else if cliroute.IsRemovedTopLevelWord(words[0]) {
+	stop, err := finishCLIDispatch(words)
+	if stop {
 		return err
 	}
 

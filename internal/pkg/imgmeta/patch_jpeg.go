@@ -178,50 +178,15 @@ func applyPatch(rootIb *exif.IfdBuilder, p PatchFields) error {
 		return err
 	}
 	if p.DateTime != nil {
-		if err := ifd0.SetStandardWithName("DateTime", *p.DateTime); err != nil {
+		if err := setDateTimeTag(ifd0, "DateTime", *p.DateTime); err != nil {
 			return err
 		}
+	}
+	if err := applyPatchExifIFD(rootIb, p); err != nil {
+		return err
 	}
 
-	needExif := p.LensMake != nil || p.LensModel != nil || p.SerialNumber != nil || p.DateTime != nil
-	if needExif {
-		exifIb, err := exif.GetOrCreateIbFromRootIb(rootIb, ifdPathExif)
-		if err != nil {
-			return err
-		}
-		if err := setASCII(exifIb, "LensMake", p.LensMake); err != nil {
-			return err
-		}
-		if err := setASCII(exifIb, "LensModel", p.LensModel); err != nil {
-			return err
-		}
-		if err := setASCII(exifIb, "BodySerialNumber", p.SerialNumber); err != nil {
-			return err
-		}
-		if p.DateTime != nil {
-			if err := exifIb.SetStandardWithName("DateTimeOriginal", *p.DateTime); err != nil {
-				return err
-			}
-		}
-	}
-
-	if p.HasGPS() || p.Altitude != nil {
-		gpsIb, err := exif.GetOrCreateIbFromRootIb(rootIb, ifdPathGPS)
-		if err != nil {
-			return err
-		}
-		if p.HasGPS() {
-			if err := setGPSCoords(gpsIb, *p.Latitude, *p.Longitude); err != nil {
-				return err
-			}
-		}
-		if p.Altitude != nil {
-			if err := setGPSAltitude(gpsIb, *p.Altitude); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
+	return applyPatchGPS(rootIb, p)
 }
 
 func applyClear(rootIb *exif.IfdBuilder, mask ClearMask) error {
@@ -262,22 +227,14 @@ func applyClear(rootIb *exif.IfdBuilder, mask ClearMask) error {
 		}
 	}
 
-	if mask.GPS || mask.Altitude {
-		gpsIb, err := exif.GetOrCreateIbFromRootIb(rootIb, ifdPathGPS)
-		if err != nil {
-			return err
-		}
-		if mask.GPS {
-			for _, name := range []string{"GPSLatitude", "GPSLatitudeRef", "GPSLongitude", "GPSLongitudeRef"} {
-				_ = deleteTagByName(gpsIb, name)
-			}
-		}
-		if mask.Altitude {
-			for _, name := range []string{"GPSAltitude", "GPSAltitudeRef"} {
-				_ = deleteTagByName(gpsIb, name)
-			}
-		}
+	if !mask.GPS && !mask.Altitude {
+		return nil
 	}
+	gpsIb, err := exif.GetOrCreateIbFromRootIb(rootIb, ifdPathGPS)
+	if err != nil {
+		return err
+	}
+	clearGPSIFD(gpsIb, mask)
 	return nil
 }
 

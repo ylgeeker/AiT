@@ -360,18 +360,25 @@ func collapseBlankRuns(data string) string {
 	var out []string
 	blankRun := 0
 	for _, line := range lines {
-		if strings.TrimSpace(line) == "" {
-			blankRun++
-			if blankRun <= 1 {
-				out = append(out, line)
-			}
+		var keep bool
+		out, blankRun, keep = appendCollapseBlankLine(out, line, blankRun)
+		if !keep {
 			continue
 		}
-		blankRun = 0
-		out = append(out, line)
 	}
 
 	return strings.Join(out, "\n")
+}
+
+func appendCollapseBlankLine(out []string, line string, blankRun int) ([]string, int, bool) {
+	if strings.TrimSpace(line) != "" {
+		return append(out, line), 0, true
+	}
+	blankRun++
+	if blankRun > 1 {
+		return out, blankRun, false
+	}
+	return append(out, line), blankRun, true
 }
 
 func isSetupLeakLine(line, user, host string) bool {

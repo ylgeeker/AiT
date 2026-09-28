@@ -80,30 +80,15 @@ func ParseLogin(argv []string) (Spec, error) {
 
 	remoteCommandStarted := false
 	for i := 0; i < len(argv); i++ {
-		arg := argv[i]
-		if arg == "--" {
-			s.RemoteCommand = append(s.RemoteCommand, argv[i+1:]...)
+		var done bool
+		var err error
+		i, remoteCommandStarted, done, err = stepParseLogin(&s, argv, i, remoteCommandStarted)
+		if err != nil {
+			return Spec{}, err
+		}
+		if done {
 			break
 		}
-		if strings.HasPrefix(arg, "-") {
-			if remoteCommandStarted {
-				s.RemoteCommand = append(s.RemoteCommand, arg)
-				continue
-			}
-			next, err := applyFlag(&s, argv, i, connectArgvLabel)
-			if err != nil {
-				return Spec{}, err
-			}
-			i = next
-			continue
-		}
-
-		if s.Destination != "" {
-			remoteCommandStarted = true
-			s.RemoteCommand = append(s.RemoteCommand, arg)
-			continue
-		}
-		s.Destination = arg
 	}
 
 	if err := applyLegacy(&s); err != nil {
@@ -142,17 +127,9 @@ func ParseDestination(dest string) (user, host string, port int, err error) {
 		dest = dest[at+1:]
 	}
 
-	hostPart := dest
-	if strings.HasPrefix(dest, "[") {
-		hostPart, port, err = parseBracketHost(dest)
-		if err != nil {
-			return "", "", 0, err
-		}
-	} else if colon := strings.LastIndex(dest, ":"); colon > 0 {
-		if p, perr := strconv.Atoi(dest[colon+1:]); perr == nil {
-			hostPart = dest[:colon]
-			port = p
-		}
+	hostPart, port, err := parseDestinationHostPort(dest)
+	if err != nil {
+		return "", "", 0, err
 	}
 	host = hostPart
 	return user, host, port, nil

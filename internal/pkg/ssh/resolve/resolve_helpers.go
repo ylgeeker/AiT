@@ -19,11 +19,13 @@ package resolve
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
 
 	"github.com/os-artificer/AiT/internal/pkg/platform"
+	"github.com/os-artificer/AiT/internal/pkg/ssh/openssh"
 )
 
 type sshGConfig struct {
@@ -92,4 +94,34 @@ func firstNonEmpty(vals ...string) string {
 		}
 	}
 	return ""
+}
+
+func resolveIdentityPath(spec openssh.Spec, identityFiles []string) (path string, explicit bool, err error) {
+	if spec.Identity != "" {
+		path = platform.ExpandSSHPath(spec.Identity)
+		return path, true, statIdentityRequired(path)
+	}
+	if spec.Options["identityfile"] != "" {
+		path = platform.ExpandSSHPath(spec.Options["identityfile"])
+		return path, false, statIdentityRequired(path)
+	}
+	return firstExistingIdentity(identityFiles), false, nil
+}
+
+func statIdentityRequired(path string) error {
+	if _, err := os.Stat(path); err != nil {
+		return fmt.Errorf("identity file not found: %s", path)
+	}
+	return nil
+}
+
+func appendNonEmptyProxyJumps(dst []string, csv string) []string {
+	for _, j := range strings.Split(csv, ",") {
+		j = strings.TrimSpace(j)
+		if j == "" {
+			continue
+		}
+		dst = append(dst, j)
+	}
+	return dst
 }

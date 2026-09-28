@@ -72,10 +72,11 @@ func runSources(w io.Writer, jsonOut bool, backend string) error {
 	var b strings.Builder
 	cur := ""
 	for _, c := range caps {
-		if c.Source != cur {
-			if cur != "" {
-				b.WriteByte('\n')
-			}
+		newSource := c.Source != cur
+		if newSource && cur != "" {
+			b.WriteByte('\n')
+		}
+		if newSource {
 			fmt.Fprintf(&b, "%s:\n", c.Source)
 			cur = c.Source
 		}

@@ -108,25 +108,26 @@ func (v *Viewport) Search(q string, backward bool) bool {
 	}
 	q = strings.ToLower(q)
 	if backward {
-		start := v.offset - 1
-		for i := start; i >= 0; i-- {
-			if strings.Contains(strings.ToLower(v.lines[i]), q) {
-				v.offset = i
-				v.clamp()
-				return true
-			}
-		}
-		return false
+		return v.searchFrom(v.offset-1, -1, q)
 	}
-	start := v.offset + 1
-	for i := start; i < len(v.lines); i++ {
-		if strings.Contains(strings.ToLower(v.lines[i]), q) {
-			v.offset = i
-			v.clamp()
-			return true
+
+	return v.searchFrom(v.offset+1, 1, q)
+}
+
+func (v *Viewport) searchFrom(start, step int, q string) bool {
+	for i := start; i >= 0 && i < len(v.lines); i += step {
+		if !lineContainsLower(v.lines[i], q) {
+			continue
 		}
+		v.offset = i
+		v.clamp()
+		return true
 	}
 	return false
+}
+
+func lineContainsLower(line, qLower string) bool {
+	return strings.Contains(strings.ToLower(line), qLower)
 }
 
 func (v *Viewport) clamp() {

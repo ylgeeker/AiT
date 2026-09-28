@@ -21,9 +21,7 @@
 package localmode
 
 import (
-	"errors"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"sync"
@@ -206,20 +204,8 @@ func (l *Shell) copyOut() {
 			_, _ = os.Stdout.Write(buf[:n])
 		}
 		if err != nil {
-			if !l.closing.Load() && !errors.Is(err, io.EOF) {
-				_, _ = fmt.Fprintf(os.Stderr, "%sAiT: local shell: %v%s", noticeEOL, err, noticeEOL)
-			}
-			l.mu.Lock()
-
-			onExit := l.onExit
-			l.pty = nil
-			l.cmd = nil
-			l.onExit = nil
-			l.mu.Unlock()
-
-			if onExit != nil {
-				onExit()
-			}
+			l.finishCopyOutOnError(err)
+			l.teardownCopyOutAfterRead()
 			return
 		}
 	}

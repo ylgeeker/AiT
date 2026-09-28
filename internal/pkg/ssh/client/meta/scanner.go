@@ -82,16 +82,8 @@ func (s *Scanner) Feed(b byte) (forward []byte, echo []byte, line string, hasLin
 }
 
 func (s *Scanner) feedOne(b byte, fwd, ech []byte) ([]byte, []byte, string, bool) {
-	if s.inEditState() {
-		if s.escState != escNone {
-			if echOut, handled := s.consumeEscForEdit(b); handled {
-				return fwd, append(ech, echOut...), "", false
-			}
-		}
-		if b == keyESC {
-			s.escState = escReceived
-			return fwd, ech, "", false
-		}
+	if fwd, ech, done := s.feedOneEditPrefix(b, fwd, ech); done {
+		return fwd, ech, "", false
 	}
 
 	if echOut, handled := s.applyMetaLineEdit(b); handled {
@@ -99,81 +91,12 @@ func (s *Scanner) feedOne(b byte, fwd, ech []byte) ([]byte, []byte, string, bool
 	}
 
 	switch s.state {
-
 	case stateMeta:
-		if len(s.buf) >= maxLine {
-			fwd = append(fwd, s.buf...)
-			s.buf = s.buf[:0]
-			s.cursor = 0
-			s.enterIdle()
-			s.atLineStart = false
-			return s.feedOne(b, fwd, ech)
-		}
-		if b == '\n' || b == '\r' {
-			line := finalizeMetaLine(string(s.buf))
-			s.buf = s.buf[:0]
-			s.cursor = 0
-			s.enterIdle()
-			s.atLineStart = true
-			ech = append(ech, b)
-			return fwd, ech, line, true
-		}
-		ech = s.insertMetaByte(b, ech)
-		return fwd, ech, "", false
-
+		return s.feedOneStateMeta(b, fwd, ech)
 	case stateHolding:
-		candidate := string(s.buf) + string([]byte{b})
-		if f, e, handled := s.tryLocalBangPassthrough(candidate, b, fwd, ech); handled {
-			return f, e, "", false
-		}
-		if f, e, line, hasLine, handled := s.feedHoldingLoose(candidate, b, fwd, ech); handled {
-			if hasLine {
-				return f, e, line, true
-			}
-			return f, e, "", false
-		}
-		if f, e, line, hasLine, handled := s.feedHoldingStrict(candidate, b, fwd, ech); handled {
-			if hasLine {
-				return f, e, line, true
-			}
-			return f, e, "", false
-		}
-		if prefixCandidate(candidate) && len(s.buf)+1 < maxLook {
-			s.buf = append(s.buf, b)
-			s.cursor = len(s.runes())
-			if s.shouldDeferHoldingEcho(b) {
-				if s.localShellActive {
-					return fwd, ech, "", false
-				}
-				return fwd, s.noteHoldingRedraw(ech), "", false
-			}
-			if s.localShellActive {
-				return fwd, s.holdingAppendEcho(ech, b), "", false
-			}
-			return fwd, s.noteHoldingRedraw(ech), "", false
-		}
-		ech, fwd = s.flushHoldingToForward(ech, fwd)
-		s.buf = s.buf[:0]
-		s.cursor = 0
-		s.enterIdle()
-		return s.feedOne(b, fwd, ech)
-
-	default: // stateIdle
-		if b == '!' {
-			s.buf = append(s.buf[:0], b)
-			s.cursor = 1
-			s.state = stateHolding
-			s.deferLocalEcho = true
-			return fwd, ech, "", false
-		}
-		if b == 0x15 { // Ctrl+U idle — forward to remote shell.
-			s.atLineStart = true
-			fwd = append(fwd, b)
-			return fwd, ech, "", false
-		}
-		fwd = append(fwd, b)
-		s.noteForwarded(b)
-		return fwd, ech, "", false
+		return s.feedOneStateHolding(b, fwd, ech)
+	default:
+		return s.feedOneStateIdle(b, fwd, ech)
 	}
 }
 

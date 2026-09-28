@@ -59,14 +59,10 @@ func (c *Client) waitRemoteOutputQuietAfter(injectAt time.Time, quiet, maxWait t
 	deadline := time.Now().Add(maxWait)
 	for time.Now().Before(deadline) {
 		last := c.lastRemoteOut.Load()
-		if last == 0 || remoteOutAt(last).Before(injectAt) {
-			if time.Since(injectAt) >= quiet {
-				return
-			}
-			time.Sleep(remoteOutputQuietPollStep)
-			continue
+		if quietAfterNoPostInject(last, injectAt, quiet) {
+			return
 		}
-		if time.Since(remoteOutAt(last)) >= quiet {
+		if last != 0 && !remoteOutAt(last).Before(injectAt) && time.Since(remoteOutAt(last)) >= quiet {
 			return
 		}
 		time.Sleep(remoteOutputQuietPollStep)
@@ -79,11 +75,10 @@ func (c *Client) waitRemoteOutputQuietSince(since time.Time, quiet, maxWait time
 	deadline := time.Now().Add(maxWait)
 	for time.Now().Before(deadline) {
 		last := c.lastRemoteOut.Load()
-		if last != 0 && !remoteOutAt(last).Before(since) {
-			if time.Since(remoteOutAt(last)) >= quiet {
-				return
-			}
-		} else if time.Since(since) >= quiet {
+		if last != 0 && !remoteOutAt(last).Before(since) && time.Since(remoteOutAt(last)) >= quiet {
+			return
+		}
+		if quietSinceNoOutput(last, since, quiet) {
 			return
 		}
 		time.Sleep(remoteOutputQuietPollStep)
@@ -96,21 +91,8 @@ func (c *Client) waitRemoteOutputQuietSince(since time.Time, quiet, maxWait time
 func (c *Client) waitForShellReadyBeforeInject(attachAt time.Time, user, host string, maxWait time.Duration) {
 	deadline := time.Now().Add(maxWait)
 	for time.Now().Before(deadline) {
-		scroll := c.scroll.String()
-		if containsRemotePromptLine(scroll, user, host) || lastNativePromptLine(scroll) != "" {
-			last := c.lastRemoteOut.Load()
-			if last != 0 && time.Since(remoteOutAt(last)) >= remoteOutputQuietPeriod {
-				return
-			}
-		} else {
-			last := c.lastRemoteOut.Load()
-			if last != 0 && !remoteOutAt(last).Before(attachAt) {
-				if time.Since(remoteOutAt(last)) >= remoteOutputQuietPeriod {
-					return
-				}
-			} else if time.Since(attachAt) >= remoteOutputQuietPeriod {
-				return
-			}
+		if c.shellReadyBeforeInjectTick(user, host, attachAt) {
+			return
 		}
 		time.Sleep(remoteOutputQuietPollStep)
 	}
@@ -278,11 +260,7 @@ func (c *Client) finishRemoteSetup(stdin io.Writer, _, _ string, tmuxEnabled boo
 	if !c.remotePromptShown.Load() {
 		c.waitForRemotePromptReady(user, host, remoteAITPromptMaxWait)
 		_ = c.ensureFirstPromptVisible(stdin, user, host)
-		if !c.remotePromptShown.Load() {
-			if c.paintClientRemotePrompt(user, host) {
-				c.remotePromptShown.Store(true)
-			}
-		}
+		c.tryPaintClientRemotePrompt(user, host)
 	}
 
 	if c.remotePromptShown.Load() {

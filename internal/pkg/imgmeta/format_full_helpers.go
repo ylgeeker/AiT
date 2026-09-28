@@ -145,11 +145,9 @@ func appendValueRows(rows *[]tableRow, prefix string, raw json.RawMessage, depth
 
 	var s string
 	if err := json.Unmarshal(raw, &s); err == nil {
-		if depth < maxStructuredExpandDepth {
-			if expanded, ok := tryExpandStructuredString(prefix, s, depth+1); ok {
-				*rows = append(*rows, expanded...)
-				return
-			}
+		if expanded, ok := appendExpandedStringRows(prefix, s, depth); ok {
+			*rows = append(*rows, expanded...)
+			return
 		}
 		*rows = append(*rows, tableRow{field: prefix, value: s})
 		return
@@ -159,6 +157,13 @@ func appendValueRows(rows *[]tableRow, prefix string, raw json.RawMessage, depth
 		field: prefix,
 		value: formatJSONScalar(raw),
 	})
+}
+
+func appendExpandedStringRows(prefix, s string, depth int) ([]tableRow, bool) {
+	if depth >= maxStructuredExpandDepth {
+		return nil, false
+	}
+	return tryExpandStructuredString(prefix, s, depth+1)
 }
 
 func appendIfJSONObject(rows *[]tableRow, prefix string, raw json.RawMessage, depth int) bool {

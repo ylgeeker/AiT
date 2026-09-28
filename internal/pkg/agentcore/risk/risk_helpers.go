@@ -92,3 +92,10 @@ func gitReadSubcommand(fields []string) string {
 	}
 	return ""
 }
+
+func quoteAfterByte(quote, c byte) byte {
+	if c == quote {
+		return 0
+	}
+	return quote
+}

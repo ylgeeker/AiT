@@ -159,10 +159,10 @@ func normalizeAI(cfg *Config) {
 
 	for _, id := range AllProviderIDs() {
 		p, ok := cfg.AI.Providers[id]
+		if !ok && id == ProviderOllama {
+			continue
+		}
 		if !ok {
-			if id == ProviderOllama {
-				continue
-			}
 			cfg.AI.Providers[id] = defaultProviderConfig(id)
 			continue
 		}

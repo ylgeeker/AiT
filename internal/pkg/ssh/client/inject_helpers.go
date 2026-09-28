@@ -16,7 +16,10 @@
 
 package client
 
-import "strings"
+import (
+	"strings"
+	"time"
+)
 
 const (
 	// injectSpacePrefix is prepended to all AiT-injected PTY commands.
@@ -123,6 +126,16 @@ func parseCapturedOutput(delta string) string {
 // parseHashFromOutput extracts a sha256sum hash from command output.
 // The output format is: "hash  path" or "hash  -" (stdin).
 // Returns the hash string, or empty string if parsing fails.
+func prepareInjectCaptureRetry(c *Client, attempt int, delay time.Duration) {
+	if attempt == 0 {
+		return
+	}
+	if c.scroll != nil {
+		c.scroll.StripSubstrings(injectStripFragments()...)
+	}
+	time.Sleep(delay)
+}
+
 func parseHashFromOutput(output string) string {
 	output = strings.TrimSpace(output)
 	if output == "" {

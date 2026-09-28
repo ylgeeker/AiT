@@ -101,14 +101,17 @@ func routeShell(ctx context.Context, args []string, stdout, stderr io.Writer, d 
 
 func routeAgent(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 	plain, rest := pkghelpdoc.TakePlainFlag(args)
-	if len(rest) > 0 {
-		if _, ok := AdminVerbs[rest[0]]; ok {
-			return agent.RunAdmin(rest, stdout, stderr)
-		}
-		if agent.LooksLikeConnectDestination(rest[0]) {
-			return agent.RunAdmin(append([]string{"connect"}, rest...), stdout, stderr)
-		}
+	if len(rest) == 0 {
+		return runLoop(ctx, "", plain, stdout, stderr)
 	}
+
+	if _, ok := AdminVerbs[rest[0]]; ok {
+		return agent.RunAdmin(rest, stdout, stderr)
+	}
+	if agent.LooksLikeConnectDestination(rest[0]) {
+		return agent.RunAdmin(append([]string{"connect"}, rest...), stdout, stderr)
+	}
+
 	return runLoop(ctx, strings.Join(rest, " "), plain, stdout, stderr)
 }
 

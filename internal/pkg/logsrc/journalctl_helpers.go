@@ -73,3 +73,15 @@ func nonEmptyKeywords(kws []string) []string {
 	}
 	return out
 }
+
+func bytesFromJournalMessageSlice(v []any) []byte {
+	b := make([]byte, 0, len(v))
+	for _, x := range v {
+		n, ok := x.(float64)
+		if !ok {
+			continue
+		}
+		b = append(b, byte(n))
+	}
+	return b
+}

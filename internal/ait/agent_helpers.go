@@ -30,37 +30,39 @@ import (
 
 // runNestedAgent runs the v4 agent loop from ait> with TTY restore when stdin is a terminal.
 func runNestedAgent(ctx context.Context, goal string, out, errOut io.Writer) error {
-	fd := int(os.Stdin.Fd())
-	if term.IsTerminal(fd) {
-		old, err := term.MakeRaw(fd)
-		if err == nil {
-			defer func() { _ = term.Restore(fd, old) }()
-			if restoreErr := term.Restore(fd, old); restoreErr != nil {
-				return fmt.Errorf("terminal: %w", restoreErr)
-			}
-			runErr := agent.RunLoop(ctx, agent.Options{
-				Nested: true,
-				Goal:   goal,
-				In:     os.Stdin,
-				Out:    out,
-				ErrOut: errOut,
-			})
-			if _, rawErr := term.MakeRaw(fd); rawErr != nil {
-				if runErr != nil {
-					return fmt.Errorf("terminal: %w", rawErr)
-				}
-				return fmt.Errorf("terminal: %w", rawErr)
-			}
-			return runErr
-		}
-	}
-	return agent.RunLoop(ctx, agent.Options{
+	opts := agent.Options{
 		Nested: true,
 		Goal:   goal,
 		In:     os.Stdin,
 		Out:    out,
 		ErrOut: errOut,
-	})
+	}
+
+	fd := int(os.Stdin.Fd())
+	if !term.IsTerminal(fd) {
+		return agent.RunLoop(ctx, opts)
+	}
+
+	old, err := term.MakeRaw(fd)
+	if err != nil {
+		return agent.RunLoop(ctx, opts)
+	}
+	defer func() { _ = term.Restore(fd, old) }()
+
+	if restoreErr := term.Restore(fd, old); restoreErr != nil {
+		return fmt.Errorf("terminal: %w", restoreErr)
+	}
+
+	runErr := agent.RunLoop(ctx, opts)
+	return reenterRawAfterNestedAgent(fd, runErr)
+}
+
+func reenterRawAfterNestedAgent(fd int, runErr error) error {
+	_, rawErr := term.MakeRaw(fd)
+	if rawErr == nil {
+		return runErr
+	}
+	return fmt.Errorf("terminal: %w", rawErr)
 }
 
 // agentLoopEnded reports whether err is a normal nested agent exit.

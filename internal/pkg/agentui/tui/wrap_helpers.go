@@ -82,15 +82,7 @@ func takeWrapLine(text string, width int) (line, rest string) {
 	for i, word := range words {
 		wordW := runewidth.StringWidth(word)
 		if wordW > width {
-			if b.Len() == 0 {
-				part, left := takeHardBreak(word, width)
-				restWords := words[i+1:]
-				if left != "" {
-					restWords = append([]string{left}, restWords...)
-				}
-				return part, strings.Join(restWords, " ")
-			}
-			return strings.TrimRight(b.String(), " "), strings.Join(words[i:], " ")
+			return takeWrapLineOversizedWord(words, i, word, width, b.String())
 		}
 
 		add := wordW
@@ -109,6 +101,19 @@ func takeWrapLine(text string, width int) (line, rest string) {
 		lineW += wordW
 	}
 	return b.String(), ""
+}
+
+func takeWrapLineOversizedWord(words []string, i int, word string, width int, lineSoFar string) (line, rest string) {
+	if lineSoFar != "" {
+		return strings.TrimRight(lineSoFar, " "), strings.Join(words[i:], " ")
+	}
+
+	part, left := takeHardBreak(word, width)
+	restWords := words[i+1:]
+	if left != "" {
+		restWords = append([]string{left}, restWords...)
+	}
+	return part, strings.Join(restWords, " ")
 }
 
 func takeHardBreak(word string, width int) (prefix, rest string) {

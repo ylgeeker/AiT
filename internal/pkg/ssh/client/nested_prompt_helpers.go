@@ -19,6 +19,7 @@ package client
 import (
 	"net"
 	"strings"
+	"time"
 )
 
 const (
@@ -61,11 +62,10 @@ func parseSSHCommandLine(line, defaultUser string) (user, host string, ok bool) 
 			return "", "", false
 		}
 
-		if lower == "-p" || lower == "-l" || lower == "-i" || lower == "-o" || lower == "-b" || lower == "-c" {
-			i += 2
-			if i > len(args) {
-				return "", "", false
-			}
+		if isSSHFlagWithValue(lower) && !bumpSSHFlagValue(&i, len(args)) {
+			return "", "", false
+		}
+		if isSSHFlagWithValue(lower) {
 			continue
 		}
 
@@ -184,4 +184,72 @@ func hostnameBase(host string) string {
 		return host[:i]
 	}
 	return host
+}
+
+func isSSHFlagWithValue(lower string) bool {
+	switch lower {
+	case "-p", "-l", "-i", "-o", "-b", "-c":
+		return true
+	default:
+		return false
+	}
+}
+
+func bumpSSHFlagValue(i *int, argc int) bool {
+	next, ok := advanceSSHFlagWithValue(*i, argc)
+	if !ok {
+		return false
+	}
+	*i = next
+	return true
+}
+
+func advanceSSHFlagWithValue(i, argc int) (next int, ok bool) {
+	next = i + 2
+	if next > argc {
+		return i, false
+	}
+	return next, true
+}
+
+func (c *Client) noteInteractiveInputByte(b byte) {
+	switch b {
+	case '\n', '\r':
+		line := strings.TrimSpace(string(c.forwardLineBuf))
+		c.forwardLineBuf = c.forwardLineBuf[:0]
+		c.onInteractiveLineSubmitted(line)
+	case 0x15:
+		c.forwardLineBuf = c.forwardLineBuf[:0]
+	case 0x7f, 0x08:
+		c.popForwardLineBuf()
+	default:
+		c.appendForwardLineBuf(b)
+	}
+}
+
+func (c *Client) popForwardLineBuf() {
+	if len(c.forwardLineBuf) == 0 {
+		return
+	}
+	c.forwardLineBuf = c.forwardLineBuf[:len(c.forwardLineBuf)-1]
+}
+
+func (c *Client) appendForwardLineBuf(b byte) {
+	if b < 0x20 && b != '\t' {
+		return
+	}
+	c.forwardLineBuf = append(c.forwardLineBuf, b)
+}
+
+func (c *Client) nestedMOTDAllowsInject() bool {
+	if !c.nestedMOTDSeen {
+		return time.Since(c.nestedAwaitingSince) >= nestedPromptMaxWait
+	}
+	if !c.nestedShellReadySeen {
+		return !c.nestedMOTDAt.IsZero() && time.Since(c.nestedMOTDAt) >= nestedMOTDReadyFallback
+	}
+	if c.nestedMOTDAt.IsZero() {
+		return true
+	}
+	return time.Since(c.nestedMOTDAt) >= shellReadyDelay
 }

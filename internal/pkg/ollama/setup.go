@@ -98,18 +98,7 @@ func EnsureLocal(ctx context.Context, cfg *config.Config, opts Options) (Result,
 	opts = opts.withDefaults()
 	var res Result
 
-	baseURL := opts.BaseURL
-	model := opts.Model
-	if cfg != nil {
-		if pc, ok := cfg.Provider(config.ProviderOllama); ok {
-			if pc.BaseURL != "" {
-				baseURL = pc.BaseURL
-			}
-			if pc.Model != "" {
-				model = pc.Model
-			}
-		}
-	}
+	baseURL, model := ollamaEndpointsFromConfig(cfg, opts.BaseURL, opts.Model)
 	if baseURL == "" {
 		baseURL = config.DefaultOllamaBase
 	}

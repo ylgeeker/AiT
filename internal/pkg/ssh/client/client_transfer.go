@@ -21,7 +21,6 @@ import (
 	"errors"
 	"io"
 	"os"
-	"strings"
 
 	"github.com/os-artificer/AiT/internal/pkg/errhint"
 	"github.com/os-artificer/AiT/internal/pkg/lrzsz"
@@ -97,28 +96,9 @@ func (c *Client) handleTransfer(ctx context.Context, stdin io.Writer, dir transf
 
 	switch plan.Backend {
 	case route.BackendZModem:
-		err = transferRunPTY(c, transferCtx, stdin, dir, resolvedArgs, prog)
-		if err != nil && !plan.ChainOnly && zmodemFallbackEligible(err) {
-			zmodemSftpFallbackNotice(activeHost, c.opts.Host)
-			err = transferRunSFTP(c, transferCtx, dir, resolvedArgs, prog)
-		} else if err != nil && errors.Is(err, ErrInjectCaptureNoMarkers) {
-			err = wrapPTYCaptureErr(err)
-		} else if err != nil && (errors.Is(err, ErrMissingLrzsz) || strings.Contains(err.Error(), "zmodem")) {
-			err = wrapPTYZModemErr(err)
-		}
+		err = c.runTransferZModemBackend(transferCtx, stdin, dir, resolvedArgs, prog, plan, activeHost)
 	default:
-		if !plan.LrzszOK {
-			if activeHost != "" {
-				sftpFallbackNotice(activeHost)
-			} else {
-				sftpFallbackNotice(c.opts.Host)
-			}
-		}
-		err = c.handleTransferSFTP(transferCtx, dir, resolvedArgs, prog)
-		if err != nil && isSFTPNotFoundErr(err) &&
-			shouldWrapTransferWrongHop(c.opts.Host, c.opts.LoginDestination, activeHost) {
-			err = wrapTransferWrongHop(c.opts.Host, err)
-		}
+		err = c.runTransferSFTPBackend(transferCtx, dir, resolvedArgs, prog, plan, activeHost)
 	}
 
 	if err != nil {

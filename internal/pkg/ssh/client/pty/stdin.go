@@ -84,16 +84,8 @@ func (sr *Reader) REPLActive() bool {
 // EndREPL stops routing stdin to the AI REPL and discards unread repl bytes.
 func (sr *Reader) EndREPL() {
 	sr.replActive.Store(false)
-	if sr.replCh != nil {
-		for {
-			select {
-			case <-sr.replCh:
-			default:
-				sr.replCh = nil
-				return
-			}
-		}
-	}
+	drainReplChannel(sr.replCh)
+	sr.replCh = nil
 }
 
 // Stop asks the reader goroutine to exit.
@@ -107,22 +99,28 @@ func (sr *Reader) readLoop(r io.Reader) {
 	buf := make([]byte, 1)
 	for {
 		n, err := r.Read(buf)
-		if n > 0 {
-			if sr.replActive.Load() {
-				if !sr.sendRepl(buf[0]) {
-					return
-				}
-			} else if !sr.sendForward(StdinByte{B: buf[0]}) {
-				return
-			}
+		if n > 0 && !sr.dispatchReadByte(buf[0]) {
+			return
 		}
 		if err != nil {
-			if !sr.replActive.Load() {
-				sr.sendForward(StdinByte{Err: err})
-			}
+			sr.forwardReadErr(err)
 			return
 		}
 	}
+}
+
+func (sr *Reader) dispatchReadByte(b byte) bool {
+	if sr.replActive.Load() {
+		return sr.sendRepl(b)
+	}
+	return sr.sendForward(StdinByte{B: b})
+}
+
+func (sr *Reader) forwardReadErr(err error) {
+	if sr.replActive.Load() {
+		return
+	}
+	sr.sendForward(StdinByte{Err: err})
 }
 
 func (sr *Reader) sendForward(sb StdinByte) bool {

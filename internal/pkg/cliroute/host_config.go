@@ -139,15 +139,7 @@ func sshGlobMatch(pattern, name string) bool {
 	prefix := pattern[:star]
 	pattern = pattern[star+1:]
 	if prefix == "" {
-		if pattern == "" {
-			return true
-		}
-		for i := 0; i <= len(name); i++ {
-			if sshGlobMatch(pattern, name[i:]) {
-				return true
-			}
-		}
-		return false
+		return sshGlobMatchLeadingStar(pattern, name)
 	}
 
 	idx := strings.Index(name, prefix)
@@ -163,20 +155,21 @@ func sshGlobMatch(pattern, name string) bool {
 
 func matchRunes(pat, name []rune) bool {
 	for len(pat) > 0 {
-		if len(name) == 0 {
+		nextPat, nextName, ok := stepMatchRune(pat, name)
+		if !ok {
 			return false
 		}
-		switch pat[0] {
-		case '?':
-			pat = pat[1:]
-			name = name[1:]
-		default:
-			if pat[0] != name[0] {
-				return false
-			}
-			pat = pat[1:]
-			name = name[1:]
-		}
+		pat, name = nextPat, nextName
 	}
 	return len(name) == 0
+}
+
+func stepMatchRune(pat, name []rune) (nextPat, nextName []rune, ok bool) {
+	if len(name) == 0 {
+		return nil, nil, false
+	}
+	if pat[0] == '?' || pat[0] == name[0] {
+		return pat[1:], name[1:], true
+	}
+	return nil, nil, false
 }

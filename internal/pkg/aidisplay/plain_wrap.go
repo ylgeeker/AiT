@@ -69,15 +69,7 @@ func takePlainWrapSegment(text string, width int) (line, rest string) {
 	for i, word := range words {
 		wordW := runewidth.StringWidth(word)
 		if wordW > width {
-			if b.Len() == 0 {
-				part, left := takePlainHardBreak(word, width)
-				restWords := words[i+1:]
-				if left != "" {
-					restWords = append([]string{left}, restWords...)
-				}
-				return part, strings.Join(restWords, " ")
-			}
-			return strings.TrimRight(b.String(), " "), strings.Join(words[i:], " ")
+			return takeOversizedWordSegment(b, words, i, word, width)
 		}
 
 		add := wordW
@@ -96,6 +88,19 @@ func takePlainWrapSegment(text string, width int) (line, rest string) {
 		lineW += wordW
 	}
 	return b.String(), ""
+}
+
+func takeOversizedWordSegment(b strings.Builder, words []string, i int, word string, width int) (line, rest string) {
+	if b.Len() > 0 {
+		return strings.TrimRight(b.String(), " "), strings.Join(words[i:], " ")
+	}
+
+	part, left := takePlainHardBreak(word, width)
+	restWords := words[i+1:]
+	if left != "" {
+		restWords = append([]string{left}, restWords...)
+	}
+	return part, strings.Join(restWords, " ")
 }
 
 func takePlainHardBreak(word string, width int) (prefix, rest string) {

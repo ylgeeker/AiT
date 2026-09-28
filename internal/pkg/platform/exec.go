@@ -34,23 +34,37 @@ func LookPath(name string) (string, error) {
 func OSDescription() string {
 	switch runtime.GOOS {
 	case "darwin":
-		if out, err := exec.Command("sw_vers").CombinedOutput(); err == nil {
-			return strings.TrimSpace(string(out))
-		}
-		return "macOS"
+		return darwinOSDescription()
 	case "windows":
-		if out, err := exec.Command("cmd", "/c", "ver").CombinedOutput(); err == nil {
-			return strings.TrimSpace(string(out))
-		}
-		return "Windows"
+		return windowsOSDescription()
 	default:
-		if b, err := os.ReadFile("/etc/os-release"); err == nil {
-			for _, line := range strings.Split(string(b), "\n") {
-				if strings.HasPrefix(line, "PRETTY_NAME=") {
-					return strings.Trim(strings.TrimPrefix(line, "PRETTY_NAME="), `"`)
-				}
-			}
-		}
+		return unixOSDescription()
+	}
+}
+
+func darwinOSDescription() string {
+	if out, err := exec.Command("sw_vers").CombinedOutput(); err == nil {
+		return strings.TrimSpace(string(out))
+	}
+	return "macOS"
+}
+
+func windowsOSDescription() string {
+	if out, err := exec.Command("cmd", "/c", "ver").CombinedOutput(); err == nil {
+		return strings.TrimSpace(string(out))
+	}
+	return "Windows"
+}
+
+func unixOSDescription() string {
+	b, err := os.ReadFile("/etc/os-release")
+	if err != nil {
 		return runtime.GOOS
 	}
+	for _, line := range strings.Split(string(b), "\n") {
+		if strings.HasPrefix(line, "PRETTY_NAME=") {
+			return strings.Trim(strings.TrimPrefix(line, "PRETTY_NAME="), `"`)
+		}
+	}
+	return runtime.GOOS
 }

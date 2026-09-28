@@ -56,21 +56,33 @@ func (c *fileForwardCursor) Next(rec *Record) bool {
 			c.err = c.ctx.Err()
 			return false
 		}
-		if c.sc == nil {
-			return false
-		}
-		if c.sc.Scan() {
-			parsed, ok := ParseSyslogLine(c.sc.Text())
-			if !ok {
-				continue
-			}
-			*rec = parsed
+		got, cont := c.tryReadRecord(rec)
+		if got {
 			return true
+		}
+		if !cont {
+			return false
 		}
 		if !c.advance() {
 			return false
 		}
 	}
+}
+
+func (c *fileForwardCursor) tryReadRecord(rec *Record) (got, cont bool) {
+	if c.sc == nil {
+		return false, false
+	}
+	if !c.sc.Scan() {
+		return false, true
+	}
+	parsed, ok := ParseSyslogLine(c.sc.Text())
+	if !ok {
+		return false, true
+	}
+
+	*rec = parsed
+	return true, false
 }
 
 // Err returns the first error that stopped iteration, or nil on clean EOF.
@@ -116,16 +128,15 @@ func (c *fileForwardCursor) openNext() error {
 		path := c.paths[c.idx]
 		c.idx++
 		rc, err := openLogReader(path)
-		if err != nil {
-			if os.IsPermission(err) {
-				return fmt.Errorf("%w: %s: %v", ErrPermission, path, err)
-			}
-			continue
+		if err == nil {
+			c.closer = rc
+			c.file, _ = rc.(*os.File)
+			c.sc = newLogScanner(rc)
+			return nil
 		}
-		c.closer = rc
-		c.file, _ = rc.(*os.File)
-		c.sc = newLogScanner(rc)
-		return nil
+		if os.IsPermission(err) {
+			return fmt.Errorf("%w: %s: %v", ErrPermission, path, err)
+		}
 	}
 	return io.EOF
 }
@@ -136,15 +147,27 @@ func (c *fileForwardCursor) tailWait() bool {
 	defer ticker.Stop()
 
 	for {
-		select {
-		case <-c.ctx.Done():
-			c.err = c.ctx.Err()
+		stop, done := c.tailWaitOnce(ticker)
+		if stop {
 			return false
-		case <-ticker.C:
-			if grown, ok := c.pollTail(); ok {
-				return grown
-			}
 		}
+		if done {
+			return true
+		}
+	}
+}
+
+func (c *fileForwardCursor) tailWaitOnce(ticker *time.Ticker) (stop, done bool) {
+	select {
+	case <-c.ctx.Done():
+		c.err = c.ctx.Err()
+		return true, false
+	case <-ticker.C:
+		grown, ok := c.pollTail()
+		if !ok {
+			return false, false
+		}
+		return false, grown
 	}
 }
 

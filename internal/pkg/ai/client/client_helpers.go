@@ -48,6 +48,21 @@ func cloudKeyedSet(slots map[ProviderID]*providerSlot) map[ProviderID]struct{} {
 	return out
 }
 
+func tieredLocalSlot(cfg *config.Config, httpClient *http.Client) (ProviderID, *providerSlot) {
+	if cfg == nil || !cfg.TieredEnabled() {
+		return "", nil
+	}
+	localID := ProviderID(cfg.LocalProviderID())
+	if !cfg.ProviderEnabled(string(localID)) {
+		return "", nil
+	}
+	slot := initTieredSlot(cfg, string(localID), httpClient)
+	if slot == nil {
+		return "", nil
+	}
+	return localID, slot
+}
+
 // hasCloudSlot reports whether at least one cloud provider has a configured slot.
 func hasCloudSlot(slots map[ProviderID]*providerSlot) bool {
 	for _, id := range config.CloudProviderIDs() {

@@ -18,7 +18,6 @@ package resolve
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -120,30 +119,16 @@ func Resolve(spec openssh.Spec) (Resolved, error) {
 	}
 
 	identityFiles := expandIdentityPaths(cfg.multi["identityfile"])
-	if spec.Identity != "" {
-		r.IdentityPath = platform.ExpandSSHPath(spec.Identity)
-		r.IdentityExplicit = true
-		if _, err := os.Stat(r.IdentityPath); err != nil {
-			return Resolved{}, fmt.Errorf("identity file not found: %s", r.IdentityPath)
-		}
-	} else if spec.Options["identityfile"] != "" {
-		r.IdentityPath = platform.ExpandSSHPath(spec.Options["identityfile"])
-		if _, err := os.Stat(r.IdentityPath); err != nil {
-			return Resolved{}, fmt.Errorf("identity file not found: %s", r.IdentityPath)
-		}
-	} else {
-		r.IdentityPath = firstExistingIdentity(identityFiles)
+	var idErr error
+	r.IdentityPath, r.IdentityExplicit, idErr = resolveIdentityPath(spec, identityFiles)
+	if idErr != nil {
+		return Resolved{}, idErr
 	}
 
 	if spec.ProxyJump != nil {
 		r.ProxyJump = append([]string(nil), spec.ProxyJump...)
 	} else if pj := cfg.single["proxyjump"]; pj != "" && !strings.EqualFold(pj, "none") {
-		for _, j := range strings.Split(pj, ",") {
-			j = strings.TrimSpace(j)
-			if j != "" {
-				r.ProxyJump = append(r.ProxyJump, j)
-			}
-		}
+		r.ProxyJump = appendNonEmptyProxyJumps(nil, pj)
 	}
 
 	if len(r.ProxyJump) > 0 {

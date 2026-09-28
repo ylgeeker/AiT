@@ -67,12 +67,13 @@ func ReadLine(br *bufio.Reader, out io.Writer, opt Options) (string, error) {
 		}
 
 		res := handleEditRune(br, out, opt, &st, r)
-		if res.done {
-			if res.line != "" && res.err == nil && opt.RecordHistory {
-				recordSubmittedLine(opt, res.line, true)
-			}
-			return res.line, res.err
+		if !res.done {
+			continue
 		}
+		if res.line != "" && res.err == nil && opt.RecordHistory {
+			recordSubmittedLine(opt, res.line, true)
+		}
+		return res.line, res.err
 	}
 }
 

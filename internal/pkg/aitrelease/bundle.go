@@ -278,24 +278,7 @@ func extractTarGz(archivePath, destDir string) error {
 		if err := validateBundlePath(hdr.Name); err != nil {
 			return err
 		}
-		target := filepath.Join(destDir, filepath.FromSlash(hdr.Name))
-		if hdr.Typeflag == tar.TypeDir {
-			if err := os.MkdirAll(target, 0o755); err != nil {
-				return err
-			}
-			continue
-		}
-		if hdr.Typeflag != tar.TypeReg && hdr.Typeflag != tar.TypeRegA {
-			continue
-		}
-		total += hdr.Size
-		if total > maxExtractBytes {
-			return fmt.Errorf("archive exceeds size limit")
-		}
-		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
-			return err
-		}
-		if err := writeExtractedFile(target, tr, hdr.FileInfo().Mode()); err != nil {
+		if err := extractTarGzEntry(hdr, tr, destDir, &total); err != nil {
 			return err
 		}
 	}
@@ -318,23 +301,7 @@ func extractZip(archivePath, destDir string) error {
 		if total > maxExtractBytes {
 			return fmt.Errorf("archive exceeds size limit")
 		}
-		target := filepath.Join(destDir, filepath.FromSlash(f.Name))
-		if f.FileInfo().IsDir() {
-			if err := os.MkdirAll(target, 0o755); err != nil {
-				return err
-			}
-			continue
-		}
-		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
-			return err
-		}
-		rc, err := f.Open()
-		if err != nil {
-			return err
-		}
-		err = writeExtractedFile(target, rc, f.Mode())
-		rc.Close()
-		if err != nil {
+		if err := extractZipEntry(f, destDir); err != nil {
 			return err
 		}
 	}

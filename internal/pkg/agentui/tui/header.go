@@ -82,16 +82,7 @@ func renderHeader(width int, version, status, cwd string, recent []string, compa
 	if len(recent) == 0 {
 		tipsLines = append(tipsLines, "  No recent activity")
 	} else {
-		limit := maxRecentItems
-		if compact {
-			limit = 2
-		}
-		for i, item := range recent {
-			if i >= limit {
-				break
-			}
-			tipsLines = append(tipsLines, "  "+clipTextWidth(item, innerWidth(width)-2))
-		}
+		tipsLines = appendRecentTipLines(tipsLines, recent, compact, width)
 	}
 
 	logo := logoStyle.Render(logoArt)

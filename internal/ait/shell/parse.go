@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/os-artificer/AiT/internal/pkg/errhint"
+	"github.com/os-artificer/AiT/internal/pkg/shellwords"
 )
 
 var errUnclosedQuote = errhint.WithTry(
@@ -48,10 +49,7 @@ func parseShellLine(line string) ([]string, error) {
 		case c == quote:
 			quote = 0
 		case (c == ' ' || c == '\t') && quote == 0:
-			if cur.Len() > 0 {
-				words = append(words, cur.String())
-				cur.Reset()
-			}
+			shellwords.Append(&words, &cur)
 		default:
 			cur.WriteByte(c)
 		}
@@ -60,8 +58,6 @@ func parseShellLine(line string) ([]string, error) {
 	if quote != 0 {
 		return nil, errUnclosedQuote
 	}
-	if cur.Len() > 0 {
-		words = append(words, cur.String())
-	}
+	shellwords.Append(&words, &cur)
 	return words, nil
 }

@@ -176,31 +176,43 @@ func finishTransferWithCleanup(
 	dst io.Writer,
 	cleanup func(),
 ) error {
-	if dir == DirGet {
-		if c, ok := dst.(io.Closer); ok {
-			if err := wrapLocalErr(localAbs, c.Close()); err != nil {
-				cleanup()
-				return err
-			}
-		}
+	runCleanup := func() {
 		if cleanup != nil {
 			cleanup()
 		}
+	}
+
+	if dir == DirGet {
+		if err := closeTransferDstLocal(dst, localAbs); err != nil {
+			runCleanup()
+			return err
+		}
+		runCleanup()
 		return nil
 	}
 
-	if c, ok := dst.(io.Closer); ok {
-		if err := wrapRemoteErr(remotePath, closeWithTimeout(ctx, c)); err != nil {
-			if cleanup != nil {
-				cleanup()
-			}
-			return err
-		}
+	if err := closeTransferDstRemote(ctx, dst, remotePath); err != nil {
+		runCleanup()
+		return err
 	}
-	if cleanup != nil {
-		cleanup()
-	}
+	runCleanup()
 	return nil
+}
+
+func closeTransferDstLocal(dst io.Writer, localAbs string) error {
+	c, ok := dst.(io.Closer)
+	if !ok {
+		return nil
+	}
+	return wrapLocalErr(localAbs, c.Close())
+}
+
+func closeTransferDstRemote(ctx context.Context, dst io.Writer, remotePath string) error {
+	c, ok := dst.(io.Closer)
+	if !ok {
+		return nil
+	}
+	return wrapRemoteErr(remotePath, closeWithTimeout(ctx, c))
 }
 
 const connCloseTimeout = 30 * time.Second

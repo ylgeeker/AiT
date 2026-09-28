@@ -18,7 +18,6 @@ package logsrc
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -86,10 +85,7 @@ func (r *Resolver) openChain(ctx context.Context, q Query, layers []Layer) (Sour
 
 		src, cur, err := openLayer(ctx, r, layer, q)
 		if err != nil {
-			tried = append(tried, layer.Provider+": "+err.Error())
-			if errors.Is(err, ErrPermission) && firstPerm == nil {
-				firstPerm = err
-			}
+			firstPerm = noteLayerOpenErr(&tried, layer, err, firstPerm)
 			continue
 		}
 		if layer.Kind != LayerNative && q.Backend == BackendAuto {
@@ -129,22 +125,7 @@ func (r *Resolver) Probe(q Query) []Capability {
 	var caps []Capability
 
 	for _, name := range ChainNames() {
-		selected := false
-		for _, layer := range chains[name] {
-			avail, reason := probeLayer(r, layer, name, q.Backend)
-			row := Capability{
-				Source:    name,
-				Backend:   string(layer.Kind),
-				Provider:  layer.Provider,
-				Available: avail,
-				Reason:    reason,
-			}
-			if avail && !selected {
-				row.Selected = true
-				selected = true
-			}
-			caps = append(caps, row)
-		}
+		caps = append(caps, probeChainCapabilities(r, chains[name], name, q.Backend)...)
 	}
 	return caps
 }

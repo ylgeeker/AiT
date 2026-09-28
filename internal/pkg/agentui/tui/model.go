@@ -113,27 +113,33 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleKey(msg)
 
 	default:
-		if m.confirm.active && m.confirm.form != nil {
-			var fcmd tea.Cmd
-			var form tea.Model
-			form, fcmd = m.confirm.form.Update(msg)
-			if f, ok := form.(*huh.Form); ok {
-				m.confirm.form = f
-				if f.State == huh.StateCompleted {
-					token := m.confirm.resultToken()
-					m.confirm.clear()
-					m.live.clear()
-					m.bridge.sendLine(token)
-					m.applySize(m.width, m.height)
-					return m, tea.Batch(fcmd, m.waitBridge())
-				}
-			}
-			return m, fcmd
-		}
+		return m.handleConfirmFormUpdate(msg)
+	}
+}
+
+func (m model) handleConfirmFormUpdate(msg tea.Msg) (model, tea.Cmd) {
+	if !m.confirm.active || m.confirm.form == nil {
 		var cmd tea.Cmd
 		m.viewport, cmd = m.viewport.Update(msg)
 		return m, cmd
 	}
+
+	form, fcmd := m.confirm.form.Update(msg)
+	f, ok := form.(*huh.Form)
+	if !ok {
+		return m, fcmd
+	}
+	m.confirm.form = f
+	if f.State != huh.StateCompleted {
+		return m, fcmd
+	}
+
+	token := m.confirm.resultToken()
+	m.confirm.clear()
+	m.live.clear()
+	m.bridge.sendLine(token)
+	m.applySize(m.width, m.height)
+	return m, tea.Batch(fcmd, m.waitBridge())
 }
 
 func (m model) View() string {

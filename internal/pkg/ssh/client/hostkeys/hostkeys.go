@@ -264,13 +264,9 @@ func knownHostsAddresses(host string, port int) []string {
 }
 
 func openKnownHostsDB(files []string) (ssh.HostKeyCallback, error) {
-	var existing []string
-	for _, fn := range files {
-		if _, err := os.Stat(fn); err == nil {
-			existing = append(existing, fn)
-		} else if !os.IsNotExist(err) {
-			return nil, err
-		}
+	existing, err := collectExistingKnownHostsFiles(files)
+	if err != nil {
+		return nil, err
 	}
 
 	if len(existing) == 0 {

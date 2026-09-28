@@ -68,22 +68,12 @@ func (s *session) run(ctx context.Context) error {
 	if quit := s.prefill(ctx); quit {
 		return s.finish()
 	}
+
 	s.redraw()
 
 	for {
-		select {
-		case <-ctx.Done():
+		if s.runStep(ctx) {
 			return s.finish()
-		case line, ok := <-s.lines:
-			s.consume(line, ok, true)
-		case key, ok := <-s.keys.stream():
-			if !ok {
-				return s.finish()
-			}
-			if s.handleKey(key) {
-				return s.finish()
-			}
-			s.redraw()
 		}
 	}
 }
@@ -96,15 +86,8 @@ func (s *session) prefill(ctx context.Context) bool {
 		if !s.bounded && s.vp.Len() >= s.viewRows {
 			return false
 		}
-		select {
-		case <-ctx.Done():
-			return false
-		case line, ok := <-s.lines:
-			s.consume(line, ok, false)
-		case key, ok := <-s.keys.stream():
-			if !ok || isQuitKey(key) {
-				return true
-			}
+		if s.prefillStep(ctx) {
+			return true
 		}
 	}
 	return false

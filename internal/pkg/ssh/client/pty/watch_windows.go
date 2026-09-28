@@ -18,30 +18,10 @@
 
 package pty
 
-import (
-	"time"
-
-	"golang.org/x/term"
-)
-
 // Watch polls window size on Windows (no SIGWINCH) and pushes changes
 // to the remote PTY and local shell.
 func Watch(h ResizeHandler, fd int) func() {
 	stop := make(chan struct{})
-	go func() {
-		lastCols, lastRows, _ := term.GetSize(fd)
-		t := time.NewTicker(750 * time.Millisecond)
-		defer t.Stop()
-		for {
-			select {
-			case <-stop:
-				return
-			case <-t.C:
-				if c, r, ok := PollResize(h, fd, lastCols, lastRows); ok {
-					lastCols, lastRows = c, r
-				}
-			}
-		}
-	}()
+	go watchResizePoll(h, fd, stop)
 	return func() { close(stop) }
 }

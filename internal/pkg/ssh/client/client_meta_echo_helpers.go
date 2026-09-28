@@ -30,16 +30,8 @@ func (c *Client) metaLineEchoPrefix() string {
 
 	user, host := c.promptUser(), c.promptHost()
 	if UseRemoteSystemPrompt() {
-		scroll := c.scroll.String()
-		activeHost := c.promptHost()
-		line := lastNativePromptLineForHost(scroll, activeHost)
-		if line == "" {
-			line = lastNativePromptLineFallback(scroll, activeHost)
-		}
-		if line != "" {
-			if cleaned := extractNativePromptForEmit(line); cleaned != "" {
-				return cleaned
-			}
+		if prefix := nativeMetaEchoPrefix(c.scroll.String(), c.promptHost()); prefix != "" {
+			return prefix
 		}
 	}
 

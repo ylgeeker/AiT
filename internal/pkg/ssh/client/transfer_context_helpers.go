@@ -68,26 +68,40 @@ func (c *Client) cancelTransfer() {
 func (c *Client) watchTransferStdinInterrupt(transferCtx context.Context, stop <-chan struct{}) {
 	ch := c.stdinReader.Ch
 	for {
-		select {
-		case <-stop:
+		sb, ok, done := waitTransferStdinEvent(transferCtx, stop, ch)
+		if done {
 			return
-		case <-transferCtx.Done():
-			return
-		case sb, ok := <-ch:
-			if !ok {
-				return
-			}
-			if sb.Err != nil {
-				continue
-			}
-			if sb.B != transferInterruptByte {
-				continue
-			}
-			c.cancelTransfer()
-			if sess := c.zmodemSession; sess != nil {
-				sess.Abort()
-			}
+		}
+		if c.handleTransferStdinByte(sb, ok) {
 			return
 		}
 	}
+}
+
+func waitTransferStdinEvent(transferCtx context.Context, stop <-chan struct{}, ch <-chan stdinByte) (sb stdinByte, ok bool, done bool) {
+	select {
+	case <-stop:
+		return stdinByte{}, false, true
+	case <-transferCtx.Done():
+		return stdinByte{}, false, true
+	case sb, ok := <-ch:
+		return sb, ok, false
+	}
+}
+
+func (c *Client) handleTransferStdinByte(sb stdinByte, ok bool) bool {
+	if !ok {
+		return true
+	}
+	if sb.Err != nil {
+		return false
+	}
+	if sb.B != transferInterruptByte {
+		return false
+	}
+	c.cancelTransfer()
+	if sess := c.zmodemSession; sess != nil {
+		sess.Abort()
+	}
+	return true
 }

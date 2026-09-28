@@ -18,6 +18,7 @@ package logsrc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -174,4 +175,33 @@ func probeBuiltin(r *Resolver, layer Layer, source string) (bool, string) {
 		return false, "no files"
 	}
 	return true, ""
+}
+
+func noteLayerOpenErr(tried *[]string, layer Layer, err error, firstPerm error) error {
+	*tried = append(*tried, layer.Provider+": "+err.Error())
+	if errors.Is(err, ErrPermission) && firstPerm == nil {
+		return err
+	}
+	return firstPerm
+}
+
+func probeChainCapabilities(r *Resolver, layers []Layer, source string, backend Backend) []Capability {
+	var caps []Capability
+	selected := false
+	for _, layer := range layers {
+		avail, reason := probeLayer(r, layer, source, backend)
+		row := Capability{
+			Source:    source,
+			Backend:   string(layer.Kind),
+			Provider:  layer.Provider,
+			Available: avail,
+			Reason:    reason,
+		}
+		if avail && !selected {
+			row.Selected = true
+			selected = true
+		}
+		caps = append(caps, row)
+	}
+	return caps
 }
