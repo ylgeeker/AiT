@@ -39,12 +39,18 @@ type toolArgField struct {
 	actionOut string
 }
 
-var toolCallConverters = map[string]toolArgField{
-	ToolRunShell: {jsonKey: "command", outField: JSONFieldCommand, actionOut: ToolRunShell},
-	ToolAISshCLI: {jsonKey: "args", outField: JSONFieldArgs, actionOut: ToolAISshCLI},
-	ToolAitCLI:   {jsonKey: "args", outField: JSONFieldArgs, actionOut: ToolAISshCLI},
-	ToolToolbox:  {jsonKey: "args", outField: JSONFieldArgs, actionOut: ToolToolbox},
-	ToolAnswer:   {jsonKey: "text", outField: JSONFieldText, actionOut: ToolAnswer},
+func toolCallConverter(name string) (toolArgField, bool) {
+	for _, def := range ToolDefinitions() {
+		if def.Name != name || def.CanonicalAction == "" || def.ParamName == "" {
+			continue
+		}
+		return toolArgField{
+			jsonKey:   def.ParamName,
+			outField:  def.ParamName,
+			actionOut: def.CanonicalAction,
+		}, true
+	}
+	return toolArgField{}, false
 }
 
 // ToolCallToJSON converts a function call into the AiT Agent-mode JSON action envelope.
@@ -52,7 +58,7 @@ func ToolCallToJSON(tc FCCall) (string, error) {
 	if tc.Name == "" {
 		return "", ErrUnsupportedToolCall
 	}
-	conv, ok := toolCallConverters[tc.Name]
+	conv, ok := toolCallConverter(tc.Name)
 	if !ok {
 		return "", ErrUnknownTool(tc.Name)
 	}

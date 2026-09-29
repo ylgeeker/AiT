@@ -35,6 +35,20 @@ func TestToolCallToAgentJSON_RunShell(t *testing.T) {
 	}
 }
 
+func TestToolCallToJSON_AitCLIAlias(t *testing.T) {
+	tc := FCCall{
+		Name:      ToolAitCLI,
+		Arguments: `{"args":"session --list"}`,
+	}
+	got, err := ToolCallToJSON(tc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(got, `"action":"aish_cli"`) || strings.Contains(got, `"action":"ait_cli"`) {
+		t.Fatalf("got %q", got)
+	}
+}
+
 func TestChatAgent_ToolCall(t *testing.T) {
 	tc := FCCall{
 		Name:      ToolAnswer,

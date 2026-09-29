@@ -88,19 +88,11 @@ func isLocalhostHost(host string) bool {
 }
 
 func defaultBaseURL(providerID, apiStyle string) string {
-	switch providerID {
-	case ProviderDeepseek:
-		return DefaultDeepseekBase
-	case ProviderMinimax:
-		if apiStyle == APIStyleAnthropic {
-			return DefaultMinimaxBaseAnthropic
-		}
-		return DefaultMinimaxBaseOpenAI
-	case ProviderOllama:
-		return DefaultOllamaBase
-	default:
+	spec, ok := lookupProviderSpec(providerID)
+	if !ok || spec.baseURL == nil {
 		return ""
 	}
+	return spec.baseURL(apiStyle)
 }
 
 // DefaultProviderConfig returns built-in defaults for a known provider id.
@@ -111,11 +103,8 @@ func DefaultProviderConfig(id string) ProviderConfig {
 func defaultProviderConfig(id string) ProviderConfig {
 	style := APIStyleOpenAI
 	model := DefaultDeepseekModel
-	switch id {
-	case ProviderMinimax:
-		model = DefaultMinimaxModel
-	case ProviderOllama:
-		model = DefaultOllamaModel
+	if spec, ok := lookupProviderSpec(id); ok && spec.model != "" {
+		model = spec.model
 	}
 	return ProviderConfig{
 		APIStyle: style,
@@ -142,21 +131,30 @@ func normalizeTiered(cfg *Config) {
 
 func normalizeAI(cfg *Config) {
 	ensureProviders(cfg)
+	migrateLegacyDeepseek(cfg)
+	fillProviderDefaults(cfg)
+	normalizeTieredAndAgent(cfg)
+}
 
-	if cfg.Deepseek.BaseURL != "" || cfg.Deepseek.Model != "" {
-		p := cfg.AI.Providers[ProviderDeepseek]
-		if cfg.Deepseek.BaseURL != "" {
-			p.BaseURL = cfg.Deepseek.BaseURL
-		}
-		if cfg.Deepseek.Model != "" {
-			p.Model = cfg.Deepseek.Model
-		}
-		if p.APIStyle == "" {
-			p.APIStyle = APIStyleOpenAI
-		}
-		cfg.AI.Providers[ProviderDeepseek] = p
+func migrateLegacyDeepseek(cfg *Config) {
+	if cfg.Deepseek.BaseURL == "" && cfg.Deepseek.Model == "" {
+		return
 	}
 
+	p := cfg.AI.Providers[ProviderDeepseek]
+	if cfg.Deepseek.BaseURL != "" {
+		p.BaseURL = cfg.Deepseek.BaseURL
+	}
+	if cfg.Deepseek.Model != "" {
+		p.Model = cfg.Deepseek.Model
+	}
+	if p.APIStyle == "" {
+		p.APIStyle = APIStyleOpenAI
+	}
+	cfg.AI.Providers[ProviderDeepseek] = p
+}
+
+func fillProviderDefaults(cfg *Config) {
 	for _, id := range AllProviderIDs() {
 		p, ok := cfg.AI.Providers[id]
 		if !ok && id == ProviderOllama {
@@ -178,13 +176,12 @@ func normalizeAI(cfg *Config) {
 		cfg.AI.Providers[id] = p
 	}
 
-	if cfg.AI.Default == "" {
+	if cfg.AI.Default == "" || !IsCloudProvider(cfg.AI.Default) {
 		cfg.AI.Default = ProviderDeepseek
 	}
-	if !IsCloudProvider(cfg.AI.Default) {
-		cfg.AI.Default = ProviderDeepseek
-	}
+}
 
+func normalizeTieredAndAgent(cfg *Config) {
 	normalizeTiered(cfg)
 
 	if cfg.AI.Tiered.Enabled {

@@ -127,18 +127,10 @@ func resolveJumpHop(sshPath string, base openssh.Spec, jump string) (client.Opti
 	}
 	cfg := parseSSHGOutput(out)
 
-	host := firstNonEmpty(cfg.single["hostname"], jumpHost)
-	port := parsePort(cfg.single["port"])
-	if jumpPort != 0 {
-		port = jumpPort
-	}
-	if port == 0 {
-		port = 22
-	}
-	user := cfg.single["user"]
-	if jumpUser != "" {
-		user = jumpUser
-	}
+	host, user, port := endpointFromSSHG(
+		cfg.single["hostname"], jumpHost, cfg.single["user"],
+		parsePort(cfg.single["port"]), jumpPort, jumpUser,
+	)
 
 	identity := firstExistingIdentity(expandIdentityPaths(cfg.multi["identityfile"]))
 	opts := client.Options{

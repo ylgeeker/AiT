@@ -98,7 +98,21 @@ func EnsureLocal(ctx context.Context, cfg *config.Config, opts Options) (Result,
 	opts = opts.withDefaults()
 	var res Result
 
-	baseURL, model := ollamaEndpointsFromConfig(cfg, opts.BaseURL, opts.Model)
+	baseURL, model, modelsDir, err := resolveEnsureTargets(cfg, opts)
+	if err != nil {
+		return res, err
+	}
+
+	avail := CheckAvailable(ctx, opts.HTTPClient, baseURL)
+	if avail.BinaryOK && avail.APIOK {
+		return pullWhenReady(ctx, opts, baseURL, model, modelsDir, res, false)
+	}
+
+	return installOrSkip(ctx, cfg, opts, avail, baseURL, model, modelsDir, res)
+}
+
+func resolveEnsureTargets(cfg *config.Config, opts Options) (baseURL, model, modelsDir string, err error) {
+	baseURL, model = ollamaEndpointsFromConfig(cfg, opts.BaseURL, opts.Model)
 	if baseURL == "" {
 		baseURL = config.DefaultOllamaBase
 	}
@@ -106,30 +120,35 @@ func EnsureLocal(ctx context.Context, cfg *config.Config, opts Options) (Result,
 		model = config.DefaultOllamaModel
 	}
 
-	modelsDir := ModelsDirFromConfig(cfg)
+	modelsDir = ModelsDirFromConfig(cfg)
 	if modelsDir == "" {
-		var err error
 		modelsDir, err = ResolveModelsDir(cfg, opts.ModelsDir)
-		if err != nil {
-			return res, err
-		}
 	}
+	return baseURL, model, modelsDir, err
+}
 
-	avail := CheckAvailable(ctx, opts.HTTPClient, baseURL)
-	if avail.BinaryOK && avail.APIOK {
-		res.APIOK = true
+func pullWhenReady(ctx context.Context, opts Options, baseURL, model, modelsDir string, res Result, skippedPullNote bool) (Result, error) {
+	res.APIOK = true
+	if !skippedPullNote {
 		logStep(opts.Out, 3, 6, "Ollama binary: ok")
-		logStep(opts.Out, 4, 6, logStepAPIReachable)
-		if err := EnsureModel(ctx, opts.HTTPClient, baseURL, model, opts.NoPull, modelsDir); err != nil {
-			return res, err
-		}
-		if !opts.NoPull {
-			res.ModelPulled = true
-			logStep(opts.Out, 5, 6, fmt.Sprintf("Model %s ready", model))
-		}
+	}
+	logStep(opts.Out, 4, 6, logStepAPIReachable)
+
+	if err := EnsureModel(ctx, opts.HTTPClient, baseURL, model, opts.NoPull, modelsDir); err != nil {
+		return res, err
+	}
+	if !opts.NoPull {
+		res.ModelPulled = true
+		logStep(opts.Out, 5, 6, fmt.Sprintf("Model %s ready", model))
 		return res, nil
 	}
+	if skippedPullNote {
+		logStep(opts.Out, 5, 6, fmt.Sprintf("Model pull skipped (run: ollama pull %s)", model))
+	}
+	return res, nil
+}
 
+func installOrSkip(ctx context.Context, cfg *config.Config, opts Options, avail Availability, baseURL, model, modelsDir string, res Result) (Result, error) {
 	binaryMissing := !avail.BinaryOK
 	allowed, err := ResolveInstallAllowed(binaryMissing, opts, opts.Confirm)
 	if err != nil {
@@ -161,19 +180,7 @@ func EnsureLocal(ctx context.Context, cfg *config.Config, opts Options) (Result,
 		logStep(opts.Out, 4, 6, "API: not reachable — "+err.Error())
 		return res, err
 	}
-	res.APIOK = true
-	logStep(opts.Out, 4, 6, logStepAPIReachable)
-
-	if err := EnsureModel(ctx, opts.HTTPClient, baseURL, model, opts.NoPull, modelsDir); err != nil {
-		return res, err
-	}
-	if !opts.NoPull {
-		res.ModelPulled = true
-		logStep(opts.Out, 5, 6, fmt.Sprintf("Model %s ready", model))
-	} else {
-		logStep(opts.Out, 5, 6, fmt.Sprintf("Model pull skipped (run: ollama pull %s)", model))
-	}
-	return res, nil
+	return pullWhenReady(ctx, opts, baseURL, model, modelsDir, res, true)
 }
 
 func tryProbeWithoutInstall(ctx context.Context, opts Options, baseURL, model, modelsDir string, res *Result) {

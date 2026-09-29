@@ -38,8 +38,20 @@ func TestToolDefinitions_NamesAndJSON(t *testing.T) {
 		if d.ParamJSON != golden {
 			t.Fatalf("tool %q ParamJSON=%q want %q", d.Name, d.ParamJSON, golden)
 		}
-		if d.ParamName == "" || d.Desc == "" {
+		if d.ParamName == "" || d.Desc == "" || d.CanonicalAction == "" {
 			t.Fatalf("tool %q missing metadata", d.Name)
 		}
 	}
+	if canon := canonicalAction(ToolAitCLI); canon != ToolAISshCLI {
+		t.Fatalf("ait_cli canonical=%q want %q", canon, ToolAISshCLI)
+	}
+}
+
+func canonicalAction(name string) string {
+	for _, def := range ToolDefinitions() {
+		if def.Name == name {
+			return def.CanonicalAction
+		}
+	}
+	return ""
 }

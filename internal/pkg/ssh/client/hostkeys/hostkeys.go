@@ -26,7 +26,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/os-artificer/AiT/internal/pkg/ssh/client/dial"
 	"github.com/os-artificer/AiT/internal/pkg/ssh/stricthostkey"
 
 	"golang.org/x/crypto/ssh"
@@ -129,62 +128,13 @@ func callbackAt(path, host string, port int, mode string, batch bool) (ssh.HostK
 			return err
 		}
 		if len(keyErr.Want) > 0 {
-			h := hostFromAddr(hostname, remote)
-			return fmt.Errorf(
-				"host key for %s has changed — possible MITM (refusing to connect); remove the old entry from %q",
-				h, primary,
-			)
+			return rejectChangedHostKey(hostFromAddr(hostname, remote), primary)
 		}
 
-		// Unknown host key.
 		h := hostFromAddr(hostname, remote)
-		if h != "" && displayHost == "host" {
-			displayHost = h
-		}
-		p := port
-		if _, portStr, splitErr := net.SplitHostPort(remote.String()); splitErr == nil {
-			if pp, perr := dial.ParsePortString(portStr); perr == nil && pp != 0 {
-				p = pp
-			}
-		}
-		if p == 0 {
-			p = port
-		}
-		if p == 0 {
-			p = 22
-		}
-
-		effective := mode
-		if mode == "ask" && (batch || !IsInteractiveTTY()) {
-			effective = "yes"
-		}
-
-		switch effective {
-
-		case "accept-new":
-			return appendKnownHost(primary, displayHost, p, key)
-
-		case "ask":
-			fp := ssh.FingerprintSHA256(key)
-			keyType := key.Type()
-			portNote := ""
-			if p != 22 {
-				portNote = fmt.Sprintf(" (port %d)", p)
-			}
-			prompt := fmt.Sprintf(
-				"The authenticity of host '%s'%s can't be established.\n"+
-					"%s key fingerprint is %s.\n"+
-					"Are you sure you want to continue connecting (yes/no)? ",
-				displayHost, portNote, strings.ToUpper(keyType), fp,
-			)
-			if !Confirm(prompt) {
-				return fmt.Errorf("host key verification failed")
-			}
-			return appendKnownHost(primary, displayHost, p, key)
-
-		default: // yes
-			return hostKeyUnknownError(displayHost, p, primary)
-		}
+		displayHost = noteDisplayHost(displayHost, h)
+		p := unknownHostPort(remote, port)
+		return applyUnknownHostPolicy(unknownHostMode(mode, batch), primary, displayHost, p, key)
 	}, nil
 }
 

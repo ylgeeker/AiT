@@ -17,45 +17,53 @@
 package agent
 
 // ToolDef describes one Agent-mode tool for OpenAI-compatible and Eino schema generation.
+// CanonicalAction is the envelope action name emitted for this tool. It is explicit
+// because legacy names such as ait_cli canonicalize to aish_cli rather than to Name.
 type ToolDef struct {
-	Name      string
-	Desc      string
-	ParamName string
-	ParamJSON string
+	Name            string
+	Desc            string
+	ParamName       string
+	ParamJSON       string
+	CanonicalAction string
 }
 
 // ToolDefinitions returns the SSOT Agent tool metadata for AiT.
 func ToolDefinitions() []ToolDef {
 	return []ToolDef{
 		{
-			Name:      ToolRunShell,
-			Desc:      "Run one shell command on the active host",
-			ParamName: "command",
-			ParamJSON: `{"type":"object","properties":{"command":{"type":"string"}},"required":["command"]}`,
+			Name:            ToolRunShell,
+			Desc:            "Run one shell command on the active host",
+			ParamName:       "command",
+			ParamJSON:       `{"type":"object","properties":{"command":{"type":"string"}},"required":["command"]}`,
+			CanonicalAction: ToolRunShell,
 		},
 		{
-			Name:      ToolAISshCLI,
-			Desc:      "Run aitssh CLI subcommand on the local machine",
-			ParamName: "args",
-			ParamJSON: `{"type":"object","properties":{"args":{"type":"string"}},"required":["args"]}`,
+			Name:            ToolAISshCLI,
+			Desc:            "Run aitssh CLI subcommand on the local machine",
+			ParamName:       "args",
+			ParamJSON:       `{"type":"object","properties":{"args":{"type":"string"}},"required":["args"]}`,
+			CanonicalAction: ToolAISshCLI,
 		},
 		{
-			Name:      ToolAitCLI,
-			Desc:      "Run aitssh CLI subcommand on the local machine (legacy alias)",
-			ParamName: "args",
-			ParamJSON: `{"type":"object","properties":{"args":{"type":"string"}},"required":["args"]}`,
+			Name:            ToolAitCLI,
+			Desc:            "Run aitssh CLI subcommand on the local machine (legacy alias)",
+			ParamName:       "args",
+			ParamJSON:       `{"type":"object","properties":{"args":{"type":"string"}},"required":["args"]}`,
+			CanonicalAction: ToolAISshCLI,
 		},
 		{
-			Name:      ToolToolbox,
-			Desc:      "Run an AiT toolbox CLI (host, log, ssh, or img) with full argv",
-			ParamName: "args",
-			ParamJSON: `{"type":"object","properties":{"args":{"type":"string"}},"required":["args"]}`,
+			Name:            ToolToolbox,
+			Desc:            "Run an AiT toolbox CLI (host, log, ssh, or img) with full argv",
+			ParamName:       "args",
+			ParamJSON:       `{"type":"object","properties":{"args":{"type":"string"}},"required":["args"]}`,
+			CanonicalAction: ToolToolbox,
 		},
 		{
-			Name:      ToolAnswer,
-			Desc:      "Reply to the user and finish the tool chain",
-			ParamName: "text",
-			ParamJSON: `{"type":"object","properties":{"text":{"type":"string"}},"required":["text"]}`,
+			Name:            ToolAnswer,
+			Desc:            "Reply to the user and finish the tool chain",
+			ParamName:       "text",
+			ParamJSON:       `{"type":"object","properties":{"text":{"type":"string"}},"required":["text"]}`,
+			CanonicalAction: ToolAnswer,
 		},
 	}
 }

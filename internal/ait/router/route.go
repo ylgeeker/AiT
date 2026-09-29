@@ -42,15 +42,6 @@ type RouteDeps struct {
 	RunPlugin      func(context.Context, []string, io.Writer, io.Writer) error
 }
 
-// AdminVerbs lists agent management subcommands (must match Cobra registry).
-var AdminVerbs = map[string]struct{}{
-	"connect":  {},
-	"model":    {},
-	"provider": {},
-	"ollama":   {},
-	"config":   {},
-}
-
 // Route runs the top-level ait CLI for args after experimental-flag stripping.
 func Route(ctx context.Context, args []string, stdout, stderr io.Writer, d RouteDeps) error {
 	if len(args) == 0 {
@@ -105,7 +96,7 @@ func routeAgent(ctx context.Context, args []string, stdout, stderr io.Writer) er
 		return runLoop(ctx, "", plain, stdout, stderr)
 	}
 
-	if _, ok := AdminVerbs[rest[0]]; ok {
+	if agent.IsAdminVerb(rest[0]) {
 		return agent.RunAdmin(rest, stdout, stderr)
 	}
 	if agent.LooksLikeConnectDestination(rest[0]) {

@@ -17,15 +17,11 @@
 package resolve
 
 import (
-	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/os-artificer/AiT/internal/pkg/platform"
 	"github.com/os-artificer/AiT/internal/pkg/ssh/client"
 	"github.com/os-artificer/AiT/internal/pkg/ssh/openssh"
-	"github.com/os-artificer/AiT/internal/pkg/ssh/stricthostkey"
 )
 
 // Resolved is the effective SSH connection parameters after ssh -G and CLI overrides.
@@ -63,128 +59,16 @@ func Resolve(spec openssh.Spec) (Resolved, error) {
 		return Resolved{}, err
 	}
 
-	args := []string{"-G"}
-	if spec.ConfigFile != "" {
-		args = append(args, "-F", spec.ConfigFile)
-	}
-	for _, j := range spec.ProxyJump {
-		args = append(args, "-J", j)
-	}
-	if spec.Port != 0 {
-		args = append(args, "-p", strconv.Itoa(spec.Port))
-	}
-	if spec.User != "" {
-		args = append(args, "-l", spec.User)
-	}
-	if spec.Identity != "" {
-		args = append(args, "-i", spec.Identity)
-	}
-	for k, v := range spec.Options {
-		args = append(args, "-o", k+"="+v)
-	}
-	args = append(args, spec.Destination)
-
-	out, err := sshGOutput(sshPath, args)
+	out, err := sshGOutput(sshPath, sshGArgs(spec))
 	if err != nil {
 		return Resolved{}, err
 	}
 
-	cfg := parseSSHGOutput(out)
-
-	r := Resolved{
-		Host:                  firstNonEmpty(cfg.single["hostname"], spec.Destination),
-		Port:                  parsePort(cfg.single["port"]),
-		User:                  cfg.single["user"],
-		ProxyCommand:          cfg.single["proxycommand"],
-		KnownHostsPath:        platform.ExpandSSHPath(cfg.single["userknownhostsfile"]),
-		StrictHostKeyChecking: stricthostkey.NormalizeStrictHostKeyChecking(cfg.single["stricthostkeychecking"]),
-		BatchMode:             strings.EqualFold(cfg.single["batchmode"], "yes"),
-		RemoteCommand:         spec.RemoteCommand,
-		Alias:                 spec.Alias,
-		Destination:           spec.Destination,
-		Save:                  spec.Save,
-		Tmux:                  spec.Tmux,
-		Password:              spec.Password,
-		IdentityExplicit:      spec.Identity != "",
+	r, err := resolvedFromSSHG(sshPath, spec, parseSSHGOutput(out))
+	if err != nil {
+		return Resolved{}, err
 	}
-
-	if r.Port == 0 {
-		r.Port = 22
-	}
-	if spec.Port != 0 {
-		r.Port = spec.Port
-	}
-	if spec.User != "" {
-		r.User = spec.User
-	}
-
-	identityFiles := expandIdentityPaths(cfg.multi["identityfile"])
-	var idErr error
-	r.IdentityPath, r.IdentityExplicit, idErr = resolveIdentityPath(spec, identityFiles)
-	if idErr != nil {
-		return Resolved{}, idErr
-	}
-
-	if spec.ProxyJump != nil {
-		r.ProxyJump = append([]string(nil), spec.ProxyJump...)
-	} else if pj := cfg.single["proxyjump"]; pj != "" && !strings.EqualFold(pj, "none") {
-		r.ProxyJump = appendNonEmptyProxyJumps(nil, pj)
-	}
-
-	if len(r.ProxyJump) > 0 {
-		expanded, err := expandProxyJumpList(sshPath, spec, r.ProxyJump)
-		if err != nil {
-			return Resolved{}, err
-		}
-		r.ProxyJump = expanded
-	}
-
-	if pc := cfg.single["proxycommand"]; pc != "" && !strings.EqualFold(pc, "none") {
-		r.ProxyCommand = pc
-	}
-
-	if spec.Options["port"] != "" {
-		if p, err := strconv.Atoi(spec.Options["port"]); err == nil {
-			r.Port = p
-		}
-	}
-	if spec.Options["user"] != "" {
-		r.User = spec.Options["user"]
-	}
-	if kh := spec.Options["userknownhostsfile"]; kh != "" {
-		r.KnownHostsPath = platform.ExpandSSHPath(kh)
-	}
-	if spec.Options["stricthostkeychecking"] != "" {
-		r.StrictHostKeyChecking = stricthostkey.NormalizeStrictHostKeyChecking(spec.Options["stricthostkeychecking"])
-	}
-	if to := cfg.single["connecttimeout"]; to != "" && to != "none" && to != "0" {
-		if sec, err := strconv.Atoi(to); err == nil && sec > 0 {
-			r.ConnectTimeout = time.Duration(sec) * time.Second
-		}
-	}
-
-	// Parse destination for embedded user@host if hostname still looks like alias
-	if u, h, p, err := openssh.ParseDestination(spec.Destination); err == nil && h != "" {
-		if r.Host == spec.Destination || r.Host == "" {
-			r.Host = h
-		}
-		if u != "" && r.User == "" {
-			r.User = u
-		}
-		if p != 0 && spec.Port == 0 {
-			r.Port = p
-		}
-	}
-
-	if r.Host == "" {
-		return Resolved{}, fmt.Errorf("could not resolve hostname from %q", spec.Destination)
-	}
-
-	if len(spec.RemoteCommand) > 0 && spec.Tmux {
-		return Resolved{}, openssh.TmuxWithRemoteCommandErr()
-	}
-
-	return r, nil
+	return validateResolved(r, spec)
 }
 
 // ClientOptions maps r to client.Options for dialing (UseAgent is always true).

@@ -22,53 +22,17 @@ import (
 	"time"
 )
 
+// configKeyHandler is the set/get pair for one exact dotted key.
+// Prefix keys (ai.tiered.*, providers) are resolved after this table.
+type configKeyHandler struct {
+	set func(*Config, string) error
+	get func(*Config) (string, error)
+}
+
 // SetKey sets a dotted configuration key on c.
 func (c *Config) SetKey(key, value string) error {
-	if key == keySessionAuthTTL {
-		if _, err := time.ParseDuration(value); err != nil {
-			return err
-		}
-		c.Session.AuthTTL = value
-		return nil
-	}
-
-	if key == keySessionRemotePromptPath {
-		v := strings.ToLower(strings.TrimSpace(value))
-		if v != RemotePromptPathShort && v != RemotePromptPathAbsolute {
-			return fmt.Errorf("session.remote_prompt.path must be %q or %q", RemotePromptPathShort, RemotePromptPathAbsolute)
-		}
-		c.Session.RemotePrompt.Path = v
-		return nil
-	}
-
-	if key == keyAIDefault {
-		if !IsCloudProvider(value) {
-			return validateCloudDefault(value)
-		}
-		c.AI.Default = value
-		return nil
-	}
-
-	if key == keyAIFallback {
-		c.AI.Fallback = parseFallbackList(value)
-		return nil
-	}
-
-	if key == keyAIExperimentalEnabled {
-		v, err := parseBool(value)
-		if err != nil {
-			return fmt.Errorf("%s: %w", keyAIExperimentalEnabled, err)
-		}
-		c.AI.Experimental.Enabled = v
-		return nil
-	}
-
-	if key == keyAIAgentCommandTimeout {
-		if _, err := time.ParseDuration(value); err != nil {
-			return err
-		}
-		c.AI.Agent.CommandTimeout = value
-		return nil
+	if h, ok := exactConfigKeyHandlers()[key]; ok {
+		return h.set(c, value)
 	}
 
 	if field, ok := parseTieredKey(key); ok {
@@ -84,28 +48,8 @@ func (c *Config) SetKey(key, value string) error {
 
 // GetKey returns the string value for a dotted key.
 func (c *Config) GetKey(key string) (string, error) {
-	switch key {
-	case keySessionAuthTTL:
-		return c.Session.AuthTTL, nil
-	case keySessionRemotePromptPath:
-		if c.Session.RemotePrompt.Path == "" {
-			return RemotePromptPathShort, nil
-		}
-		return c.Session.RemotePrompt.Path, nil
-	case keyAIDefault:
-		return c.DefaultProviderID(), nil
-	case keyAIFallback:
-		return strings.Join(c.AI.Fallback, ","), nil
-	case keyAIExperimentalEnabled:
-		if c.AI.Experimental.Enabled {
-			return "true", nil
-		}
-		return "false", nil
-	case keyAIAgentCommandTimeout:
-		if strings.TrimSpace(c.AI.Agent.CommandTimeout) == "" {
-			return DefaultAgentCommandTimeoutYAML, nil
-		}
-		return c.AI.Agent.CommandTimeout, nil
+	if h, ok := exactConfigKeyHandlers()[key]; ok {
+		return h.get(c)
 	}
 
 	if field, ok := parseTieredKey(key); ok {
@@ -117,6 +61,97 @@ func (c *Config) GetKey(key string) (string, error) {
 	}
 
 	return "", unknownConfigKeyErr(key)
+}
+
+func exactConfigKeyHandlers() map[string]configKeyHandler {
+	return map[string]configKeyHandler{
+		keySessionAuthTTL:          {set: setSessionAuthTTL, get: getSessionAuthTTL},
+		keySessionRemotePromptPath: {set: setSessionRemotePromptPath, get: getSessionRemotePromptPath},
+		keyAIDefault:               {set: setAIDefault, get: getAIDefault},
+		keyAIFallback:              {set: setAIFallback, get: getAIFallback},
+		keyAIExperimentalEnabled:   {set: setAIExperimentalEnabled, get: getAIExperimentalEnabled},
+		keyAIAgentCommandTimeout:   {set: setAgentCommandTimeout, get: getAgentCommandTimeout},
+	}
+}
+
+func setSessionAuthTTL(c *Config, value string) error {
+	if _, err := time.ParseDuration(value); err != nil {
+		return err
+	}
+	c.Session.AuthTTL = value
+	return nil
+}
+
+func getSessionAuthTTL(c *Config) (string, error) {
+	return c.Session.AuthTTL, nil
+}
+
+func setSessionRemotePromptPath(c *Config, value string) error {
+	v := strings.ToLower(strings.TrimSpace(value))
+	if v != RemotePromptPathShort && v != RemotePromptPathAbsolute {
+		return fmt.Errorf("session.remote_prompt.path must be %q or %q", RemotePromptPathShort, RemotePromptPathAbsolute)
+	}
+	c.Session.RemotePrompt.Path = v
+	return nil
+}
+
+func getSessionRemotePromptPath(c *Config) (string, error) {
+	if c.Session.RemotePrompt.Path == "" {
+		return RemotePromptPathShort, nil
+	}
+	return c.Session.RemotePrompt.Path, nil
+}
+
+func setAIDefault(c *Config, value string) error {
+	if !IsCloudProvider(value) {
+		return validateCloudDefault(value)
+	}
+	c.AI.Default = value
+	return nil
+}
+
+func getAIDefault(c *Config) (string, error) {
+	return c.DefaultProviderID(), nil
+}
+
+func setAIFallback(c *Config, value string) error {
+	c.AI.Fallback = parseFallbackList(value)
+	return nil
+}
+
+func getAIFallback(c *Config) (string, error) {
+	return strings.Join(c.AI.Fallback, ","), nil
+}
+
+func setAIExperimentalEnabled(c *Config, value string) error {
+	v, err := parseBool(value)
+	if err != nil {
+		return fmt.Errorf("%s: %w", keyAIExperimentalEnabled, err)
+	}
+	c.AI.Experimental.Enabled = v
+	return nil
+}
+
+func getAIExperimentalEnabled(c *Config) (string, error) {
+	if c.AI.Experimental.Enabled {
+		return "true", nil
+	}
+	return "false", nil
+}
+
+func setAgentCommandTimeout(c *Config, value string) error {
+	if _, err := time.ParseDuration(value); err != nil {
+		return err
+	}
+	c.AI.Agent.CommandTimeout = value
+	return nil
+}
+
+func getAgentCommandTimeout(c *Config) (string, error) {
+	if strings.TrimSpace(c.AI.Agent.CommandTimeout) == "" {
+		return DefaultAgentCommandTimeoutYAML, nil
+	}
+	return c.AI.Agent.CommandTimeout, nil
 }
 
 func parseTieredKey(key string) (field string, ok bool) {
