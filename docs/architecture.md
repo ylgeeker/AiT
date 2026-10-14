@@ -16,6 +16,7 @@ Shipped tools:
 - `aiimg`: Image metadata extractor (EXIF device/time/GPS + Nominatim reverse-geocoded address).
 - `ailog`: System log viewer and search (Linux/macOS/Windows) with native tools and built-in fallbacks.
 - `aihost`: Live host CPU, memory, disk, network, and process monitor (Bubble Tea dashboard).
+- `aitkeep`: Process supervisor (`keep` plugin command) with `GET /ping` and CPU, memory, and disk limits.
 
 Shared capabilities (not separate binaries) live under `internal/pkg/` and are consumed by tools. Agent Loop kernel is `internal/pkg/agentcore` (engine: `internal/pkg/ai`; ops toolbox: `agentops` + `tooldispatch`; wire: `agentwire`; UI: `agentui`). Admin CLI and connect live in `internal/ait/agent`; routing in `internal/ait/router`.
 
@@ -39,6 +40,8 @@ Shared capabilities (not separate binaries) live under `internal/pkg/` and are c
 | [tools/ailog-internals.md](tools/ailog-internals.md) | `ailog` implementation (package layering) |
 | [tools/aihost.md](tools/aihost.md) | `aihost` user guide |
 | [tools/aihost-internals.md](tools/aihost-internals.md) | `aihost` implementation (package layering) |
+| [tools/aitkeep.md](tools/aitkeep.md) | `aitkeep` user guide |
+| [tools/aitkeep-internals.md](tools/aitkeep-internals.md) | `aitkeep` implementation (package `keepalive`) |
 | [AGENTS.md](../AGENTS.md) | Agent-oriented build/test/layout orientation |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Contributor workflow and coding standards |
 | [change-acceptance.mdc](../.cursor/rules/change-acceptance.mdc) | Merge gates and regression acceptance checklist |
@@ -60,10 +63,11 @@ Shared capabilities (not separate binaries) live under `internal/pkg/` and are c
 | `aiimg` | Shipped | `bin/aiimg` | `internal/img` | [tools/aiimg.md](tools/aiimg.md) | [tools/aiimg-internals.md](tools/aiimg-internals.md) |
 | `ailog` | Shipped | `bin/ailog` | `internal/log` | [tools/ailog.md](tools/ailog.md) | [tools/ailog-internals.md](tools/ailog-internals.md) |
 | `aihost` | Shipped | `bin/aihost` | `internal/host` | [tools/aihost.md](tools/aihost.md) | [tools/aihost-internals.md](tools/aihost-internals.md) |
+| `aitkeep` | Shipped | `bin/aitkeep` | `internal/pkg/keepalive` | [tools/aitkeep.md](tools/aitkeep.md) | [tools/aitkeep-internals.md](tools/aitkeep-internals.md) |
 
 
 AiT is intentionally toolbox-first: each tool gets a thin `cmd/<tool>/main.go` entry, an app layer under `internal/<tool>/`, and shared primitives in `internal/pkg/*`.  
-Agent admin (former `ai` plugin) lives under `internal/ait/agent`. The toolbox ships `ait`, `aissh`, `aiimg`, `ailog`, and `aihost`.
+Agent admin (former `ai` plugin) lives under `internal/ait/agent`. The toolbox ships `ait`, `aissh`, `aiimg`, `ailog`, `aihost`, and `aitkeep`. `aitkeep` keeps its CLI in `internal/pkg/keepalive` (package `keepalive`); `cmd/keep` only calls `keepalive.Run`.
 
 ---
 
@@ -203,6 +207,8 @@ For a future toolbox tool `<tool>`:
 | [tools/ailog-internals.md](tools/ailog-internals.md) | `ailog` code layout |
 | [tools/aihost.md](tools/aihost.md) | `aihost` operator-facing CLI guide |
 | [tools/aihost-internals.md](tools/aihost-internals.md) | `aihost` code layout |
+| [tools/aitkeep.md](tools/aitkeep.md) | `aitkeep` operator-facing CLI guide |
+| [tools/aitkeep-internals.md](tools/aitkeep-internals.md) | `aitkeep` code layout |
 | [AGENTS.md](../AGENTS.md) | Agent entry point and codebase orientation |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Contributor process and standards |
 | [change-acceptance.mdc](../.cursor/rules/change-acceptance.mdc) | Acceptance and regression checklist |

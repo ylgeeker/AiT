@@ -844,6 +844,7 @@ Loopback mocks for required external services (no real hosts or personal infra).
 ## 验收勾选（PR / Agent 交付）
 
 - [ ] `make fmt && make vet && make test && make build && make test-cross`
+- [ ] KP1–KP8：`aitkeep` ping、资源动作、重启预算、单实例、硬帽、CLI、官方插件 `keep`（见 **KP\***）
 - [ ] MS1–MS23：in-repo testenv-mock SSH+HTTP 成功与错误路径 + CI 全量 mock e2e（见 **MS\*** 明细；`docs/testenv-mock.md`）
 - [ ] AT* / AP*：`ait` toolbox REPL + 插件发现（见 **AT\*** / **AP\*** 明细；含 **AT30a–f** Tab 首词补全、**AT31–AT48** install/update/upgrade；**OA9–OA10** `ai` 插件名）
 - [ ] AH1–AH63：`aihost` 主机监控（见 **AH\*** 明细）
@@ -1108,6 +1109,7 @@ aissh hostA                    # 无 --save
 | PG* | `internal/pkg/pager` less-like 分页 | `TestPage_Passthrough`、`TestViewport_Scroll`、`TestViewport_Search` |
 | FB* | `ailog` 无外部工具时 builtin 兜底 | `TestResolver_BuiltinNoLookPath`、`TestFileSource_Builtin`、`TestBuildJournalctlArgs` |
 | BI* | `internal/pkg/buildinfo` 三工具 version 共用 | `TestFormat_LdflagsWin`、`TestShort_DevFallback` |
+| KP* | `aitkeep` 常驻与资源限制 | `TestPing_PongAndNotFound`、`TestDecide_MemoryDoesNotThrottle`、`TestWatch_BudgetAndStableReset`、`TestReconcile_StaleGenerationKeepsRunning`、`TestCLI_Manifest` |
 | AG* | Agent Loop / agentcore（替代 A20–A22；含 AG-7…13 安全门） | `TestOpsAI_DefaultShowsHelp`、`TestPolicy_*`、`TestClassify_Chained*`、`TestRunBoundedCapture_*`、`TestWaitContinueOrExit_*`、`TestSetGetKey_AgentCommandTimeout` |
 | AC-V4* | v4 边界（无 aimode；agentcore 无产品 import） | `TestRepo_NoAimodeImport`、`TestAgentcore_NoProductImports` |
 | agentcore risk/approve | Classify / Confirm（AG-2…11 支撑） | `TestClassify_Read`、`TestClassify_GitRead`、`TestClassify_GitWrite`、`TestClassify_ChainedDestructiveNotRead`、`TestClassify_PipeToShellHigh`、`TestConfirm_ReadAutoApproves`、`TestClassify_Low` |
@@ -1132,6 +1134,19 @@ aissh hostA                    # 无 --save
 | V* | 传输收尾 / 可取消 / ZEOF / ZFIN / send put 100% | `TestSession_Wait_TeardownAfterDone`、`TestSession_Wait_TeardownTimeout`、`TestSession_Wait_TeardownAfterZFINWithPrefix`、`TestSession_Wait_TeardownChainTimeout`、`TestSession_Wait_SendTeardownAfterUpload`、`TestZModem_ResyncSkipsPrefix`、`TestZModemReceive_ZEOFOffsetMismatch`、`TestBlockBuffer_CloseLargeSlowReader`、`TestZModemTransfer_FinishingPhase`、`TestZModemTransfer_PutWaitAfterProgress100`、`TestPTYZModemErrHint_TeardownTimeout`、`TestTransferProgress_SFTPClosingPhase`、`TestProcessForwardStdin_TransferCtrlC`、`TestSession_Wait_ContextCancelAborts`、`TestCopyWithContext_CancelDuringBlockedRead` |
 | EX* | AI 实验门禁（EX1–EX3 config；EX4+ opsai） | `TestAIExperimental_*`、`TestOpsAI_ExperimentalDisabled`、`TestAgentcore_NoProductImports` |
 | OA* | Ops AI Agent `ai` / `opsai` | `TestOpsAI_*`、`TestAissh_AISubtreeRemoved`、`TestMetaScanner_BangBangForwardsPTY`、`TestExecute_AIMetaUnknownHint` |
+
+### KP* 明细（`aitkeep` / 包 `keepalive`）
+
+| ID | 验收行为 | 自动化测试 |
+|----|----------|------------|
+| KP1 | `GET /ping` 为 `pong`，其它请求 404 | `TestPing_PongAndNotFound` |
+| KP2 | CPU/字节率在采样周期内按比例暂停，暂停不计入 sustain；内存软限制不暂停；设备 `%util` 在本进程无 IO 时不杀 | `TestThrottlePause_FitsSample`、`TestDecide_ThrottleThenKill`、`TestDecide_MemoryDoesNotThrottle`、`TestDecide_IOUtilIgnoresIdleProcess` |
+| KP3 | 非 0 退出会重启，0 不重启；预算与稳定重置；磁盘仍超限不重启；遍历触顶视为超限；退避睡眠可取消 | `TestWatch_AbnormalRestartsCleanExitDoesNot`、`TestWatch_BudgetAndStableReset`、`TestWatch_DiskStillOverDoesNotRestart`、`TestWatch_DiskPercentStillOverDoesNotRestart`、`TestDirUsage_BudgetIsOver`、`TestWatch_SleepHonorsCancel` |
+| KP4 | 同一 AppRoot 第二次 `serve` 返回 `ErrAlreadyRunning`；管道名随 AppRoot 变化 | `TestAcquire_SecondFails`、`TestPipeName_DependsOnRoot` |
+| KP5 | `cpu.max` 允许大于 1 核；`memory.max` / `io.max` 写入；Windows `cpuRateFromCores` 在超过整机 100% 时拒绝 | `TestWriteCPUMax_AboveOneCore`、`TestWriteCPUMax_FakeSysfs`、`TestWriteIOMax_AndMemoryMax`、`TestCPURateFromCores_AboveMachine` |
+| KP6 | 无参 help；`serve` 取消后退出；未运行 `status` 为 `ErrDaemonDown`；运行中的 status 含采样；监听失败返回错误 | `TestCLI_NoArgsHelp`、`TestServe_CancelReturns`、`TestCLI_StatusDaemonDown`、`TestFormatStatusLine_Samples`、`TestServe_StatusIncludesMockSample`、`TestServe_BadListen` |
+| KP7 | manifest 含 `"binary": "aitkeep"`；官方插件名含 `keep`；release stub 含 `aitkeep` 且可安装 | `TestCLI_Manifest`、`TestDiscover_OnceCached`、`TestPlanInstall_AllOfficial`、`TestWriteBundleTree_IncludesKeep`、`TestExecute_InstallKeep` |
+| KP8 | `add`/`remove` 读写 yaml；非法名字 `ErrBadName`；调和不重启未变更 unit；过期代际不能把新 unit 写成 stopped | `TestCLI_AddRemove`、`TestUpsert_RoundTrip`、`TestReconcile_LeavesUnchanged`、`TestReconcile_StaleGenerationKeepsRunning` |
 
 ## 索引
 

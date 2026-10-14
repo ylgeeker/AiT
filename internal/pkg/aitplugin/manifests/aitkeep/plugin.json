@@ -1,0 +1,21 @@
+{
+  "apiVersion": 1,
+  "name": "keep",
+  "binary": "aitkeep",
+  "short": "Keep hosted processes alive and within resource limits",
+  "order": 50,
+  "usage": "keep [command]",
+  "flags": [
+    {
+      "name": "help",
+      "short": "h",
+      "type": "bool",
+      "help": "help for keep"
+    }
+  ],
+  "examples": [
+    "keep serve",
+    "keep status",
+    "keep add --name demo -- sleep 3600"
+  ]
+}

@@ -42,7 +42,7 @@ func TestPlanInstall_AllOfficial(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(plan.Tools) != 4 {
+	if len(plan.Tools) != 5 {
 		t.Fatalf("tools=%v", plan.Tools)
 	}
 }
@@ -185,6 +185,38 @@ func TestApplyBundle_PartialInstall(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(installRoot, "aitlog")); !os.IsNotExist(err) {
 		t.Fatalf("ailog should not be installed: %v", err)
+	}
+}
+
+func TestExecute_InstallKeep(t *testing.T) {
+	root := t.TempDir()
+	resetDiscoverHooks(t)
+	aitplugin.SetInstallDirsForTest([]string{root})
+
+	srv := testrelease.NewServer(t, "v0.9.0")
+	t.Cleanup(srv.Close)
+
+	var out bytes.Buffer
+	err := Execute(context.Background(), Options{
+		BaseURL:     srv.URL,
+		InstallRoot: root,
+		UserAgent:   "test",
+	}, Request{Action: ActionInstall, Names: []string{"keep"}}, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "installed keep ->") {
+		t.Fatalf("out=%q", out.String())
+	}
+	if _, err := os.Stat(filepath.Join(root, "plugins", "keep", "aitkeep")); err != nil {
+		t.Fatal(err)
+	}
+	manifest, err := os.ReadFile(filepath.Join(root, "plugins", "keep", "plugin.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(manifest), `"binary": "aitkeep"`) {
+		t.Fatalf("manifest=%s", manifest)
 	}
 }
 

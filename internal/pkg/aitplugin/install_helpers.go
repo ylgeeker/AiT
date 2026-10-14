@@ -32,7 +32,7 @@ func IsManageCommand(name string) bool {
 	return ok
 }
 
-// OfficialPluginNames returns sorted official plugin command names (host, img, log, ssh).
+// OfficialPluginNames returns sorted official plugin command names (host, img, keep, log, ssh).
 // The returned slice is a new copy.
 func OfficialPluginNames() []string {
 	names := make([]string, 0, len(BuiltinBinaryNames))

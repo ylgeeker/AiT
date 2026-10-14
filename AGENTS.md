@@ -1,11 +1,11 @@
 # AiT — Agent orientation
 
-**AiT** is a Go **toolbox** (module `github.com/os-artificer/AiT`). Shipped tools: **`ait`** (Agent interaction entry + toolbox shell), **`aissh`** (SSH client with sessions, SFTP/ZMODEM transfer; **no AI**), **`aiimg`**, **`ailog`**, and **`aihost`**. Layout follows [golang-standards/project-layout](https://github.com/golang-standards/project-layout).
+**AiT** is a Go **toolbox** (module `github.com/os-artificer/AiT`). Shipped tools: **`ait`** (Agent interaction entry + toolbox shell), **`aissh`** (SSH client with sessions, SFTP/ZMODEM transfer; **no AI**), **`aiimg`**, **`ailog`**, **`aihost`**, and **`aitkeep`** (process supervisor; plugin command `keep`). Layout follows [golang-standards/project-layout](https://github.com/golang-standards/project-layout).
 
 ## Build and test
 
 ```bash
-make build       # → bin/ait, bin/aissh, bin/aiimg, bin/ailog, bin/aihost (+ bin/plugins/*)
+make build       # → bin/ait, bin/aissh, bin/aiimg, bin/ailog, bin/aihost, bin/aitkeep (+ bin/plugins/*)
 make test        # go test ./...
 make vet         # go vet ./...
 make fmt         # go fmt ./...
@@ -18,6 +18,7 @@ make test-e2e-mock   # GitHub CI full e2e against testenv-mock (`AIT_TEST_USE_MO
 ./bin/aiimg        # run image metadata tool
 ./bin/ailog        # run log viewer tool
 ./bin/aihost       # run host monitor
+./bin/aitkeep      # supervise processes (plugin command: keep)
 ```
 
 Requires **Go 1.25+** (see `go.mod`). Windows cross-compile: `GOOS=windows GOARCH=amd64 go build -o bin/aissh.exe ./cmd/aissh`.
@@ -34,8 +35,9 @@ Requires **Go 1.25+** (see `go.mod`). Windows cross-compile: `GOOS=windows GOARC
 - **Image metadata (`aiimg`)**: EXIF extract via `internal/pkg/imgmeta`; reverse geocode via `internal/pkg/geocode` (Nominatim)
 - **System logs (`ailog`)**: view/search via `internal/pkg/logsrc` (native tools + builtin fallbacks) and less-like paging via `internal/pkg/pager`
 - **Host monitor (`aihost`)**: live multi-panel dashboard via Bubble Tea (header: USER/OS/CPU/MEM/KERNEL + datetime; wraps on narrow terminals; panels: centered title, faint percents, Braille curves (DISK/NET dual-rate), `HH:MM:SS` X-axis; TCP/UDP/ARP/ICMP protocol row; PROC samples all processes by default and fills the window height with PEER listen/remote and LOG (latest system-log line) columns; `/` fuzzy search + Enter detail overlay with matching logs and a full peer list; `x` kill with SIGTERM confirm / optional SIGKILL); metrics via `internal/pkg/hoststats` + panels in `internal/pkg/hostdash`. Runs on Linux, macOS, and Windows (`CGO_ENABLED=0`); protocol/log backends are OS-specific (see [docs/tools/aihost.md](docs/tools/aihost.md)).
+- **Process supervisor (`aitkeep` / `ait keep`)**: `GET /ping` returns `pong`; `serve` supervises units in `keepalive.yaml` with CPU, memory, disk-space, and disk-IO limits (see [docs/tools/aitkeep.md](docs/tools/aitkeep.md)). CLI and daemon share `internal/pkg/keepalive`.
 
-Project structure: [`docs/architecture.md`](docs/architecture.md). ait: [`docs/tools/ait.md`](docs/tools/ait.md), [`docs/tools/ait-internals.md`](docs/tools/ait-internals.md). aissh: [`docs/tools/aissh.md`](docs/tools/aissh.md), [`docs/tools/aissh-internals.md`](docs/tools/aissh-internals.md). ai: [`docs/tools/ai.md`](docs/tools/ai.md), [`docs/tools/ai-internals.md`](docs/tools/ai-internals.md). aiimg: [`docs/tools/aiimg.md`](docs/tools/aiimg.md), [`docs/tools/aiimg-internals.md`](docs/tools/aiimg-internals.md). ailog: [`docs/tools/ailog.md`](docs/tools/ailog.md), [`docs/tools/ailog-internals.md`](docs/tools/ailog-internals.md). aihost: [`docs/tools/aihost.md`](docs/tools/aihost.md), [`docs/tools/aihost-internals.md`](docs/tools/aihost-internals.md). Example config: [`configs/ait.example.yaml`](configs/ait.example.yaml). Archive Cursor plans to `docs/<kebab-case>.md` per [`docs-exec-plans.mdc`](.cursor/rules/docs-exec-plans.mdc).
+Project structure: [`docs/architecture.md`](docs/architecture.md). ait: [`docs/tools/ait.md`](docs/tools/ait.md), [`docs/tools/ait-internals.md`](docs/tools/ait-internals.md). aissh: [`docs/tools/aissh.md`](docs/tools/aissh.md), [`docs/tools/aissh-internals.md`](docs/tools/aissh-internals.md). ai: [`docs/tools/ai.md`](docs/tools/ai.md), [`docs/tools/ai-internals.md`](docs/tools/ai-internals.md). aiimg: [`docs/tools/aiimg.md`](docs/tools/aiimg.md), [`docs/tools/aiimg-internals.md`](docs/tools/aiimg-internals.md). ailog: [`docs/tools/ailog.md`](docs/tools/ailog.md), [`docs/tools/ailog-internals.md`](docs/tools/ailog-internals.md). aihost: [`docs/tools/aihost.md`](docs/tools/aihost.md), [`docs/tools/aihost-internals.md`](docs/tools/aihost-internals.md). aitkeep: [`docs/tools/aitkeep.md`](docs/tools/aitkeep.md), [`docs/tools/aitkeep-internals.md`](docs/tools/aitkeep-internals.md). Example config: [`configs/ait.example.yaml`](configs/ait.example.yaml). Archive Cursor plans to `docs/<kebab-case>.md` per [`docs-exec-plans.mdc`](.cursor/rules/docs-exec-plans.mdc).
 
 ## Where code lives
 
@@ -46,6 +48,7 @@ Project structure: [`docs/architecture.md`](docs/architecture.md). ait: [`docs/t
 | `cmd/aiimg/main.go` | Thin `main` — delegates to `aiimg.Run` |
 | `cmd/ailog/main.go` | Thin `main` — delegates to `ailog.Run` |
 | `cmd/aihost/main.go` | Thin `main` — delegates to `aihost.Run` |
+| `cmd/keep/main.go` | Thin `main` — delegates to `keepalive.Run` (binary `aitkeep`) |
 | `internal/ait/` | `ait` entry (package **`ait`**: `Run`, `Execute`, router); **`ait/agent`** Loop + admin CLI |
 | `internal/pkg/aitplugin/` | Plugin Manifest v1, Discover (`plugins/<binary>/`), embedded SSOT manifests |
 | `internal/pkg/aitrelease/` | GitHub Release fetch/extract/apply for REPL `install` / `update` / `upgrade` |
@@ -61,7 +64,8 @@ Project structure: [`docs/architecture.md`](docs/architecture.md). ait: [`docs/t
 | `internal/pkg/hoststats/` | Host CPU/mem/disk/net/process sampling and Section formatters |
 | `internal/pkg/hostdash/` | aihost dashboard Panel primitives (sparklines) |
 | `internal/pkg/pager/` | Less-like interactive pager |
-| `internal/pkg/buildinfo/` | Shared version string formatting (aissh/ai/aiimg/ailog/aihost) |
+| `internal/pkg/buildinfo/` | Shared version string formatting (aissh/ai/aiimg/ailog/aihost/aitkeep) |
+| `internal/pkg/keepalive/` | `aitkeep` daemon and CLI (package **`keepalive`**: ping, supervisor, `serve`/`add`/`status`) |
 | `internal/pkg/imgmeta/` | Image EXIF extract + human/JSON formatters |
 | `internal/pkg/geocode/` | Nominatim reverse geocode HTTP client |
 | `internal/ssh/` | CLI entry (Go package **`aissh`**: `Run`, `ExitCode`, `Execute`, `NewManager`, Cobra root); subpackages below |

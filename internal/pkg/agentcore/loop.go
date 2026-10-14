@@ -110,7 +110,7 @@ func runAgentSteps(ctx context.Context, cfg Config, st *sessionState, question s
 	maxSteps := cfg.MaxAgentSteps()
 	parseState := newAgentParseRetryState(st.history)
 
-	for step := 0; step < maxSteps; step++ {
+	for step := range maxSteps {
 		emit(cfg, Event{Kind: EventPlanUpdated, Detail: formatPlanStep(step+1, maxSteps, cfg)})
 		reply, thinking, updated, chatErr := cfg.AI.ChatAgent(ctx, st.history, userMsg, env)
 		if chatErr != nil {

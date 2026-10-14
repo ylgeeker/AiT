@@ -24,7 +24,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/os-artificer/AiT/internal/pkg/aitplugin"
@@ -37,9 +36,6 @@ func NewServer(t *testing.T, tag string) *httptest.Server {
 
 	assetName, archiveBytes, err := loadReleaseArchive(ServeOptions{Tag: tag})
 	if err != nil {
-		if strings.Contains(err.Error(), "stub bundle on windows") {
-			t.Skip(err.Error())
-		}
 		t.Fatal(err)
 	}
 
@@ -59,15 +55,19 @@ func AssetFileName(tag, goos, goarch string) string {
 }
 
 // WriteBundleTree writes a minimal flat-root release bundle into dir.
+// Every official plugin binary from aitplugin.BuiltinBinaryNames is included, with its embedded manifest.
+// aisshBody and ailogBody replace the stub bytes for those two binaries. Other binaries use "<name>-bin".
 func WriteBundleTree(dir, aisshBody, ailogBody string) error {
-	bodies := map[string]string{
-		"aitssh":  aisshBody,
-		"aitlog":  ailogBody,
-		"aitimg":  "aitimg-bin",
-		"aithost": "aithost-bin",
+	overrides := map[string]string{
+		toolname.AITSSH: aisshBody,
+		toolname.AITLog: ailogBody,
 	}
-	for tool, body := range bodies {
-		if err := writeBundleTool(dir, tool, body); err != nil {
+	for _, plugin := range aitplugin.BuiltinBinaryNames {
+		body := plugin.Binary + "-bin"
+		if custom, ok := overrides[plugin.Binary]; ok {
+			body = custom
+		}
+		if err := writeBundleTool(dir, plugin.Binary, body); err != nil {
 			return err
 		}
 	}

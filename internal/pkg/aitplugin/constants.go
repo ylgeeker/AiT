@@ -51,6 +51,7 @@ var BuiltinBinaryNames = []struct {
 	{Binary: toolname.AITLog, Name: NameLog},
 	{Binary: toolname.AITImg, Name: NameImg},
 	{Binary: toolname.AITHost, Name: NameHost},
+	{Binary: toolname.AITKeep, Name: NameKeep},
 }
 
 // LegacyPluginNames maps retired command/binary tokens to current plugin command names.
@@ -63,6 +64,7 @@ var LegacyPluginNames = map[string]string{
 	toolname.AITLog:  NameLog,
 	toolname.AITImg:  NameImg,
 	toolname.AITHost: NameHost,
+	toolname.AITKeep: NameKeep,
 }
 
 const (
@@ -97,6 +99,8 @@ const (
 	NameImg = toolname.Img
 	// NameHost is the ait plugin command name for the aithost binary.
 	NameHost = toolname.Host
+	// NameKeep is the ait plugin command name for the aitkeep binary.
+	NameKeep = toolname.Keep
 
 	pluginJSONName  = "plugin.json"
 	pluginsDirName  = "plugins"

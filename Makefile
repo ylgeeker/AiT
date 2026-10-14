@@ -1,6 +1,6 @@
 .PHONY: all build build-cross install install-git-hooks release-archives test vet fmt clean test-cross test-e2e test-e2e-smoke test-e2e-mock dupl check-generate nestscan
 
-TOOLS     := aitssh aitimg aitlog aithost ait
+TOOLS     := aitssh aitimg aitlog aithost aitkeep ait
 BUILD_DIR := bin
 
 MODULE := github.com/os-artificer/AiT
@@ -15,7 +15,7 @@ CROSS_PLATFORMS := \
 	darwin/arm64 \
 	windows/amd64
 
-PLUGIN_TOOLS := aitssh aitimg aitlog aithost
+PLUGIN_TOOLS := aitssh aitimg aitlog aithost aitkeep
 
 tool_version = $(shell cat $(1) 2>/dev/null | tr -d ' \n')
 tool_ldflags = -X $(2).version=$(call tool_version,$(1)) -X $(2).gitCommit=$(GIT_COMMIT) -X $(2).buildDate=$(BUILD_DATE)
@@ -31,6 +31,7 @@ build:
 			aitimg) verfile=internal/img/version/VERSION; ldpkg=$(MODULE)/internal/img/version; main=./cmd/img ;; \
 			aitlog) verfile=internal/log/version/VERSION; ldpkg=$(MODULE)/internal/log/version; main=./cmd/log ;; \
 			aithost) verfile=internal/host/version/VERSION; ldpkg=$(MODULE)/internal/host/version; main=./cmd/host ;; \
+			aitkeep) verfile=internal/pkg/keepalive/VERSION; ldpkg=$(MODULE)/internal/pkg/keepalive; main=./cmd/keep ;; \
 			ait) verfile=internal/ait/version/VERSION; ldpkg=$(MODULE)/internal/ait/version; main=./cmd/ait ;; \
 			*) echo "unknown tool $$tool"; exit 1 ;; \
 		esac; \
@@ -57,6 +58,7 @@ build-cross:
 			aitimg) verfile=internal/img/version/VERSION; ldpkg=$(MODULE)/internal/img/version; main=./cmd/img ;; \
 			aitlog) verfile=internal/log/version/VERSION; ldpkg=$(MODULE)/internal/log/version; main=./cmd/log ;; \
 			aithost) verfile=internal/host/version/VERSION; ldpkg=$(MODULE)/internal/host/version; main=./cmd/host ;; \
+			aitkeep) verfile=internal/pkg/keepalive/VERSION; ldpkg=$(MODULE)/internal/pkg/keepalive; main=./cmd/keep ;; \
 			ait) verfile=internal/ait/version/VERSION; ldpkg=$(MODULE)/internal/ait/version; main=./cmd/ait ;; \
 			*) echo "unknown tool $$tool"; exit 1 ;; \
 		esac; \
@@ -91,6 +93,7 @@ endif
 				aitimg) ldpkg=$(MODULE)/internal/img/version; main=./cmd/img ;; \
 				aitlog) ldpkg=$(MODULE)/internal/log/version; main=./cmd/log ;; \
 				aithost) ldpkg=$(MODULE)/internal/host/version; main=./cmd/host ;; \
+				aitkeep) ldpkg=$(MODULE)/internal/pkg/keepalive; main=./cmd/keep ;; \
 				ait) ldpkg=$(MODULE)/internal/ait/version; main=./cmd/ait ;; \
 				*) echo "unknown tool $$tool"; exit 1 ;; \
 			esac; \
@@ -121,6 +124,7 @@ install:
 			aitimg) verfile=internal/img/version/VERSION; ldpkg=$(MODULE)/internal/img/version; main=./cmd/img ;; \
 			aitlog) verfile=internal/log/version/VERSION; ldpkg=$(MODULE)/internal/log/version; main=./cmd/log ;; \
 			aithost) verfile=internal/host/version/VERSION; ldpkg=$(MODULE)/internal/host/version; main=./cmd/host ;; \
+			aitkeep) verfile=internal/pkg/keepalive/VERSION; ldpkg=$(MODULE)/internal/pkg/keepalive; main=./cmd/keep ;; \
 			ait) verfile=internal/ait/version/VERSION; ldpkg=$(MODULE)/internal/ait/version; main=./cmd/ait ;; \
 			*) echo "unknown tool $$tool"; exit 1 ;; \
 		esac; \

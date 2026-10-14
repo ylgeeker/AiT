@@ -9,6 +9,7 @@
 - [`aiimg`](cmd/aiimg) — image metadata extractor (EXIF, GPS, reverse-geocoded address). Guide: [aiimg](docs/tools/aiimg.md).
 - [`ailog`](cmd/ailog) — system log viewer and search (Linux/macOS/Windows). Guide: [ailog](docs/tools/ailog.md).
 - [`aihost`](cmd/aihost) — live host CPU/mem/disk/net/process monitor. Guide: [aihost](docs/tools/aihost.md).
+- [`aitkeep`](cmd/keep) — process supervisor (`keep` plugin command; `GET /ping` → `pong`). Guide: [aitkeep](docs/tools/aitkeep.md).
 
 > **Note:** The standalone `ai` binary was removed. Use **`ait`** / **`ait agent`** for the Agent Loop and **`ait agent connect`**, **`ait agent model list`**, etc. See [ai](docs/tools/ai.md) for migration.
 
@@ -65,7 +66,7 @@ ait --help
 
 Ensure `$(go env GOPATH)/bin` is on your PATH.
 
-### Install official plugins (`aissh`, `ai`, `aiimg`, `ailog`, `aihost`)
+### Install official plugins (`aissh`, `ai`, `aiimg`, `ailog`, `aihost`, `keep`)
 
 After a [GitHub Release](https://github.com/os-artificer/AiT/releases) is available, use the **ait** REPL (no separate `go install` for plugins):
 
@@ -92,7 +93,7 @@ make build
 ./bin/ait --help
 ```
 
-For local development, `make build` also produces `bin/aissh`, `bin/ai`, `bin/aiimg`, `bin/ailog`, and `bin/aihost`. To install plugins into `bin/` without a Release, run `make install` or use `ait> install` once a Release exists. See [CONTRIBUTING.md](CONTRIBUTING.md).
+For local development, `make build` also produces `bin/aissh`, `bin/ai`, `bin/aiimg`, `bin/ailog`, `bin/aihost`, and `bin/aitkeep`. To install plugins into `bin/` without a Release, run `make install` or use `ait> install` once a Release exists. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Documentation
 
@@ -109,6 +110,8 @@ For local development, `make build` also produces `bin/aissh`, `bin/ai`, `bin/ai
 | ailog guide | [docs/tools/ailog.md](docs/tools/ailog.md) |
 | aihost internals | [docs/tools/aihost-internals.md](docs/tools/aihost-internals.md) |
 | aihost guide | [docs/tools/aihost.md](docs/tools/aihost.md) |
+| aitkeep internals | [docs/tools/aitkeep-internals.md](docs/tools/aitkeep-internals.md) |
+| aitkeep guide | [docs/tools/aitkeep.md](docs/tools/aitkeep.md) |
 | Python E2E tests | [tests/README.md](tests/README.md) |
 | In-repo SSH/HTTP mock | [docs/testenv-mock.md](docs/testenv-mock.md) |
 | Contributing | [CONTRIBUTING.md](CONTRIBUTING.md) |

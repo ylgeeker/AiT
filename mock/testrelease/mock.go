@@ -92,10 +92,6 @@ func loadReleaseArchive(opts ServeOptions) (assetName string, data []byte, err e
 		return assetName, data, nil
 	}
 
-	if strings.HasSuffix(assetName, ".zip") {
-		return "", nil, fmt.Errorf("stub bundle on windows requires -archive (zip)")
-	}
-
 	dir, err := os.MkdirTemp("", "ait-testrelease-*")
 	if err != nil {
 		return "", nil, err
@@ -107,7 +103,12 @@ func loadReleaseArchive(opts ServeOptions) (assetName string, data []byte, err e
 	}
 
 	archivePath := filepath.Join(os.TempDir(), "ait-testrelease-"+assetName)
-	if err := PackTarGzDir(dir, archivePath); err != nil {
+	if strings.HasSuffix(assetName, ".zip") {
+		err = PackZipDir(dir, archivePath)
+	} else {
+		err = PackTarGzDir(dir, archivePath)
+	}
+	if err != nil {
 		return "", nil, err
 	}
 	defer os.Remove(archivePath)

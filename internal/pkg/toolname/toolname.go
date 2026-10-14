@@ -29,6 +29,8 @@ const (
 	Img = "img"
 	// Host is the ait host monitor plugin command name.
 	Host = "host"
+	// Keep is the ait keepalive plugin command name.
+	Keep = "keep"
 
 	// Agent is the ait agent admin subcommand (ait agent …).
 	Agent = "agent"
@@ -41,6 +43,8 @@ const (
 	AITLog  = "aitlog"
 	AITImg  = "aitimg"
 	AITHost = "aithost"
+	// AITKeep is the shipped keepalive binary basename.
+	AITKeep = "aitkeep"
 
 	// MetaPrefix is the in-session SSH meta opener without a trailing space (!ait).
 	MetaPrefix = "!ait"
@@ -101,6 +105,11 @@ func HostCLI(subcmd string) string {
 // ImgCLI returns the user-visible aiimg prefix: "aitimg" or "img" when dispatched via ait, plus optional subcmd.
 func ImgCLI(subcmd string) string {
 	return PluginCLI(AITImg, Img, subcmd)
+}
+
+// KeepCLI returns the user-visible keepalive prefix: "aitkeep" or "keep" when dispatched via ait, plus optional subcmd.
+func KeepCLI(subcmd string) string {
+	return PluginCLI(AITKeep, Keep, subcmd)
 }
 
 // MetaLine returns the in-session SSH meta prefix "!ait" or "!ait <rest>" when rest is non-empty.
