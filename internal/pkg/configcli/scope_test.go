@@ -55,7 +55,7 @@ func TestRejectSSHConfigKey(t *testing.T) {
 		t.Fatal("want reject")
 	}
 	s := err.Error()
-	if !strings.Contains(s, "key belongs to aissh config") {
+	if !strings.Contains(s, "key belongs to "+toolname.CLI("config")) {
 		t.Fatalf("summary: %q", s)
 	}
 	if !strings.Contains(s, "Try:") {

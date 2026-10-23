@@ -36,11 +36,11 @@ const (
 )
 
 var (
-	usageLine     = toolname.AICLI("ollama status")
-	exampleStatus = toolname.AICLI("ollama status")
+	usageLine     = toolname.AgentCLI("ollama status")
+	exampleStatus = toolname.AgentCLI("ollama status")
 )
 
-// WriteHelp prints ai ollama status --help to w.
+// WriteHelp prints ait agent ollama status --help to w.
 func WriteHelp(w io.Writer) error {
 	b := pkghelpdoc.NewBody(w)
 	if err := b.WriteIntro(introMain, introNote); err != nil {

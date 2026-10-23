@@ -36,9 +36,9 @@ var aiNote = "Experimental (on by default): disable with ai.experimental.enabled
 	"With ai.tiered.enabled, simple prompts use local Ollama. " +
 	"Interactive agent loop: " + toolname.AITCLI("agent") + "."
 
-var aiUsageLine = toolname.AICLI("[subcommand]")
+var aiUsageLine = toolname.AgentCLI("[subcommand]")
 
-// WriteAIHelp prints ai --help to w.
+// WriteAIHelp prints ait agent --help to w.
 func WriteAIHelp(w io.Writer) error {
 	b := pkghelpdoc.NewBody(w)
 	if err := b.WriteIntro(pkghelpdoc.AIIntroLocal, aiNote); err != nil {
@@ -60,21 +60,22 @@ func WriteAIHelp(w io.Writer) error {
 		"There is no one-shot ask/agent subcommand on "+toolname.Agent+"; use the loop.\n"); err != nil {
 		return err
 	}
-	if err := b.WriteSection("Remote", "Use "+toolname.AICLI("connect <destination>")+" (or "+toolname.AICLI("<destination>")+") for a remote Agent session over SSH. In-session !! / !ait ai are not available in "+toolname.AITSSH+".\n"); err != nil {
+	if err := b.WriteSection("Remote", "Use "+toolname.AgentCLI("connect <destination>")+
+		" (or "+toolname.AgentCLI("<destination>")+") for a remote Agent session over SSH.\n"); err != nil {
 		return err
 	}
 	if err := b.WriteExamples(
 		toolname.AITCLI("agent"),
-		toolname.AICLI("model list"),
-		toolname.AICLI("connect user@host"),
+		toolname.AgentCLI("model list"),
+		toolname.AgentCLI("connect user@host"),
 		pkghelpdoc.ExampleAIOllamaStatus,
 		pkghelpdoc.ExampleAIProviderEnableDeepseek,
 		pkghelpdoc.ExampleAIOllamaSetupYes,
-		toolname.AICLI("--model minimax"),
+		toolname.AgentCLI("--model minimax"),
 	); err != nil {
 		return err
 	}
-	return b.Finish("ai")
+	return b.Finish(toolname.AgentCLI(""))
 }
 
 func formatAISubcommands() string {

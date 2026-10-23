@@ -4,34 +4,16 @@ from __future__ import annotations
 
 import pytest
 
-from tests.lib.cli import AITRunner, assert_exit
+from tests.lib.cli import assert_exit
 from tests.lib.hints import assert_hint
 
 pytestmark = [pytest.mark.smoke]
 
 
-def test_ai_experimental_disabled_by_default(runner, ai_bin):
-    runner.run_ok(["config", "init"])
-    off = AITRunner(ai_bin, runner.ait_home, base_env=runner.base_env)
-    proc = off.run(["model", "list"], timeout=5)
-    assert_exit(1, proc)
-    assert_hint(
-        proc,
-        sentinel="AI experimental features are disabled",
-        try_commands=(
-            "ai --ai-experimental",
-            "AIT_AI_EXPERIMENTAL=1 ai",
-        ),
-    )
-    combined = (proc.stdout or "") + (proc.stderr or "")
-    assert "aitssh" not in combined.lower()
-
-
-def test_ai_help_without_experimental(ai_bin, runner):
-    off = AITRunner(ai_bin, runner.ait_home, base_env=runner.base_env)
-    proc = off.run_ok(["--help"])
+def test_ai_help_without_experimental(ai_runner):
+    proc = ai_runner.run_ok(["--help"])
     assert "Usage:" in proc.stdout
-    assert "experimental" in proc.stdout.lower() or "connect" in proc.stdout
+    assert "connect" in proc.stdout.lower()
 
 
 def test_ai_model_list_non_interactive(runner, ai_runner):

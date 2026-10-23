@@ -19,12 +19,14 @@ package openssh
 import (
 	"fmt"
 	"strings"
+
+	"github.com/os-artificer/AiT/internal/pkg/toolname"
 )
 
 func stepParseTransferArgv(s *Spec, argv []string, i int, cmdLabel, session string, positionals []string) (next int, outSession string, outPos []string, err error) {
 	arg := argv[i]
 	if arg == "--" {
-		return i, session, positionals, fmt.Errorf("-- is not supported for aissh %s", cmdLabel)
+		return i, session, positionals, fmt.Errorf("-- is not supported for %s", toolname.CLI(cmdLabel))
 	}
 	if !strings.HasPrefix(arg, "-") {
 		return i, session, append(positionals, arg), nil

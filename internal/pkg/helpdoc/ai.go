@@ -20,15 +20,15 @@ import (
 	"github.com/os-artificer/AiT/internal/pkg/toolname"
 )
 
-// AI help strings — single source for ai plugin, ollama, and in-REPL help.
+// AI help strings — single source for ait agent, ollama, and in-REPL help.
 var (
-	ExampleAIProviderEnableDeepseek  = toolname.AICLI("provider enable deepseek")
-	ExampleAIProviderEnableOllamaYes = toolname.AICLI("provider enable ollama --yes")
-	ExampleAIProviderDisableMinimax  = toolname.AICLI("provider disable minimax")
-	ExampleAIOllamaStatus            = toolname.AICLI("ollama status")
-	ExampleAIOllamaSetupYes          = toolname.AICLI("ollama setup --yes")
-	ExampleAIOllamaStartWait         = toolname.AICLI("ollama start --wait")
-	ExampleAIOllamaDisableStop       = toolname.AICLI("ollama disable --stop")
+	ExampleAIProviderEnableDeepseek  = toolname.AgentCLI("provider enable deepseek")
+	ExampleAIProviderEnableOllamaYes = toolname.AgentCLI("provider enable ollama --yes")
+	ExampleAIProviderDisableMinimax  = toolname.AgentCLI("provider disable minimax")
+	ExampleAIOllamaStatus            = toolname.AgentCLI("ollama status")
+	ExampleAIOllamaSetupYes          = toolname.AgentCLI("ollama setup --yes")
+	ExampleAIOllamaStartWait         = toolname.AgentCLI("ollama start --wait")
+	ExampleAIOllamaDisableStop       = toolname.AgentCLI("ollama disable --stop")
 
 	ExampleMetaSuspend = toolname.MetaLine("suspend")
 	ExampleMetaLocal   = toolname.MetaLine("local")
@@ -36,8 +36,8 @@ var (
 	AIHelpFlagsBody = "  --model   Override AI provider for this session (uses provider model/base_url from config)\n"
 
 	AIHelpTieredRoutingBody = "When ai.tiered.enabled in config.yaml, short first-turn prompts use local Ollama; " +
-		"longer or complex prompts use cloud providers. Setup: " + toolname.AICLI("ollama setup") +
-		". List: " + toolname.AICLI("model list") + "\n"
+		"longer or complex prompts use cloud providers. Setup: " + toolname.AgentCLI("ollama setup") +
+		". List: " + toolname.AgentCLI("model list") + "\n"
 
 	AIIntroLocal = "Ops AI Agent plugin (experimental, on by default): model list, " +
 		"provider/ollama, and remote connect. Interactive Agent Loop: " + toolname.AIT + " agent."

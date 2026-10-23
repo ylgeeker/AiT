@@ -9,9 +9,9 @@ Authoritative detail: [docs/tools/aissh-internals.md#package-layering](../../doc
 
 ## Call chain
 
-`cmd/aissh` → `internal/ssh` (package **`aissh`**: `Run`, `Execute`, `NewManager`) → `internal/ssh/<cmd>` (closed loop per subcommand) → `internal/pkg/*` (shared, no product subcommand ownership).
+`cmd/ssh` → `internal/ssh` (package **`aissh`**: `Run`, `Execute`, `NewManager`) → `internal/ssh/<cmd>` (closed loop per subcommand) → `internal/pkg/*` (shared, no product subcommand ownership).
 
-**Directory vs package:** `internal/ssh/` uses Go package `aissh` (binary/cmd name `aissh`; directory is short `ssh`). Registered subcommand dirs use package names matching Cobra (`shell`, `session`, …). **`internal/ssh/connect/`** is the SSH connect route package (not registered as a Cobra subcommand).
+**Directory vs package:** `internal/ssh/` uses Go package `aissh` (binary `aitssh`, plugin command `ssh`, `cmd/ssh`; directory is short `ssh`). Registered subcommand dirs use package names matching Cobra (`shell`, `session`, …). **`internal/ssh/connect/`** is the SSH connect route package (not registered as a Cobra subcommand).
 
 ## Subcommand package (`internal/ssh/<cmd>/`)
 
@@ -25,11 +25,11 @@ One package per top-level command owns: `Name`, `flags.go`, `parse.go`, `cmd.go`
 - Root: `registry.AttachRoot` in `internal/ssh/cli_root.go`; root help via `registry.RootHelpEntries()` / `pkg/helpdoc.WriteRootHelp`（[`registry/root_help.go`](internal/ssh/registry/root_help.go)）。
 - **Do not** hand-edit `AddCommand` lists for new top-level or nested commands.
 - New top-level: `internal/ssh/<cmd>/` + `_ "…/registry/all/imports.go"`.
-- Nested (`aissh config`, …): parent `<parent>/subregistry` + child `register.go` + `<parent>/registry/all/imports.go`. Ops AI admin commands live under **`internal/ait/agent`** (not `aissh`).
+- Nested (`aitssh config` / `ssh config`, …): parent `<parent>/subregistry` + child `register.go` + `<parent>/registry/all/imports.go`. Ops AI admin commands live under **`internal/ait/agent`** (not under `internal/ssh`).
 
 ## Package name = command name
 
-**Exception:** `internal/ssh/` root is package **`aissh`** (directory `ssh`, binary `aissh`). Otherwise directory/package = Cobra name (`shell`, `session`, `config/set`). **`internal/ssh/connect/`** is the connect route (not `registry.Register`). No `*cmd` package suffix. Agent loop kernel: **`internal/pkg/agentcore`** + **`internal/pkg/agentui`** + **`internal/pkg/agentops`** + **`internal/pkg/agentwire`**; **`internal/ait/agent`** wires admin CLI + connect; interactive Loop: **`internal/ait/loop`** via **`internal/ait/router`**. Plugin exec: **`internal/pkg/tooldispatch`**. **`internal/ait` must not import `internal/ssh`**, `internal/log`, `internal/host`, or `internal/img` (use `tooldispatch`). CLI `session`: `internal/ssh/session` (alias pkg session as `pkgsession`).
+**Exception:** `internal/ssh/` root is package **`aissh`** (directory `ssh`, binary `aitssh`, plugin `ssh`). Otherwise directory/package = Cobra name (`shell`, `session`, `config/set`). **`internal/ssh/connect/`** is the connect route (not `registry.Register`). No `*cmd` package suffix. Agent loop kernel: **`internal/pkg/agentcore`** + **`internal/pkg/agentui`** + **`internal/pkg/agentops`** + **`internal/pkg/agentwire`**; **`internal/ait/agent`** wires admin CLI + connect; interactive Loop: **`internal/ait/loop`** via **`internal/ait/router`**. Plugin exec: **`internal/pkg/tooldispatch`**. **`internal/ait` must not import `internal/ssh`**, `internal/log`, `internal/host`, or `internal/img` (use `tooldispatch`). CLI `session`: `internal/ssh/session` (alias pkg session as `pkgsession`).
 
 ## `ait` toolbox entry (`internal/ait/`)
 
@@ -37,7 +37,7 @@ One package per top-level command owns: `Name`, `flags.go`, `parse.go`, `cmd.go`
 - **`loop/`** — starts Agent Loop (`agent.RunLoop` wrapper).
 - **`dispatch/`** — top-level plugin execution (`tooldispatch`).
 - **`agent/`** — `ait agent` Cobra admin subtree (`connect`, `model`, `provider`, `ollama`, `config`).
-- Root package **`ait`** — `Run`, `Execute`, shell REPL, help; **no** standalone `cmd/ai` / `internal/opsai`.
+- Root package **`ait`** — `Run`, `Execute`, shell REPL, help; Agent Loop via `ait` / `ait agent` (**no** standalone `cmd/ai` binary).
 
 ## `helpdoc`
 
@@ -46,7 +46,7 @@ One package per top-level command owns: `Name`, `flags.go`, `parse.go`, `cmd.go`
 ## `clihints` (Try SSOT)
 
 - Shared errhint Try example lines: [`internal/pkg/clihints`](internal/pkg/clihints/try_lines.go).
-- `internal/ssh` and `internal/pkg/ssh/*` reference `clihints` constants; do not duplicate literals such as `aissh session --list`.
+- `internal/ssh` and `internal/pkg/ssh/*` reference `clihints` constants; do not duplicate literals such as `aitssh session --list`.
 
 ## `internal/pkg`
 

@@ -43,10 +43,10 @@ func wrapRemovedOneShotErr(args []string, err error) error {
 		return err
 	}
 	return errhint.WithTryMsg(
-		"unknown ai command",
+		"unknown agent command",
 		"One-shot ask/agent were removed; use the interactive Agent Loop.",
 		clihints.TryAitAgent(),
-		toolname.AICLI("connect user@host"),
-		toolname.AICLI("model list"),
+		toolname.AgentCLI("connect user@host"),
+		toolname.AgentCLI("model list"),
 	)
 }

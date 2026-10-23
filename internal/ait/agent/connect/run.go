@@ -67,9 +67,9 @@ func LooksLikeDestination(first string) bool {
 func Run(ctx context.Context, cfg *config.Config, aiClient *pkgai.Client, argv []string, exec deps.CLIExecutor) error {
 	if len(argv) == 0 {
 		return errhint.WithTryMsg("connect requires a destination",
-			"Pass an SSH destination after connect (or as the first ai argument).",
-			toolname.AICLI("connect user@host"),
-			toolname.AICLI("user@host"),
+			"Pass an SSH destination after connect (or as the first "+toolname.AgentCLI("")+" argument).",
+			toolname.AgentCLI("connect user@host"),
+			toolname.AgentCLI("user@host"),
 		)
 	}
 
@@ -78,15 +78,15 @@ func Run(ctx context.Context, cfg *config.Config, aiClient *pkgai.Client, argv [
 		return err
 	}
 	if spec.Tmux {
-		return errhint.WithTryMsg("--tmux is not supported for ai connect",
-			"ai connect opens an Agent session without tmux keep-alive.",
-			toolname.AICLI("connect user@host"),
+		return errhint.WithTryMsg("--tmux is not supported for "+toolname.AgentCLI("connect"),
+			toolname.AgentCLI("connect")+" opens an Agent session without tmux keep-alive.",
+			toolname.AgentCLI("connect user@host"),
 		)
 	}
 	if len(spec.RemoteCommand) > 0 {
-		return errhint.WithTryMsg("remote command is not supported for ai connect",
-			"ai connect runs an interactive Agent session only.",
-			toolname.AICLI("connect user@host"),
+		return errhint.WithTryMsg("remote command is not supported for "+toolname.AgentCLI("connect"),
+			toolname.AgentCLI("connect")+" runs an interactive Agent session only.",
+			toolname.AgentCLI("connect user@host"),
 		)
 	}
 
@@ -156,7 +156,7 @@ type ptyRemoteRunner struct {
 
 func (r *ptyRemoteRunner) Run(cmd string) error {
 	if r.stdin == nil {
-		return errhint.WithTryMsg("remote stdin not available", "", toolname.AICLI("connect user@host"))
+		return errhint.WithTryMsg("remote stdin not available", "", toolname.AgentCLI("connect user@host"))
 	}
 	_, err := io.WriteString(r.stdin, cmd+"\n")
 	return err

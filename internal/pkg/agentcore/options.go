@@ -77,7 +77,7 @@ type Config struct {
 }
 
 // DynamicRemote holds live remote session fields for optional hot connect/disconnect.
-// The shipped ai connect path sets static Config fields and does not wire Dynamic.
+// The shipped ait agent connect path sets static Config fields and does not wire Dynamic.
 type DynamicRemote struct {
 	mu sync.RWMutex
 

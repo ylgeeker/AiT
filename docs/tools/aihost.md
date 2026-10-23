@@ -1,22 +1,24 @@
 # aihost
 
-`aihost` is a cross-platform host monitor for CPU, memory, disk, network, protocols, and top processes.
+> **Names:** binary `aithost`, plugin command `host` (`ait host …`), Go package `aihost`.
+
+`aithost` (docs title **aihost**, plugin `host`) is a cross-platform host monitor for CPU, memory, disk, network, protocols, and top processes.
 
 ```bash
-make build   # → bin/aihost
-./bin/aihost --help
+make build   # → bin/aithost
+./bin/aithost --help
 ```
 
 ## Usage
 
 ```text
-aihost                         # live dashboard (TTY required)
-aihost top [flags]             # same dashboard
-aihost snapshot [--json]       # one-shot all metrics
-aihost cpu|mem|disk|net|proto  # one category
-aihost proc [--limit 10] [--sort cpu|mem|net|disk]
-aihost sources [--json]
-aihost version
+aithost                         # live dashboard (TTY required)
+aithost top [flags]             # same dashboard
+aithost snapshot [--json]       # one-shot all metrics
+aithost cpu|mem|disk|net|proto  # one category
+aithost proc [--limit 10] [--sort cpu|mem|net|disk]
+aithost sources [--json]
+aithost version
 ```
 
 With no arguments (or `top`), opens a multi-panel TUI: CPU, MEM, DISK, NET, TCP/UDP/ARP/ICMP, and PROC (sorted CPU → MEM → NET → DISK). PROC samples **all** processes by default and fills the panel from the window height (`--limit` optionally caps the sample). Press `/` to fuzzy-search by name, cmdline, or PID (row order freezes while searching; CPU/MEM/etc. still refresh); ↑↓/`j`/`k` to move; Enter for a PROC-area detail overlay (resources, cmdline, one peer record per line, ancestor chain, children, and matching system-log records; extra peers collapse to `… +N more` when the panel is short); `x` to kill the selected process (SIGTERM after `y` confirm; on failure, ask whether to force SIGKILL); Esc backs out; `q` quits. The PROC table shows `PEER` (listening servers as `:port×conns`, otherwise remote `host:port`) and `LOG` (latest system-log line for that process). The header prints `USER`, `OS`, `CPU` (count), `MEM` (total), `KERNEL`, and datetime; it wraps left-aligned on narrow terminals. Metric panels use a centered `TYPE   value` title line and Braille trend curves with an `HH:MM:SS` X-axis. Y ticks and on-panel values use the same color as their curve: CPU and MEM percents; DISK `r`/`w` rates (title still shows usage %); NET and TCP/UDP/ARP/ICMP `↓`/`↑` in/out with left/right Y axes (NET also tints errs/drops in/out).
@@ -41,13 +43,13 @@ Some flags apply only to specific subcommands:
 ## Examples
 
 ```bash
-aihost snapshot
-aihost snapshot --json
-aihost proc --limit 5 --sort mem
-aihost proto --json
-aihost cpu --json
-aihost sources
-aihost top --interval 2s --limit 10
+aithost snapshot
+aithost snapshot --json
+aithost proc --limit 5 --sort mem
+aithost proto --json
+aithost cpu --json
+aithost sources
+aithost top --interval 2s --limit 10
 ```
 
 ## Notes

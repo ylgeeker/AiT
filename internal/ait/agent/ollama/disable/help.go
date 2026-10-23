@@ -31,13 +31,13 @@ const (
 )
 
 var (
-	introAlias         = fmt.Sprintf("Same config effect as: %s. Does not turn off ai.tiered.enabled.", toolname.AICLI("provider disable ollama"))
-	usageLine          = toolname.AICLI("ollama disable [flags]")
-	exampleDisable     = toolname.AICLI("ollama disable")
-	exampleDisableStop = toolname.AICLI("ollama disable --stop")
+	introAlias         = fmt.Sprintf("Same config effect as: %s. Does not turn off ai.tiered.enabled.", toolname.AgentCLI("provider disable ollama"))
+	usageLine          = toolname.AgentCLI("ollama disable [flags]")
+	exampleDisable     = toolname.AgentCLI("ollama disable")
+	exampleDisableStop = toolname.AgentCLI("ollama disable --stop")
 )
 
-// WriteHelp prints ai ollama disable --help to w.
+// WriteHelp prints ait agent ollama disable --help to w.
 func WriteHelp(w io.Writer) error {
 	b := pkghelpdoc.NewBody(w)
 	if err := b.WriteIntro(introMain, introAlias); err != nil {

@@ -23,18 +23,18 @@ import (
 	"github.com/os-artificer/AiT/internal/pkg/toolname"
 )
 
-// WriteHelp prints ai connect --help to w.
+// WriteHelp prints ait agent connect --help to w.
 func WriteHelp(w io.Writer) error {
 	b := pkghelpdoc.NewBody(w)
-	if err := b.WriteIntro("Open a remote Ops Agent session (experimental). Does not use aissh interactive meta (!! / !ait ai).", ""); err != nil {
+	if err := b.WriteIntro("Open a remote Ops Agent session (experimental). Does not use aissh interactive meta.", ""); err != nil {
 		return err
 	}
-	if err := b.WriteUsage(toolname.AICLI("connect [ssh-options] destination")); err != nil {
+	if err := b.WriteUsage(toolname.AgentCLI("connect [ssh-options] destination")); err != nil {
 		return err
 	}
 	return b.WriteExamples(
-		toolname.AICLI("connect user@host"),
-		toolname.AICLI("connect -J jump user@final"),
-		toolname.AICLI("user@host"),
+		toolname.AgentCLI("connect user@host"),
+		toolname.AgentCLI("connect -J jump user@final"),
+		toolname.AgentCLI("user@host"),
 	)
 }

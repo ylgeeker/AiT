@@ -22,18 +22,19 @@ import (
 
 	pkghelpdoc "github.com/os-artificer/AiT/internal/pkg/helpdoc"
 	pkgollama "github.com/os-artificer/AiT/internal/pkg/ollama"
+	"github.com/os-artificer/AiT/internal/pkg/toolname"
 
 	"github.com/spf13/cobra"
 )
 
 const name = "stop"
 
-// New builds the `ai ollama stop` cobra command.
+// New builds the `ait agent ollama stop` cobra command.
 func New() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           name,
 		Short:         "Stop local ollama serve",
-		Long:          pkghelpdoc.LongHint("ai ollama stop"),
+		Long:          pkghelpdoc.LongHint(toolname.AgentCLI("ollama stop")),
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

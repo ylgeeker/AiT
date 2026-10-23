@@ -27,13 +27,12 @@ def test_version(runner):
 
 def test_root_help(runner):
     proc = runner.run_ok(["--help"])
-    assert_contains(proc, "Usage:", "aissh [command]")
+    assert_contains(proc, "Usage:", "aitssh [command]")
     for cmd in TOP_LEVEL_COMMANDS:
         assert cmd in proc.stdout, f"missing {cmd} in root help"
     for gone in ("  list       ", "  load       ", "  suspend    ", "  login       "):
         assert gone not in proc.stdout, f"root help still lists removed command {gone!r}"
-    # v4: Ops AI is the separate `ai` binary, not an aissh subcommand.
-    assert "\n  ai " not in proc.stdout, "root help must not list ai as aissh subcommand"
+    assert "\n  ai " not in proc.stdout, "root help must not list ai as a subcommand"
 
 
 @pytest.mark.parametrize("cmd", TOP_LEVEL_COMMANDS)

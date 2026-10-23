@@ -24,7 +24,7 @@ import (
 	"github.com/os-artificer/AiT/internal/ssh/connect"
 )
 
-// Run is the application entry invoked from cmd/aissh.
+// Run is the application entry invoked from cmd/ssh.
 // args are os.Args[1:] passed to the Cobra root command.
 // Returns Cobra RunE errors (connect, session, get, put, etc.) printed to stderr before return.
 func Run(args []string) error {

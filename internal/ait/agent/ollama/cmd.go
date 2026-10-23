@@ -14,22 +14,23 @@
  * limitations under the License.
 **/
 
-// Package ollama builds the `ai ollama` Cobra subtree (status/setup/start/stop/disable).
+// Package ollama builds the `ait agent ollama` Cobra subtree (status/setup/start/stop/disable).
 package ollama
 
 import (
 	"github.com/os-artificer/AiT/internal/ait/agent/ollama/subregistry"
 	pkghelpdoc "github.com/os-artificer/AiT/internal/pkg/helpdoc"
+	"github.com/os-artificer/AiT/internal/pkg/toolname"
 
 	"github.com/spf13/cobra"
 )
 
-// New builds the `ai ollama` cobra command tree.
+// New builds the `ait agent ollama` cobra command tree.
 func New() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "ollama",
 		Short:         "Local Ollama setup, status, and service control",
-		Long:          pkghelpdoc.LongHint("ai ollama"),
+		Long:          pkghelpdoc.LongHint(toolname.AgentCLI("ollama")),
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}

@@ -159,10 +159,6 @@ func TestMetaScanner_AitAIBareLine(t *testing.T) {
 	if len(meta) != 1 || meta[0] != "!ait ai" {
 		t.Errorf("meta=%v", meta)
 	}
-	_, ok := AIPromptFromLine(meta[0])
-	if ok {
-		t.Error("AIPromptFromLine must always return false")
-	}
 }
 
 func TestMetaScanner_BangBangAskForwards(t *testing.T) {
@@ -458,21 +454,6 @@ func TestMetaScanner_LegacyPrefixNotCaptured(t *testing.T) {
 		trimmed := strings.TrimSuffix(input, "\n")
 		if !strings.Contains(fwd, trimmed) {
 			t.Errorf("input %q: forward=%q want to contain %q", input, fwd, trimmed)
-		}
-	}
-}
-
-func TestAIPromptFromLine(t *testing.T) {
-	for _, line := range []string{
-		"!! how to grep",
-		"!!",
-		"!ait ai how to grep",
-		"!ait ai ask hello",
-		"!ait suspend",
-	} {
-		p, ok := AIPromptFromLine(line)
-		if ok || p != "" {
-			t.Errorf("AIPromptFromLine(%q) = (%q, %v), want (\"\", false)", line, p, ok)
 		}
 	}
 }

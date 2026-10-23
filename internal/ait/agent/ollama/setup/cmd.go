@@ -22,6 +22,7 @@ import (
 	"github.com/os-artificer/AiT/internal/pkg/config"
 	pkghelpdoc "github.com/os-artificer/AiT/internal/pkg/helpdoc"
 	pkgollama "github.com/os-artificer/AiT/internal/pkg/ollama"
+	"github.com/os-artificer/AiT/internal/pkg/toolname"
 
 	"github.com/spf13/cobra"
 )
@@ -36,7 +37,7 @@ const (
 	flagShorthandYes  = "y"
 )
 
-// New builds the `ai ollama setup` cobra command.
+// New builds the `ait agent ollama setup` cobra command.
 func New() *cobra.Command {
 	var (
 		model     string
@@ -50,7 +51,7 @@ func New() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           name,
 		Short:         "Enable tiered routing and set up local Ollama",
-		Long:          pkghelpdoc.LongHint("ai ollama setup"),
+		Long:          pkghelpdoc.LongHint(toolname.AgentCLI("ollama setup")),
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

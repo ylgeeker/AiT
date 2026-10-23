@@ -1,0 +1,22 @@
+AiT
+Copyright 2026 AiT authors
+
+This product includes software developed by AiT authors and licensed under
+the Apache License, Version 2.0 (see LICENSE).
+
+Third-party: ZMODEM
+-------------------
+Path: pkg/third-party/xiwh/zmodem
+Origin: Go module github.com/xiwh/zmodem v1.0.4 (module timestamp 2024-02-21),
+retrieved from the public module proxy. Versions v1.0.1 through v1.0.4 were
+checked. The GitHub repository https://github.com/xiwh/zmodem returns 404.
+
+OPEN-SOURCE BLOCKER: none of those published module versions contain a
+LICENSE, COPYRIGHT, or NOTICE file, and the copyright holder and license
+terms could not be recovered from this repository's history. Do not publish
+this tree until the copyright holder grants a license or this code is
+replaced. Unmodified upstream files must not be described as AiT works or
+relicensed under the Apache License. Files added in this repository
+(zeof_validate, frame_resync, send_teardown, and their tests, plus
+upload_progress_test.go) are AiT changes and still depend on the unlicensed
+upstream sources.

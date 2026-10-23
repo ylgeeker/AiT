@@ -24,6 +24,7 @@ import (
 	"github.com/os-artificer/AiT/internal/pkg/config"
 	pkghelpdoc "github.com/os-artificer/AiT/internal/pkg/helpdoc"
 	pkgollama "github.com/os-artificer/AiT/internal/pkg/ollama"
+	"github.com/os-artificer/AiT/internal/pkg/toolname"
 
 	"github.com/spf13/cobra"
 )
@@ -33,14 +34,14 @@ const (
 	flagNameBaseURL = "base-url"
 )
 
-// New builds the `ai ollama start` cobra command.
+// New builds the `ait agent ollama start` cobra command.
 func New() *cobra.Command {
 	var wait bool
 	var baseURL string
 	cmd := &cobra.Command{
 		Use:           name,
 		Short:         "Start ollama serve in the background",
-		Long:          pkghelpdoc.LongHint("ai ollama start"),
+		Long:          pkghelpdoc.LongHint(toolname.AgentCLI("ollama start")),
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

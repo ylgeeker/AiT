@@ -84,7 +84,7 @@ func TestShell_AINotBuiltin(t *testing.T) {
 	}
 }
 
-// OA24: internal/ssh must not import internal/pkg/aimode (AI lives in opsai plugin).
+// OA24: internal/ssh must not import internal/pkg/aimode (AI lives in ait agent).
 func TestAissh_NoAimodeImport(t *testing.T) {
 	root := filepath.Join("..", "..", "internal", "ssh")
 	const aimodePkg = "github.com/os-artificer/AiT/internal/pkg/aimode"

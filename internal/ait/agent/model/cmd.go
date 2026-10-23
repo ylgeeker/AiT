@@ -14,7 +14,7 @@
  * limitations under the License.
 **/
 
-// Package model builds the `ai model` Cobra subtree.
+// Package model builds the `ait agent model` Cobra subtree.
 package model
 
 import (
@@ -26,18 +26,19 @@ import (
 	pkgai "github.com/os-artificer/AiT/internal/pkg/ai"
 	"github.com/os-artificer/AiT/internal/pkg/config"
 	pkghelpdoc "github.com/os-artificer/AiT/internal/pkg/helpdoc"
+	"github.com/os-artificer/AiT/internal/pkg/toolname"
 
 	"github.com/spf13/cobra"
 )
 
 const name = "model"
 
-// New builds the `ai model` cobra command.
+// New builds the `ait agent model` cobra command.
 func New(d deps.Deps) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           name,
 		Short:         "Show or list configured AI providers",
-		Long:          pkghelpdoc.LongHint("ai model"),
+		Long:          pkghelpdoc.LongHint(toolname.AgentCLI("model")),
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

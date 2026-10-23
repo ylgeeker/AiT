@@ -14,7 +14,7 @@
  * limitations under the License.
 **/
 
-// Package subregistry collects ai model subcommands registered from init hooks.
+// Package subregistry collects ait agent model subcommands registered from init hooks.
 package subregistry
 
 import (
@@ -24,7 +24,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Command is the extension point for an `ai model` subcommand.
+// Command is the extension point for an `ait agent model` subcommand.
 type Command interface {
 	pkgsubregistry.MetaCommand
 	NewCobra(d deps.Deps) *cobra.Command
@@ -45,7 +45,7 @@ func Attach(parent *cobra.Command, d deps.Deps) {
 	reg.Attach(parent, func(c Command) *cobra.Command { return c.NewCobra(d) })
 }
 
-// Entries returns registered subcommands for ai model --help.
+// Entries returns registered subcommands for ait agent model --help.
 func Entries() []Entry {
 	return reg.Entries()
 }

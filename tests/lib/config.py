@@ -124,7 +124,7 @@ def load_config(path: Path | None = None) -> TestConfig:
     feat_block = raw.get("features") or {}
     env_block = raw.get("env") or {}
 
-    binary = Path(str(ait_block.get("binary", "../bin/aissh")))
+    binary = Path(str(ait_block.get("binary", "../bin/aitssh")))
     if not binary.is_absolute():
         binary = (TESTS_DIR / binary).resolve()
 

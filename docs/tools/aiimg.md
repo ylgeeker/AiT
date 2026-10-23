@@ -1,34 +1,36 @@
 # aiimg
 
-`aiimg` extracts image metadata (EXIF) from common formats and prints device, capture time, GPS coordinates, and a reverse-geocoded address. It can also **set** or **clear** writable EXIF fields on **JPEG** files (default: write a new sibling file).
+> **Names:** binary `aitimg`, plugin command `img` (`ait img …`), Go package `aiimg`.
+
+`aitimg` (docs title **aiimg**, plugin `img`) extracts image metadata (EXIF) from common formats and prints device, capture time, GPS coordinates, and a reverse-geocoded address. It can also **set** or **clear** writable EXIF fields on **JPEG** files (default: write a new sibling file).
 
 ## Build
 
 ```bash
 make build
-./bin/aiimg --help
+./bin/aitimg --help
 ```
 
 ## Usage
 
 ```bash
-aiimg photo.jpg
-aiimg --json photo.jpg shot.png
-aiimg --all photo.jpg              # locked summary + full structured EXIF
-aiimg --json --all photo.jpg       # locked keys + nested "exif" object
-aiimg --no-geocode photo.jpg       # skip network; Location shows 0; GPS still shown when present
-aiimg --version                    # or -V; also: aiimg version
-aiimg version --help               # subcommand help (not: aiimg help version)
+aitimg photo.jpg
+aitimg --json photo.jpg shot.png
+aitimg --all photo.jpg              # locked summary + full structured EXIF
+aitimg --json --all photo.jpg       # locked keys + nested "exif" object
+aitimg --no-geocode photo.jpg       # skip network; Location shows 0; GPS still shown when present
+aitimg --version                    # or -V; also: aitimg version
+aitimg version --help               # subcommand help (not: aitimg help version)
 
-aiimg set --make Canon photo.jpg                 # writes photo_aiimg.jpg by default
-aiimg set --make Canon --inplace photo.jpg       # overwrite original
-aiimg set --gps 31.2304,121.4737 -o out.jpg photo.jpg
-aiimg set --datetime "2020:06:07 01:30:00" photo.jpg
-aiimg clear --gps --make photo.jpg
-aiimg clear --all --inplace photo.jpg
+aitimg set --make Canon photo.jpg                 # writes photo_aiimg.jpg by default
+aitimg set --make Canon --inplace photo.jpg       # overwrite original
+aitimg set --gps 31.2304,121.4737 -o out.jpg photo.jpg
+aitimg set --datetime "2020:06:07 01:30:00" photo.jpg
+aitimg clear --gps --make photo.jpg
+aitimg clear --all --inplace photo.jpg
 ```
 
-`aiimg version` prints build version (and takes precedence over a file named `version`).
+`aitimg version` prints build version (and takes precedence over a file named `version`).
 
 ### set / clear (JPEG only)
 
@@ -81,7 +83,7 @@ After the locked summary (or under `"exif"` with `--json`), prints the TIFF/EXIF
 
 ### Network
 
-By default, when GPS is present, `aiimg` calls the OpenStreetMap [Nominatim](https://nominatim.org/) reverse API (`accept-language=zh-CN,en`). This requires network access and follows Nominatim usage policy (User-Agent set; ≥1s between requests).
+By default, when GPS is present, `aitimg` calls the OpenStreetMap [Nominatim](https://nominatim.org/) reverse API (`accept-language=zh-CN,en`). This requires network access and follows Nominatim usage policy (User-Agent set; ≥1s between requests).
 
 Use `--no-geocode` for offline use.
 

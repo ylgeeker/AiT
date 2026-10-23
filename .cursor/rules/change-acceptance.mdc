@@ -39,62 +39,61 @@ Agent 完成实现后须实际运行上述命令；失败须修复后再交付�
 | Meta/Shell I/O | R3 CRLF；R4 会话内阻断 login/load/suspend |
 | 认证/会话 | R5–R9 密码、Switch、stale meta |
 | 传输 | R10–R11 错误前缀、put 建父目录 |
-| 其它 | R12 HostKey；R13 `aissh session --list` 列对齐；R14 login 远程退出码 |
-| Ops AI model list | **R15 → OA14**（`ai model list` 非交互；见 **OA\***） |
+| 其它 | R12 HostKey；R13 `aitssh session --list` 列对齐；R14 login 远程退出码 |
+| Ops AI model list | **R15 → OA14**（见 **OA\***） |
 | 配置 | R16 Save 无根级 `deepseek`；旧 YAML 可读；`deepseek.model` 别名仍有效 |
-| AI CLI（历史） | R17 无顶层 `aissh models`；provider/ollama 现属 **`ai`** 插件（`ai provider` / `ai ollama`） |
-| AI ask | **R18a–b 删除**（one-shot `ai ask`/`ai agent`/`aichat` 已移除；负向 RO-1 / OA20–OA22） |
-| SSH AI 输入 | **R19 删除** → 远程经 `ai connect`；负向见 OA20–OA22 |
+| AI CLI | R17 无顶层 `aitssh models` |
+| AI ask | **R18a–b 删除**（负向 RO-1 / OA20–OA22） |
 | Agent Loop | **v4：** Loop 经 `ait agent` → **AG-1…13** + **AC-V4\***（`agentcore`）；历史 A20–A22 **已退役** |
 
-### OA* 明细（Ops AI Agent 插件 `ai` / `opsai`）
+### OA* 明细（Ops AI Agent，`ait agent`）
 
 #### 正向
 
 | ID | 验收行为 | 自动化测试 |
 |----|----------|------------|
-| OA1 | 无参 `ai` → help + Try `ait agent`（Loop 仅经 ait） | `TestOpsAI_DefaultShowsHelp` |
-| OA2 | 实验关 → Try；help/manifest 可用 | `TestOpsAI_ExperimentalDisabled` |
+| OA1 | 无参 `ait agent` 管理命令打印 help + Try `ait agent` | `TestOpsAI_DefaultShowsHelp` |
+| OA2 | 实验关时 `ait agent model list` 不被实验门禁拒绝 | `TestOpsAI_ExperimentalDisabled` |
 | OA3 | toolbox → aihost | `TestToolbox_DispatchAIHost` |
 | OA4 | ClassifyToolbox Read 自动放行 | `TestClassify_ToolboxRead` |
-| OA5 | `ai connect` ScopeRemote | `TestOpsAI_ConnectRemoteAgent` |
+| OA5 | `ait agent connect` ScopeRemote | `TestOpsAI_ConnectRemoteAgent` |
 | OA6 | 远程 Capture | `TestOpsAI_RemoteCapture` |
 | OA7 | `DynamicRemote.SetLocal` API；connect teardown 关 Client | `TestDynamicRemote_SetLocal`（agentcore）；connect Run 测例 |
 | OA8 | ops system prompt | `TestSystemPrompt_OpsDomain` |
-| OA9 | OfficialPluginNames 含 ai | 扩 `TestOfficialPluginNames_ManifestsAligned` |
-| OA10 | Tab：`ai` 唯一；`aih`→aihost | 更新 `TestCompleteFirstToken_*` |
-| OA11 | test-cross 含 cmd/ai | merge gate |
+| OA9 | OfficialPluginNames 含 `ssh`、`log`、`img`、`host`、`keep` | `TestOfficialPluginNames_ManifestsAligned` |
+| OA10 | Tab：`ag`→`agent`；`ho`→`host` | `TestCompleteFirstToken_AgentPrefix`、`TestCompleteFirstToken_HoToHost` |
+| OA11 | test-cross 含 cmd/ait | merge gate |
 | OA12 | agentcore 不 import 产品包（v4） | `TestAgentcore_NoProductImports`（= AC-V4-1） |
-| OA13 | `ai --ai-experimental ask` | `TestOpsAI_ExperimentalCLIFlag` |
-| OA14 | `ai model list` 非 TTY 5s（原 R15） | `TestOpsAI_ModelListNoTTY` |
+| OA13 | `ait --ai-experimental` | `TestOpsAI_ExperimentalCLIFlag` |
+| OA14 | `ait agent model list` 非 TTY 5s（原 R15） | `TestOpsAI_ModelListNoTTY` |
 | OA15 | connect `-J` | `TestOpsAI_ConnectProxyJump` |
 | OA16 | RunAgentSession 无 meta 拦截 `!!` | `TestRunAgentSession_NoMeta` |
-| OA17 | `ai agent` 不进 connect | `TestOpsAI_AgentNotConnect` |
+| OA17 | `agent` / `ask` 等保留词不像 connect 目标 | `TestOpsAI_AgentNotConnect` |
 
-#### 负向（aissh 去 AI）
+#### 负向（aitssh 去 AI）
 
 | ID | 验收行为 | 自动化测试 |
 |----|----------|------------|
-| OA20 | `aissh ai` unknown | `TestAissh_AISubtreeRemoved` |
+| OA20 | `aitssh ai` unknown | `TestAissh_AISubtreeRemoved` |
 | OA21 | `!!ls` 转发 PTY（非 AI meta） | `TestMetaScanner_BangBangForwardsPTY` |
 | OA22 | `!ait ai` unknown + Try | `TestExecute_AIMetaUnknownHint` |
 | OA23 | shell 内 `ai` 非 REPL | `TestShell_AINotBuiltin` |
-| OA24 | aissh 无 agentcore/opsai/`ssh/ai` import | `TestAissh_NoAimodeImport`（名历史；断言无 aimode/opsai AI 包） |
-| OA25 | aissh 无 experimental strip | `TestAissh_NoExperimentalStrip` |
+| OA24 | aitssh 无 agentcore/opsai/`ssh/ai` import | `TestAissh_NoAimodeImport`（名历史；断言无 aimode/opsai AI 包） |
+| OA25 | aitssh 无 experimental strip | `TestAissh_NoExperimentalStrip` |
 
 #### 迁移矩阵（原 ID）
 
 | 原 ID | V3.1 处置 |
 |-------|-----------|
-| R15 | → OA14（`ai model list`） |
+| R15 | → OA14 |
 | R18a–b | **删除**（one-shot ask/agent 移除；见 **RO-1…RO-2**） |
 | R18c–f / R19 / RA* | **删除** + OA20–OA22 |
 | EX1–EX3 | 保留 config 包 |
-| EX4–EX13 | → opsai；aissh 侧删旗测例 |
+| EX4–EX13 | 见 **EX\***；aitssh 侧删旗测例 |
 | A20–A22 | **退役** → **AG-1…13** + `agentcore` 风险/确认测例（见 **AG\***） |
 | H3a | → **删除**（空 ask）；用 `ait agent` / ChatMessageRequired 仅内部 runner |
 
-### R18 明细（历史 `aissh ai ask` / `ai ask` — **已删除**）
+### R18 明细（历史 `aitssh ai ask` / `ai ask` — **已删除**）
 
 > **迁移：** R18a–b one-shot ask **删除**（RO-1：`ai ask`/`ai agent` unknown + Try `ait agent`；RO-2：无 `aichat` / `agentcore.RunOnce`）。R18c–f 仍由 OA20–OA22 覆盖。
 
@@ -103,27 +102,11 @@ Agent 完成实现后须实际运行上述命令；失败须修复后再交付�
 | R18a–b | **删除** |
 | R18c–f | **删除** |
 
-### R19 明细（历史 SSH 远程 AI REPL UTF-8 — **已删除**）
-
-> **迁移：** R19a–e 与 aissh 内远程 AI REPL **删除**。远程 Agent 经 `ai connect`（OA5–OA7 / OA15–OA16）。负向：OA20–OA22。stdin/UTF-8 能力仍由 `terminal` / Agent Loop 测例覆盖。
-
-| ID | 状态 |
-|----|------|
-| R19a–e | **删除**（原 `TestStdinReader_*` / meta bangbang AI 测例不再作为 aissh AI 回归） |
-
-### RA* 明细（历史 SSH 远程 AI REPL 入口 — **已删除**）
-
-> **迁移：** RA1–RA6 **删除** + OA20–OA22；远程入口改为 `ai connect`（OA5+）。
-
-| ID | 状态 |
-|----|------|
-| RA1–RA6 | **删除** |
-
 ### AG* 明细（Agent Loop / `agentcore` — v4 SSOT；替代已退役的 A20–A22）
 
 | ID | 验收行为 | 自动化测试 | 手动烟雾 |
 |----|----------|------------|----------|
-| AG-1 | Loop 仅经 `ait agent`；裸 `ai` 不进 REPL | `TestOpsAI_DefaultShowsHelp`；ait agent 入口测例 | `./bin/ai` → help + Try；`./bin/ait agent` 进 Loop |
+| AG-1 | Loop 仅经 `ait` / `ait agent` | `TestOpsAI_DefaultShowsHelp`；ait agent 入口测例 | `./bin/ait` 或 `./bin/ait agent` 进 Loop |
 | AG-2 | 只读命令自动放行（不提示） | `TestPolicy_ReadAutoRun` | Agent：「列出文件」→ `ls` 无确认 |
 | AG-3 | 低危写命令需确认 | `TestPolicy_WriteConfirm` | Agent：`cp a b` → 确认 |
 | AG-4 | 高危在 session trust 下仍确认 | `TestPolicy_HighAlwaysConfirm` | Agent：`rm -rf /tmp/x` 每次确认 |
@@ -173,13 +156,13 @@ Agent 完成实现后须实际运行上述命令；失败须修复后再交付�
 
 | ID | 验收行为 | 自动化测试 | 手动烟雾 |
 |----|----------|------------|----------|
-| E1 | 同 u/h/p，`--alias prod` 与 `--alias staging` → 2 行 | `TestResolvePersistSessionID_SeparateAliasesSameHost` | `aissh --alias prod user@host` + `aissh --alias staging user@host` → `--list` 2 条 |
-| E2 | 同 u/h/p，`--save` 与 `--alias prod` → 2 行 | `TestResolvePersistSessionID_SaveAndAliasSeparateRows` | `aissh --save user@host` + `aissh --alias prod user@host` → `--list` 2 条 |
+| E1 | 同 u/h/p，`--alias prod` 与 `--alias staging` → 2 行 | `TestResolvePersistSessionID_SeparateAliasesSameHost` | `aitssh --alias prod user@host` + `aitssh --alias staging user@host` → `--list` 2 条 |
+| E2 | 同 u/h/p，`--save` 与 `--alias prod` → 2 行 | `TestResolvePersistSessionID_SaveAndAliasSeparateRows` | `aitssh --save user@host` + `aitssh --alias prod user@host` → `--list` 2 条 |
 | E3 | Store 按四元组查找；不同 alias 不互相命中 | `TestFindSessionByKey_DifferentAliasSameConnection` | — |
-| E4 | 仅 alias 会话存在时无 flag login → ephemeral | `TestPlanLoginPersistence_NoFlagSkipsAliasedOnly` | 仅 prod 存在时 `aissh user@h` 不写库 |
+| E4 | 仅 alias 会话存在时无 flag login → ephemeral | `TestPlanLoginPersistence_NoFlagSkipsAliasedOnly` | 仅 prod 存在时 `aitssh user@h` 不写库 |
 | E5 | 无 alias 行时无 flag 新连接 → ephemeral | `TestLoginNoSaveNoExistingStillEphemeral` | 未知 host 无 flag 不落库 |
 
-### S* 明细（`aissh session` flag CLI）
+### S* 明细（`aitssh session` flag CLI）
 
 | ID | 验收行为 | 自动化测试 |
 |----|----------|------------|
@@ -211,7 +194,7 @@ Agent 完成实现后须实际运行上述命令；失败须修复后再交付�
 | B3 | `PickSessionFrom` 序号 `2` → 第二条 UUID | `TestPickSession_SelectByNumber` |
 | B4 | `--load <alias>` 在 dial 前解析成功 | `TestSessionCmd_LoadAliasFound` |
 | B5 | `--list -v` 输出 `FULL_ID` 与完整 UUID | `TestSessionCmd_ListVerboseFullID`、`TestListVerbose_IncludesFullID` |
-| B6 | 非 TTY `aissh session --load` 快速失败 | `TestSessionCmd_LoadPickNonTTY` |
+| B6 | 非 TTY `aitssh session --load` 快速失败 | `TestSessionCmd_LoadPickNonTTY` |
 | B7 | REPL `load` 无参走 picker | `shellLoad` 无参分支（`TestPickSession_SelectByNumber` 覆盖 picker） |
 
 ### Hint 模板规范（用户可见校验错误）
@@ -252,7 +235,7 @@ Agent 完成实现后须实际运行上述命令；失败须修复后再交付�
 
 | ID | 验收行为 | 自动化测试 |
 |----|----------|------------|
-| H2a | 无 destination（如 `aissh --save`）→ `Try:` + `aissh --help`；**无参** `aissh` → root help | `TestDestinationRequiredErr_Format`、`TestExecuteWriters_EmptyShowsRootHelp` |
+| H2a | 无 destination（如 `aitssh --save`）→ `Try:` + `aitssh --help`；**无参** `aitssh` → root help | `TestDestinationRequiredErr_Format`、`TestExecuteWriters_EmptyShowsRootHelp` |
 | H2b | `--tmux` + remote cmd 冲突 → `Try:` | `TestTmuxWithRemoteCommandErr_Format` |
 | H2c | transfer 路径个数不足 → `Try:` | `TestTransferPathCountErr_Format` |
 | H2d | meta get/put 参数不足（SSH） | `TestTransferUsageHint_Format` |
@@ -311,7 +294,7 @@ Agent 完成实现后须实际运行上述命令；失败须修复后再交付�
 
 | ID | 验收行为 | 自动化测试 |
 |----|----------|------------|
-| K18 | `aissh shell` `history` 内置命令 | `TestExecuteLineHistory_Shell` |
+| K18 | `aitssh shell` `history` 内置命令 | `TestExecuteLineHistory_Shell` |
 | K19 | `ai` REPL `history` 与 `clear` 分离（chat vs 输入历史） | `TestExecuteLineHistory_AIMode` |
 | K20 | 确认 `[y/N]` / pick 仍不污染历史（K6 不回退） | `TestAIMode_ConfirmNoHistory`、`TestReadLine_NoHistoryOnPick` |
 
@@ -328,8 +311,8 @@ raw 模式 TTY（`term.MakeRaw` 期间）下 `OPOST/ONLCR` 关闭，bare `\n` �
 
 | ID | 验收行为 | 自动化测试 | 手动烟雾 |
 |----|----------|------------|----------|
-| K23 | raw TTY 多行输出 CRLF 幂等；Agent Loop / shell 经 CRLF writer | `TestCRLFWriter_IdempotentOnCRLF`、`TestCRLFWriter_KeepsLoneCR`、`TestCRLFWriter_IdempotentAcrossWrites`；（历史 AIMode history 测例已随 aimode 删除） | `ait agent` / `aissh shell` 多行输出起于列 0 |
-| K24 | `aissh shell` `load` 无参 picker 的编号列表与 `Select session …: ` 提示走 `shellCLIOut`（raw TTY 下为 `terminal.NewCRLFWriter(os.Stdout)`） | `TestExecuteLineLoad_PickerCRLF` | `./bin/aissh shell` → `load`；列表每行起于列 0 |
+| K23 | raw TTY 多行输出 CRLF 幂等；Agent Loop / shell 经 CRLF writer | `TestCRLFWriter_IdempotentOnCRLF`、`TestCRLFWriter_KeepsLoneCR`、`TestCRLFWriter_IdempotentAcrossWrites`；（历史 AIMode history 测例已随 aimode 删除） | `ait agent` / `aitssh shell` 多行输出起于列 0 |
+| K24 | `aitssh shell` `load` 无参 picker 的编号列表与 `Select session …: ` 提示走 `shellCLIOut`（raw TTY 下为 `terminal.NewCRLFWriter(os.Stdout)`） | `TestExecuteLineLoad_PickerCRLF` | `./bin/aitssh shell` → `load`；列表每行起于列 0 |
 
 ### P* 明细（AppRoot / AIT_HOME）
 
@@ -342,7 +325,7 @@ raw 模式 TTY（`term.MakeRaw` 期间）下 `OPOST/ONLCR` 关闭，bare `\n` �
 | P5 | 空 `AIT_HOME` 回退 OS 默认 | `TestAppRoot_EmptyIgnores` |
 | P6 | 迁移后 `Save` 写入 AppRoot | `TestConfigSave_AfterMigration` |
 
-### G* 明细（`aissh config init` / `view` / `edit` / `validate`）
+### G* 明细（`aitssh config init` / `view` / `edit` / `validate`）
 
 | ID | 验收行为 | 自动化测试 |
 |----|----------|------------|
@@ -350,7 +333,7 @@ raw 模式 TTY（`term.MakeRaw` 期间）下 `OPOST/ONLCR` 关闭，bare `\n` �
 | G2 | 部分 YAML 保留用户值，补全缺失 provider | `TestConfigEnsureFile_MergesPartial` |
 | G3 | 已完整配置第二次 init 无写盘 | `TestConfigEnsureFile_NoOp` |
 | G4 | Save 无根级 `deepseek`（R16） | `TestConfigEnsureFile_NoRootDeepseek` |
-| G5 | CLI `aissh config init` 与 help | `TestConfigInitCmd`、config `--help` 含 `init` |
+| G5 | CLI `aitssh config init` 与 help | `TestConfigInitCmd`、config `--help` 含 `init` |
 | G6 | `--dry-run` 不写盘，输出 Would create/update | `TestConfigEnsureFile_DryRun`、`TestConfigInitCmd_DryRun` |
 | G7 | 无文件时 `view` 自动 init 并输出 YAML | `TestConfigViewCmd` |
 | G8 | 有文件时 `view` 输出原文 | `TestConfigViewCmd_Existing` |
@@ -376,7 +359,7 @@ raw 模式 TTY（`term.MakeRaw` 期间）下 `OPOST/ONLCR` 关闭，bare `\n` �
 | Z7 | 进度定稿行 CRLF 安全；TTY 上 `copying…` 行内 `\r` 刷新 | `TestZModemTransfer_ProgressCRLF`、`TestTransferProgress_InlineDoneCRLF` | SSH 内 `!ait get/put`：单行百分比更新，done 起于列 0 |
 | Z8 | `sz`/`rz` 命令无 shell 重定向至目标路径；chain resolve 不回退 U12–U20 | `TestBuildSzCmd_Heredoc`、`TestBuildRzCmd_NoRemoteRedirect`、`TestResolveTransferMode_*` | — |
 | Z9 | ZMODEM 包与 `transfer_zmodem` 无 Unix-only 编译标签 | `make test-cross` | — |
-| Z10 | Windows 客户端链式 get/put（可选） | — | Windows Terminal：`aissh user@host` → 嵌套 ssh → `!ait get/put` |
+| Z10 | Windows 客户端链式 get/put（可选） | — | Windows Terminal：`aitssh user@host` → 嵌套 ssh → `!ait get/put` |
 
 ### F* 明细（ZMODEM teardown 尾部 drain / strip）
 
@@ -387,24 +370,24 @@ raw 模式 TTY（`term.MakeRaw` 期间）下 `OPOST/ONLCR` 关闭，bare `\n` �
 | F3 | `handleTransferPTY` 返回后 `pauseRemoteOut` 已恢复 | `TestHandleTransferPTY_PausesRemoteOut` | — |
 | F4 | post-teardown 尾部字节经 drain 后不写入 fake stdout | `TestHandleRemoteOutput_AfterZModemDrain` | 链式 `!ait get` done 后 stdout 无 `*…乱码…#` |
 
-### X* 明细（`aissh shell` bin 扩展与 PATH 回退）
+### X* 明细（`aitssh shell` bin 扩展与 PATH 回退）
 
 | ID | 验收行为 | 自动化测试 | 手动烟雾 |
 |----|----------|------------|----------|
-| X1 | 内置 `list` 优先于 bin 同名文件 | `TestExecuteLine_BuiltinWinsOverBin` | `aissh shell` → `list` 仍为 session 列表 |
+| X1 | 内置 `list` 优先于 bin 同名文件 | `TestExecuteLine_BuiltinWinsOverBin` | `aitssh shell` → `list` 仍为 session 列表 |
 | X2 | `<AppRoot>/bin/foo` 可解析并传 argv | `TestResolveAppBin_Found`、`TestDispatchShellCommand_RunsBin` | `AIT_HOME=…/bin/hello` → `hello world` |
 | X3 | bin 未命中时 `config` 仍走 Cobra | `TestDispatchShellCommand_AitCLIBeforePATH` | `config view` 仍输出 YAML |
-| X4 | Cobra unknown 后 PATH 回退 | `TestDispatchShellCommand_PATHFallback` | 未知 aissh 子命令但 PATH 有 `true`/`ls` |
+| X4 | Cobra unknown 后 PATH 回退 | `TestDispatchShellCommand_PATHFallback` | 未知 aitssh 子命令但 PATH 有 `true`/`ls` |
 | X5 | Cobra 业务错误不回退 PATH | `TestDispatchShellCommand_PATHSkipsCLIError` | `session` 无 flag → usage，不执行 PATH |
 | X6 | `AIT_HOME` 下 `BinDir` 为 `<root>/bin` | `TestBinDir_UnderAppRoot` | — |
 | X7 | 非法名（含 `/`）不解析 | `TestResolveAppBin_RejectsUnsafeName` | — |
 | X8 | 全未命中多行 errhint + `errors.Is` | `TestDispatchShellCommand_NotFoundHint` | `nosuchcmd` → Try 块 |
 
-### Y* 明细（`aissh shell` 内置 `ll`，仅 shell 模式）
+### Y* 明细（`aitssh shell` 内置 `ll`，仅 shell 模式）
 
 | ID | 验收行为 | 自动化测试 | 手动烟雾 |
 |----|----------|------------|----------|
-| Y1 | 无参 `ll` 含 `total`、`.`、`..`、文件行 | `TestShellLL_CurrentDir` | `aissh shell` → `ll` |
+| Y1 | 无参 `ll` 含 `total`、`.`、`..`、文件行 | `TestShellLL_CurrentDir` | `aitssh shell` → `ll` |
 | Y2 | `ll <subdir>` 列出目标目录 | `TestShellLL_TargetPath` | `ll ..` |
 | Y3 | builtin `ll` 优先于 `bin/ll` | `TestExecuteLine_LLWinsOverBin` | — |
 | Y4 | 目录 `d`、文件 `-` 权限前缀 | `TestDirlist_FormatMode` | — |
@@ -412,8 +395,8 @@ raw 模式 TTY（`term.MakeRaw` 期间）下 `OPOST/ONLCR` 关闭，bare `\n` �
 | Y6 | 不存在路径 → errhint + `Try:` | `TestShellLL_NotFoundHint` | `ll /nope` |
 | Y7 | 多余参数 → usage errhint | `TestShellLL_TooManyArgs` | `ll a b` |
 | Y8 | `make test-cross` 编译 `dirlist` | merge gate | — |
-| Y9 | Agent Loop / 裸 `ai` 中 `ll` 非 shell builtin（Historical：原 AIMode 测例） | shell 侧 Y1–Y8；裸 `ai` 不进 shell builtin（OA1） | `./bin/ai` 无 `ll` total 列表；`aissh shell` → `ll` 仍可用 |
-| Y10 | 顶层 `aissh ll` → unknown command | `TestTopLevelLLUnknown` | `./bin/aissh ll` 报错 |
+| Y9 | Agent Loop 中 `ll` 非 shell builtin | shell 侧 Y1–Y8 | `./bin/ait` 无 shell builtin `ll`；`aitssh shell` → `ll` 仍可用 |
+| Y10 | 顶层 `aitssh ll` → unknown command | `TestTopLevelLLUnknown` | `./bin/aitssh ll` 报错 |
 
 ### T* 明细（统一 get/put 路由 + lrzsz 安装）
 
@@ -440,11 +423,11 @@ raw 模式 TTY（`term.MakeRaw` 期间）下 `OPOST/ONLCR` 关闭，bare `\n` �
 | TR2 | 会话内 get 对相对 remote 先 probe pwd 再 SFTP stat | `TestResolveTransferArgs_SFTPRelativeRemote` | `cd …/bin` 后 `!ait get ./ait-darwin-arm64` 成功 |
 | TR3 | `!ait get <remote>` 单参数 → 本地 `./<basename>` | `TestNormalizeMetaTransferArgs_GetDefaultLocal` | `!ait get ./bin/ait-darwin-arm64` → `./ait-darwin-arm64` |
 | TR4 | `!ait get <remote> <dir/>` 且 local 为目录 → `<dir>/<basename>` | `TestNormalizeMetaTransferArgs_GetDirTarget` | `!ait get ./file ./out/` → `./out/file` |
-| TR5 | standalone `aissh get <remote>` 单参数与 TR3 一致 | `TestParseTransfer_GetSinglePath`、`TestDefaultLocalPathForGet` | `aissh get user@h:/remote/file` → `./file` |
+| TR5 | standalone `aitssh get <remote>` 单参数与 TR3 一致 | `TestParseTransfer_GetSinglePath`、`TestDefaultLocalPathForGet` | `aitssh get user@h:/remote/file` → `./file` |
 | TR6 | active host 与 dial 一致时 SFTP 404 不包装 wrong-hop / 不误推 chain | `TestWrapTransferWrongHop_SkipsSameHostAfterResolve` | 错误相对路径 → 原始 not found，无 chain 误导 |
 | TR7 | `!ait put <local>` 单参数 → remote `./<basename(local)>` | `TestNormalizeMetaTransferArgs_PutDefaultRemote` | `!ait put ./bin/app` → remote `./app` |
 | TR8 | `!ait put <local> <remote/>` 且 remote 为目录 → `<remote>/<basename>` | `TestNormalizeMetaTransferArgs_PutDirTarget` | `!ait put ./file ./remote-dir/` → `./remote-dir/file` |
-| TR9 | standalone `aissh put` 单参数（local 或 `user@host:/path`）与 meta 一致 | `TestParseTransfer_PutSinglePath`、`TestDefaultRemotePathForPut` | `aissh put user@host:/opt/app` → local `./app` |
+| TR9 | standalone `aitssh put` 单参数（local 或 `user@host:/path`）与 meta 一致 | `TestParseTransfer_PutSinglePath`、`TestDefaultRemotePathForPut` | `aitssh put user@host:/opt/app` → local `./app` |
 
 ### U26–U29 明细（传输进度行内更新）
 
@@ -472,16 +455,16 @@ raw 模式 TTY（`term.MakeRaw` 期间）下 `OPOST/ONLCR` 关闭，bare `\n` �
 | W3 | 动态 PS1 含目录段 + `git rev-parse`（**默认 short** 含 `basename`） | `TestRemoteSetupLine_ContainsDirAndGit` | — |
 | W4 | 重复 precmd：同前缀不同路径仍去重（R2） | `TestDuplicatePromptOutput_PrefixMatch` | meta 后无双提示符 |
 | W5 | setup 泄漏过滤仍隐藏含新 PS1 的 export（R1） | `TestIsSetupLeakLine`、`TestSetupOutputFilterAcrossChunks` | login 无 setup 回显 |
-| W6 | `finishRemoteSetup` 无静态占位符 stdout；无 marker 时 `\r` refresh | `TestFinishRemoteSetup_RefreshOnly`、`TestFinishRemoteSetupShowsPromptOnceWhenPaused` | `aissh devhost` 后提示符含 `:路径`；git 目录含 `:分支` |
+| W6 | `finishRemoteSetup` 无静态占位符 stdout；无 marker 时 `\r` refresh | `TestFinishRemoteSetup_RefreshOnly`、`TestFinishRemoteSetupShowsPromptOnceWhenPaused` | `aitssh devhost` 后提示符含 `:路径`；git 目录含 `:分支` |
 | W7 | 默认/缺省 `session.remote_prompt.path` 为 **short**，PS1 含 `basename` | `TestRemoteSetupLine_ShortDir`、`TestConfigRemotePromptPath_Default`、`TestConfigEnsureFile_RemotePromptPath` | 默认 connect：提示符 `…:末级目录名>` |
-| W8 | `path: absolute` 时 PS1 含 `${PWD/#$HOME` | `TestRemoteSetupLine_AbsoluteDir` | `aissh config set session.remote_prompt.path absolute` 后重连：`…:~/path>` |
-| W9 | `session.remote_prompt.path` set/get/validate；非法值字段路径 | `TestSetGetKey_RemotePromptPath`、`TestValidate_BadRemotePromptPath` | `aissh config get session.remote_prompt.path` |
-| W10 | **connect 与 load** 共用 helper，`absolute` 时 PS1 一致 | `TestRemotePromptInitialCommands_LoginLoadSamePath` | `aissh devhost` 与 `aissh session --load` 同配置下 dir 表现一致 |
+| W8 | `path: absolute` 时 PS1 含 `${PWD/#$HOME` | `TestRemoteSetupLine_AbsoluteDir` | `aitssh config set session.remote_prompt.path absolute` 后重连：`…:~/path>` |
+| W9 | `session.remote_prompt.path` set/get/validate；非法值字段路径 | `TestSetGetKey_RemotePromptPath`、`TestValidate_BadRemotePromptPath` | `aitssh config get session.remote_prompt.path` |
+| W10 | **connect 与 load** 共用 helper，`absolute` 时 PS1 一致 | `TestRemotePromptInitialCommands_LoginLoadSamePath` | `aitssh devhost` 与 `aitssh session --load` 同配置下 dir 表现一致 |
 | W11 | 会话内 `ssh` 后 MOTD+quiet 注入内层 AiT PS1（short/absolute） | `TestForwardStdin_SSHTriggersNestedPrompt` | connect 经 proxy 后 `ssh final` → `AiT user@final:…>` |
 | W12 | nested 后 R2 用 active host；单跳 active=dial 不变 | `TestDuplicatePromptOutput_ActiveHostAfterNested`、`TestDuplicatePromptOutput_SingleHopUnchanged`、`TestSingleHopPromptIdentityEqualsDial` | — |
 | W13 | `parseSSHCommandLine` 解析 `-p`/`user@host`；`-J` 不挂钩 | `TestParseSSHCommandLine_PortAndUserHost`、`TestParseSSHCommandLine_SkipComplex` | — |
 | W14 | nested 注入后 `chain on`；新 Client 默认 chain off | `TestForwardStdin_SSHEnablesChainMode`、`TestRunInteractive_SingleHopChainOff` | `!ait chain` 显示 on |
-| W15 | setup pause 期间 prompt 仅入 scroll 时，`finishRemoteSetup` **立即**写 stdout；stdin 无 `\r`；无双 prompt | `TestFinishRemoteSetup_EmitsBufferedPromptStdout`、`TestFinishRemoteSetupShowsPromptOnceWhenPaused` | `aissh devhost` 无需 Enter 即见 `AiT user@host:…>` |
+| W15 | setup pause 期间 prompt 仅入 scroll 时，`finishRemoteSetup` **立即**写 stdout；stdin 无 `\r`；无双 prompt | `TestFinishRemoteSetup_EmitsBufferedPromptStdout`、`TestFinishRemoteSetupShowsPromptOnceWhenPaused` | `aitssh devhost` 无需 Enter 即见 `AiT user@host:…>` |
 | W16 | `\r` refresh 首条 prompt 不被 premature `remotePromptShown` 丢弃；emit 失败回退 refresh | `TestFinishRemoteSetup_RefreshPromptReachStdout`、`TestFinishRemoteSetup_EmitFailFallsBackRefresh` | 同 W15；无 marker 路径亦无需 Enter |
 
 ### NP* 明细（嵌套 SSH idle poll / chain·host）
@@ -497,8 +480,8 @@ raw 模式 TTY（`term.MakeRaw` 期间）下 `OPOST/ONLCR` 关闭，bare `\n` �
 
 | ID | 验收行为 | 自动化测试 | 手动烟雾 |
 |----|----------|------------|----------|
-| PJ1 | jump client 在终跳握手前保持打开；`Client.Close` 再关 via | `TestDialProxyJumpChain_KeepsJumpAlive`、`TestClient_CloseClosesNestedViaChain` | `aissh -J root@jump.example:2222 -p 2222 root@final.example hostname` |
-| PJ2 | 每个 `-J` hop 经 `ssh -G` 解析 Host 别名/端口/用户 | `TestResolve_ProxyJumpHostAlias`、`TestDialChain_JumpUsesResolvedHostPort`、`TestResolveJumpDialOptions_UsesSSHG` | `aissh -J jump -p 2222 root@final.example hostname` |
+| PJ1 | jump client 在终跳握手前保持打开；`Client.Close` 再关 via | `TestDialProxyJumpChain_KeepsJumpAlive`、`TestClient_CloseClosesNestedViaChain` | `aitssh -J root@jump.example:2222 -p 2222 root@final.example hostname` |
+| PJ2 | 每个 `-J` hop 经 `ssh -G` 解析 Host 别名/端口/用户 | `TestResolve_ProxyJumpHostAlias`、`TestDialChain_JumpUsesResolvedHostPort`、`TestResolveJumpDialOptions_UsesSSHG` | `aitssh -J jump -p 2222 root@final.example hostname` |
 
 ### P11 明细（meta 结束提示符 repaint）
 
@@ -511,14 +494,14 @@ raw 模式 TTY（`term.MakeRaw` 期间）下 `OPOST/ONLCR` 关闭，bare `\n` �
 | ID | 验收行为 | 自动化测试 | 手动烟雾 |
 |----|----------|------------|----------|
 | TM9a | attach 突发输出在 `pauseRemoteOut` 期间不写 stdout | `TestRunInteractive_TmuxAttachBurstSuppressed` | — |
-| TM9b | grace 窗口内迟到的 setup echo 从 stdout 剔除 | `TestHandleRemoteOutput_TmuxLateSetupLeakFiltered` | `aissh devhost --tmux` 无 stty/export PS1 泄漏 |
+| TM9b | grace 窗口内迟到的 setup echo 从 stdout 剔除 | `TestHandleRemoteOutput_TmuxLateSetupLeakFiltered` | `aitssh devhost --tmux` 无 stty/export PS1 泄漏 |
 | TM9c | 仅 `\r` 结尾的 setup 行仍被过滤 | `TestSetupOutputFilter_CRLines` | — |
 | TM9d | pre-attach `send-keys -l` 引号 golden（单引号 target + literal） | `TestBuildSendKeysLiteralCmd_Golden` | — |
-| TM10a | 省略 `--tmux` 重登清除 `tmux_enabled` | `TestLoginWithoutTmuxClearsTmuxEnabled` | `aissh devhost` 后再 `aissh devhost` store 无 tmux |
+| TM10a | 省略 `--tmux` 重登清除 `tmux_enabled` | `TestLoginWithoutTmuxClearsTmuxEnabled` | `aitssh devhost` 后再 `aitssh devhost` store 无 tmux |
 | TM10b | `--tmux` 登录设置 `tmux_enabled` | `TestLoginWithTmuxSetsTmuxEnabled` | — |
 | TM10c | tmux attach 失败含 sentinel + Try | `TestWrapTmuxAttachExitErr_Format`、`TestWrapTmuxPreAttachErr_Format` | — |
 | TM10d | `TmuxEnabled` 以 CLI `--tmux` 为准 | `TestBuildSessionForLogin_TmuxFollowsCLI` | — |
-| TM11a | 裸 `\n` 远程输出经 `writeInteractiveStdout` 转 CRLF | `TestHandleRemoteOutput_InteractiveStdoutCRLF`、`TestHandleRemoteOutput_GraceStripUsesCRLF` | `aissh devhost` 提示符起于列 0、无阶梯 |
+| TM11a | 裸 `\n` 远程输出经 `writeInteractiveStdout` 转 CRLF | `TestHandleRemoteOutput_InteractiveStdoutCRLF`、`TestHandleRemoteOutput_GraceStripUsesCRLF` | `aitssh devhost` 提示符起于列 0、无阶梯 |
 | TM11b | grace 期 `stripSetupLeakStdout` 保留 `\r`/`\r\n` | `TestStripSetupLeakStdout_PreservesCRLF`、`TestStripSetupLeakStdout_PreservesLoneLF` | — |
 | TM11c | `crlf.NewWriter` 对已含 `\r\n` 幂等（与 K23 一致） | `TestCRLFWriter_IdempotentOnCRLF`、`TestCRLFWriter_IdempotentAcrossWrites` | — |
 | TM11d | prompt 已 shown 后 duplicate 仍丢弃（W4 不回退） | `TestCopyOutDropsDuplicatePromptAfterShown` | — |
@@ -545,7 +528,7 @@ raw 模式 TTY（`term.MakeRaw` 期间）下 `OPOST/ONLCR` 关闭，bare `\n` �
 | V6 | SFTP get 在 100% 后、`Done` 前有 `closing…` | `TestTransferProgress_SFTPClosingPhase` | 直连 `!ait get`：100% → `closing…` → done |
 | V7 | 传输 active 时 `0x03` 触发 `transferCancel`，不写入远端 stdin | `TestProcessForwardStdin_TransferCtrlC`、`TestProcessForwardStdin_CtrlCFwdWhenInactive` | SSH 内传输中 Ctrl+C → 数秒内 cancelled |
 | V8 | `Session.Wait` 在已取消 ctx 下调用 `Abort` 并快速返回 | `TestSession_Wait_ContextCancelAborts` | — |
-| V9 | SFTP `copyWithContext` 在 ctx 取消后 2s 内退出（`ctxReader` 打断阻塞 Read） | `TestCopyWithContext_CancelDuringBlockedRead` | 独立 `aissh get` 传输中 Ctrl+C → 非 0 退出 |
+| V9 | SFTP `copyWithContext` 在 ctx 取消后 2s 内退出（`ctxReader` 打断阻塞 Read） | `TestCopyWithContext_CancelDuringBlockedRead` | 独立 `aitssh get` 传输中 Ctrl+C → 非 0 退出 |
 | V10 | `dataDone` 后 Feed「可打印垃圾 + ZEOF + ZFIN」→ `Wait` 成功 | `TestSession_Wait_TeardownAfterZFINWithPrefix` | 嵌套 SSH 链式 `!ait get` 大文件：100% → `finishing…` → `done`（数秒内） |
 | V11 | 队首 PTY 垃圾后 resync 可解析 ZFIN 并回到 Idle | `TestZModem_ResyncSkipsPrefix` | — |
 | V12 | `SetChainTeardown(true)` 使用 30s teardown 常量（非默认 15s） | `TestSession_Wait_TeardownChainTimeout` | — |
@@ -557,12 +540,12 @@ raw 模式 TTY（`term.MakeRaw` 期间）下 `OPOST/ONLCR` 关闭，bare `\n` �
 | ID | 验收行为 | 自动化测试 | 手动烟雾（无 mock 时） |
 |----|----------|------------|------------------------|
 | N1 | `!ait dest` suspend 当前 persisted 会话并进入新 host | `TestHandleMetaLine_ChainLogin` | SSH：`!ait user@hostB` 进入 hostB |
-| N2 | ephemeral 当前会话 `!ait user@hostB` → auto-persist + suspend + 进入新 host | `TestEnsureSessionPersisted_ChainLogin` | `aissh hostA`（无 save）→ `!ait user@hostB` |
+| N2 | ephemeral 当前会话 `!ait user@hostB` → auto-persist + suspend + 进入新 host | `TestEnsureSessionPersisted_ChainLogin` | `aitssh hostA`（无 save）→ `!ait user@hostB` |
 | N3 | `!ait load id` 链式 load | `TestRunInteractive_ChainLoad` | SSH：`!ait load <alias>` |
 | N4 | `!ait session --switch alias` auto-suspend + switch | `TestRunInteractive_ChainSwitch` | SSH：`!ait session --switch hostA` |
 | N5 | 链式 login 后 DB：旧 session `suspended`，新 `active` + current meta | `TestChainLogin_DBSessionStates` | `!ait session --list` 见两行状态 |
 | N6 | `login` 首词 → unknown / not-found（非专用 Try；shell 不回落 PATH `login`） | `TestExecuteWriters_LoginUnknown`、`TestExecuteLine_LoginUnknown`、`TestExecute_LoginUnknown`、`TestDispatchShellCommand_LoginSkipsPATH` | — |
-| N7 | 本机 shell active 时 ssh 形 argv 仍 blocked（R4 不回退） | shell dispatch tests | `aissh shell` 内 active 时 `devhost` → Try |
+| N7 | 本机 shell active 时 ssh 形 argv 仍 blocked（R4 不回退） | shell dispatch tests | `aitssh shell` 内 active 时 `devhost` → Try |
 | N8 | `!ait suspend`/`get`/`put` 路径不变（无 AI meta） | 现有 Z*/H4* 仍过；OA20–OA22 | `!ait get` 烟雾 |
 | N9 | ephemeral 会话 `!ait suspend` → auto-persist + suspended + scrollback | `TestEnsureSessionPersisted_Suspend` | ephemeral connect 后 `!ait suspend` → `session --list` 可见 |
 | N10 | auto-persist 同连接键 dedupe（D1 不回退） | `TestEnsureSessionPersisted_DedupeConnectionKey` | — |
@@ -586,7 +569,7 @@ raw 模式 TTY（`term.MakeRaw` 期间）下 `OPOST/ONLCR` 关闭，bare `\n` �
 
 | ID | 验收行为 | 自动化测试 | 手动烟雾 |
 |----|----------|------------|----------|
-| M1 | `go.mod`/`go.sum` 无外部 `github.com/xiwh/zmodem`；空 cache 可 build | `TestGoMod_NoExternalXiwhZmodem`、`TestBuild_FreshModCache`（`cmd/aissh/build_gate_test.go`） | macOS：`go install github.com/os-artificer/AiT/cmd/aissh@latest` |
+| M1 | `go.mod`/`go.sum` 无外部 `github.com/xiwh/zmodem`；空 cache 可 build | `TestGoMod_NoExternalXiwhZmodem`、`TestBuild_FreshModCache`（`cmd/ssh/build_gate_test.go`） | macOS：`go install github.com/os-artificer/AiT/cmd/ssh@latest` |
 
 ### MS* 明细（in-repo testenv-mock：SSH+SFTP / HTTP）
 
@@ -622,18 +605,18 @@ Loopback mocks for required external services (no real hosts or personal infra).
 
 | ID | 验收行为 | 自动化测试 |
 |----|----------|------------|
-| EX1 | 默认（无 CLI/env/config）全部 AI 入口拒绝，多行 Try | `TestAIExperimental_DefaultOff`（config 包） |
+| EX1 | 默认（无 CLI/env/config）AI 开启 | `TestAIExperimental_DefaultOn`（config 包） |
 | EX2 | `AIT_AI_EXPERIMENTAL=1` 开启 | `TestAIExperimental_EnvOn`（config 包） |
-| EX3 | `ai.experimental.enabled: true` 开启 | `TestAIExperimental_ConfigOn`（config 包） |
-| EX4 | `ai` / `ai connect` / `ai provider` / `ai ollama status` / `model list` 关闭时均门禁；help 仍可用；`ai ask`/`ai agent` unknown | opsai `TestOpsAI_ExperimentalDisabled`、`TestOpsAI_AskAgentRemoved` 等 |
-| EX4b | 实验关 + 已配置 API key：`ai model list` / `connect` 仍拒绝 | opsai 等价测例 |
+| EX3 | `ai.experimental.enabled: true` 开启（配置默认） | `TestAIExperimental_DefaultOn`（config 包） |
+| EX4 | 实验关闭时 `ait agent model list` 不被该门禁拒绝；`ai ask` / 裸 `ai agent` 仍 unknown | `TestOpsAI_ExperimentalDisabled`、`TestOpsAI_AskAgentRemoved` |
+| EX4b | 实验关时 `ait agent model list` 不因实验门禁拒绝（与是否已配置 API key 无关） | `TestOpsAI_ExperimentalDisabled` |
 | EX5–EX6 | ~~`!!`/`!ait ai` / shell `ai`~~ | **删除** → OA20–OA23 |
 | EX7 | `config set/get ai.experimental.enabled` | `TestSetGetKey_AIExperimental` |
 | EX8 | `agentcore` 不 import 产品包 / 无 aimode | `TestAgentcore_NoProductImports`、`TestRepo_NoAimodeImport`（AC-V4） |
-| EX9 | 开启后门禁不回退 OA* / AG* | 现有套件 + **opsai** `TestMain` 默认 `AIT_AI_EXPERIMENTAL=1` |
-| EX10 | 进程入口 `ai --ai-experimental` 剥离且开启；不写 config | `TestOpsAI_ExperimentalCLIFlag` 等（OA13） |
-| EX11–EX12 | ~~aissh `!!` / ExecuteCobraOnly 旗~~ | **删除** → OA25 |
-| EX13 | 新增 ai 子命令仅挂 opsai subregistry 即继承门禁 | opsai 子树门禁测例 |
+| EX9 | 开启后门禁不回退 OA* / AG* | 现有套件 + `internal/ait/agent` `TestMain` 默认 `AIT_AI_EXPERIMENTAL=1` |
+| EX10 | 进程入口 `ait --ai-experimental` 剥离且开启；不写 config | `TestOpsAI_ExperimentalCLIFlag` 等（OA13） |
+| EX11–EX12 | ~~aitssh `!!` / ExecuteCobraOnly 旗~~ | **删除** → OA25 |
+| EX13 | admin 子命令注册在 `internal/ait/agent/subregistry`（`connect`、`model`、`provider`、`ollama`、`config`） | `TestIsAdminVerb_MatchesRegistry` |
 
 ### 测试名等价说明（规则名与仓库实现）
 
@@ -646,7 +629,7 @@ Loopback mocks for required external services (no real hosts or personal infra).
 | `TestApproveSession_LowRiskSkipsSecond` | `TestConfirm_ApproveSessionLowRiskSkipsSecond` |
 | `TestConfirm_PatternTrustSkipsSamePrefix` | `TestConfirm_PatternTrustFirstToken` |
 | `TestConfirm_HighRiskNoSessionOption` | `TestRenderPrompt_HighRiskOmitsPatternSession` |
-| `TestAIPromptFromMetaLine` | **已删除**（aissh AI meta）；负向见 OA20–OA22 |
+| `TestAIPromptFromMetaLine` | **已删除**（aitssh AI meta）；负向见 OA20–OA22 |
 
 ### C17–C22 明细（`internal/pkg` 字面量常量化，除 `ai/` 外）
 
@@ -719,7 +702,7 @@ Loopback mocks for required external services (no real hosts or personal infra).
 | BI1 | Format ldflags 优先 | `TestFormat_LdflagsWin` |
 | BI2 | Short 无值 → `dev` | `TestShort_DevFallback` |
 | BI3 | Short 用 embedded | `TestShort_Embedded` |
-| BI4 | aissh/aiimg/ailog/aihost version 仍可用 | `internal/img` / `internal/ssh/version` / `internal/host` 测试 |
+| BI4 | aitssh/aiimg/ailog/aihost version 仍可用 | `internal/img` / `internal/ssh/version` / `internal/host` 测试 |
 
 ### AH* 明细（`aihost` CLI）
 
@@ -796,7 +779,7 @@ Loopback mocks for required external services (no real hosts or personal infra).
 | AT4 | OS `ait ssh …` → interactive only | `TestExecuteWriters_InteractiveOnly` |
 | AT5 | REPL 插件名走 Discover Path | `TestExecuteLine_RunPluginUsesPath` |
 | AT8 | 未知命令 → errhint | `TestExecuteLine_UnknownCommand` |
-| AT11 | test-cross 含 cmd/ait | merge gate |
+| AT11 | test-cross 含 cmd/aitt | merge gate |
 | AT14 | ExitError 吞掉；Join/wrap ExitError 不吞 | `TestExecuteLine_RunPluginSwallowsExitError`、`TestExecuteLine_JoinedExitErrorNotSwallowed`、`TestExecuteLine_WrappedExitErrorNotSwallowed` |
 | AT15 | 历史文件 `ait_repl_history`（≠ `repl_history`） | `TestHistoryPath_NotReplHistory`、`TestNewAITHistory_Basename` |
 | AT19 | REPL `version` 不 exec 插件 | `TestExecuteLine_VersionBuiltin` |
@@ -806,10 +789,10 @@ Loopback mocks for required external services (no real hosts or personal infra).
 | AT29a | 插件执行期间父进程吸收 Interrupt，不退出 REPL | `TestWithAbsorbedInterrupt_Survives` |
 | AT29b | absorb 下真实 exec 子进程仍可被 SIGINT 终止（非 SIG_IGN 继承） | `TestWithAbsorbedInterrupt_ChildReceivesSIGINT` |
 | AT29c | 插件 ExitError 不结束 REPL；提示符 Ctrl+C 不退出 | AT14 + `TestReadLine_HistorySkipEmpty`（Ctrl+C）；烟雾 |
-| AT30a | 唯一前缀 `ais` + Tab → `aissh`（无后续参数则带尾随空格） | `TestCompleteFirstToken_UniquePlugin` |
-| AT30b | `ai` + Tab → 列出注入的 `aihost`/`aiimg`/`ailog`/`aissh`（LCP 仍为 `ai`，行不变） | `TestCompleteFirstToken_AIPrefixListsFour` |
+| AT30a | 唯一前缀 `ais` + Tab → `aitssh`（无后续参数则带尾随空格） | `TestCompleteFirstToken_UniquePlugin` |
+| AT30b | `ai` + Tab → 列出注入的 `aihost`/`aiimg`/`ailog`/`aitssh`（LCP 仍为 `ai`，行不变） | `TestCompleteFirstToken_AIPrefixListsFour` |
 | AT30c | Completer nil 仍插入 Tab | `TestReadLine_NilCompleterInsertsTab` |
-| AT30d | `aissh ` 行尾（第二词）Tab 无操作 | `TestCompleteFirstToken_SecondTokenNoop` |
+| AT30d | `aitssh ` 行尾（第二词）Tab 无操作 | `TestCompleteFirstToken_SecondTokenNoop` |
 | AT30e | `he` + Tab → `help`（可带尾随空格） | `TestCompleteFirstToken_UniqueHelp` |
 | AT30f | `h` + Tab → 列出 `help`/`history`，行不变 | `TestCompleteFirstToken_HListsHelpHistory` |
 | AT31 | `install` 无参 plan 四官方插件 | `TestPlanInstall_AllOfficial` |
@@ -835,7 +818,7 @@ Loopback mocks for required external services (no real hosts or personal infra).
 | AP8 | plugins 根散落文件不发现 | `TestDiscover_ScatterFileIgnored` |
 | AP9 | 零插件根帮助仍可用 + Try（含 make install） | `TestWriteRootHelp_NoPlugins` |
 | AP10 | 有 json 无二进制不注册 | `TestDiscover_JSONWithoutBinarySkipped` |
-| AP11 | 四工具 `ait-plugin-manifest` 早于默认 | `TestCLI_PluginManifest`（aissh/aiimg/ailog/aihost） |
+| AP11 | 四工具 `ait-plugin-manifest` 早于默认 | `TestCLI_PluginManifest`（aitssh/aiimg/ailog/aihost） |
 | AP12 | Discover `sync.Once`；取消 ctx 不污染缓存 | `TestDiscover_OnceCached`、`TestDiscover_IgnoresCancelledContext` |
 | AP13 | `toolname.AIT == "ait"` | `TestToolnameAIT` |
 | AP14 | InstallDirs 解析后去重 | `TestUniqueInstallDirs_DedupesResolved` |
@@ -846,16 +829,16 @@ Loopback mocks for required external services (no real hosts or personal infra).
 - [ ] `make fmt && make vet && make test && make build && make test-cross`
 - [ ] KP1–KP8：`aitkeep` ping、资源动作、重启预算、单实例、硬帽、CLI、官方插件 `keep`（见 **KP\***）
 - [ ] MS1–MS23：in-repo testenv-mock SSH+HTTP 成功与错误路径 + CI 全量 mock e2e（见 **MS\*** 明细；`docs/testenv-mock.md`）
-- [ ] AT* / AP*：`ait` toolbox REPL + 插件发现（见 **AT\*** / **AP\*** 明细；含 **AT30a–f** Tab 首词补全、**AT31–AT48** install/update/upgrade；**OA9–OA10** `ai` 插件名）
+- [ ] AT* / AP*：`ait` toolbox REPL + 插件发现（见 **AT\*** / **AP\*** 明细；含 **AT30a–f** Tab 首词补全、**AT31–AT48** install/update/upgrade；**OA9–OA10**）
 - [ ] AH1–AH63：`aihost` 主机监控（见 **AH\*** 明细）
-- [ ] OA1–OA17：Ops AI Agent 正向（见 **OA\***）；OA14 替代原 R15（`ai model list`）
-- [ ] OA20–OA25：aissh 去 AI 负向（`aissh ai` / `!!` AI / `!ait ai` 移除）
-- [ ] EX1–EX3：config 包实验门禁 SSOT；EX4+ 在 opsai（见 **EX\***）；agentcore 边界（EX8/AC-V4）
+- [ ] OA1–OA17：Ops AI Agent 正向（见 **OA\***）；OA14 替代原 R15
+- [ ] OA20–OA25：aitssh 去 AI 负向（`aitssh ai` / `!!` AI / `!ait ai` 移除）
+- [ ] EX1–EX3：config 包实验门禁 SSOT；EX4+ 见 **EX\***；agentcore 边界（EX8/AC-V4）
 - [ ] R16 未回退（Save 无根级 `deepseek`；`TestSaveYAML_NoRootDeepseek` 等通过）
-- [ ] R17 未回退（`aissh models` unknown；`TestTopLevelModelsRemoved`；`models_dir`/`OLLAMA_MODELS` 测试通过）
+- [ ] R17 未回退（`aitssh models` unknown；`TestTopLevelModelsRemoved`；`models_dir`/`OLLAMA_MODELS` 测试通过）
 - [ ] RO-1…RO-2：`ai ask`/`ai agent` unknown + Try `ait agent`；无 `aichat` / `agentcore.RunOnce`
 - [ ] R18a–b / R18c–f / R19 / RA*：**已删除**；由 RO-1 / OA20–OA22 覆盖负向
-- [ ] AG-1：Loop 仅经 `ait agent`；裸 `ai` → help（`TestOpsAI_DefaultShowsHelp`）
+- [ ] AG-1：Loop 仅经 `ait` / `ait agent`（`TestOpsAI_DefaultShowsHelp`）
 - [ ] AG-2：只读自动放行（`TestPolicy_ReadAutoRun`）
 - [ ] AG-3：低危写需确认（`TestPolicy_WriteConfirm`）
 - [ ] AG-4：高危始终确认（`TestPolicy_HighAlwaysConfirm`）
@@ -872,7 +855,7 @@ Loopback mocks for required external services (no real hosts or personal infra).
 - [ ] Confirm/Classify 回归：`TestConfirm_ReadAutoApproves`、`TestClassify_Read`、`TestClassify_Low`、`TestClassify_HighPatterns`、`TestConfirm_HighRiskIgnoresSession`
 - [ ] D1–D19：登录连接去重与已有连接更新（见 **D* 明细**）
 - [ ] E1–E5：会话四元组唯一键 username+host+port+alias（见 **E* 明细**）
-- [ ] S1–S18：`aissh session` flag CLI（见 **S* 明细**）
+- [ ] S1–S18：`aitssh session` flag CLI（见 **S* 明细**）
 - [ ] B1–B7：session 列表 `#` 与 load 交互（见 **B* 明细**）
 - [ ] H0a–H0d：errhint 基础设施（见 **H0**）
 - [ ] H1a–H1e：session hint + `#`/`-v`（见 **H1**、**B\***）
@@ -883,11 +866,11 @@ Loopback mocks for required external services (no real hosts or personal infra).
 - [ ] K10–K22：history 命令、Ctrl+R、持久化（见 **K\*** 明细 K10–K22）
 - [ ] K23–K24：raw-TTY 输出 CRLF（Agent Loop / shell `load` picker；见 **K\*** 明细 K23–K24）
 - [ ] P1–P6：AppRoot / AIT_HOME 单目录（见 **P\***）
-- [ ] G1–G16：`aissh config init` / `view` / `edit` / `validate`（见 **G\***）
+- [ ] G1–G16：`aitssh config init` / `view` / `edit` / `validate`（见 **G\***）
 - [ ] Z1–Z10：链式 ZMODEM `!ait get/put`（见 **Z\*** 明细）
 - [ ] F1–F4：ZMODEM teardown 尾部 drain / strip（见 **F\*** 明细）
-- [ ] X1–X8：`aissh shell` bin 扩展与 PATH 回退（见 **X\*** 明细）
-- [ ] Y1–Y10：`aissh shell` 内置 `ll`（仅 shell 模式；见 **Y\*** 明细）
+- [ ] X1–X8：`aitssh shell` bin 扩展与 PATH 回退（见 **X\*** 明细）
+- [ ] Y1–Y10：`aitssh shell` 内置 `ll`（仅 shell 模式；见 **Y\*** 明细）
 - [ ] T1–T12：统一 get/put 路由 + lrzsz 安装 + ZMODEM 握手修复（见 **T\*** 明细）
 - [ ] TR1–TR9：get/put 相对 remote cwd 解析 + 默认目标 basename（见 **TR\*** 明细）
 - [ ] U26–U29：传输进度行内更新（见 **U26–U29** 明细）
@@ -910,34 +893,34 @@ Loopback mocks for required external services (no real hosts or personal infra).
 - [ ] M1：`go install` 无外部 xiwh/zmodem（见 **M\*** 明细）
 - [ ] 相关自动化测试未删除或弱化
 
-手动烟雾（涉及 AI/config 时）：`timeout 5 ./bin/ai model list`、`timeout 5 ./bin/ai help`、`timeout 5 ./bin/ai ask ping`（unknown + Try）、`timeout 5 ./bin/ait agent --help`、`./bin/aissh config view`、`./bin/aissh config validate && echo OK`、`./bin/aissh config --help | grep -E 'view|edit|validate'`。
+手动烟雾（涉及 AI/config 时）：`timeout 5 ./bin/ait agent model list`、`timeout 5 ./bin/ait agent --help`、`timeout 5 ./bin/ait agent ask ping`（unknown + Try）、`./bin/aitssh config view`、`./bin/aitssh config validate && echo OK`、`./bin/aitssh config --help | grep -E 'view|edit|validate'`。
 
 手动烟雾（多行 Hint，H*）：
 
 ```bash
-./bin/aissh session --load 621b71ac    # H1a：多行 Try
-./bin/aissh session                    # H1c：无 flag → Try
-./bin/aissh --save                   # H2a：destination required → Try
-./bin/aissh                          # LC8：无参 → root help（非 Try）
-./bin/aissh config get bad.key         # H3b：unknown config key → Try
-./bin/ai ask ping                      # RO-1：unknown + Try ait agent
+./bin/aitssh session --load 621b71ac    # H1a：多行 Try
+./bin/aitssh session                    # H1c：无 flag → Try
+./bin/aitssh --save                   # H2a：destination required → Try
+./bin/aitssh                          # LC8：无参 → root help（非 Try）
+./bin/aitssh config get bad.key         # H3b：unknown config key → Try
+./bin/ait agent ask ping                      # RO-1：unknown + Try ait agent
 ```
 
 手动烟雾（REPL 快捷键，K*）：
 
 ```bash
-./bin/aissh shell   # list → Up/Down；Ctrl+A/E；Left 编辑
-./bin/ai            # run 确认后 Up 不应出现 y/n
+./bin/aitssh shell   # list → Up/Down；Ctrl+A/E；Left 编辑
+./bin/ait            # Agent Loop；确认后 Up 不应出现 y/n
 ```
 
 手动烟雾（history / Ctrl+R，K10–K22）：
 
 ```bash
-./bin/aissh shell
+./bin/aitssh shell
 # list → history → history 2 → history -d 1 → history -c
 # Ctrl+R 搜 list；Ctrl+G 取消；双按 Ctrl+R 更旧匹配
 # exit 再进 shell → Up 可见（K14 持久化）
-./bin/ai
+./bin/ait
 # run echo hi → 确认 y → history 不含 y（K20）
 # Ctrl+R 搜 run；clear 后 history 仍有输入行（K19）
 ```
@@ -945,17 +928,17 @@ Loopback mocks for required external services (no real hosts or personal infra).
 手动烟雾（raw-TTY CRLF，K23–K24）：
 
 ```bash
-./bin/aissh shell
+./bin/aitssh shell
 # load            # K24：编号列表 + Select session 提示每行起于列 0
 # exit
-./bin/ai
+./bin/ait
 # history         # 本地 AI REPL；每条 entry 起于列 0
 ```
 
-手动烟雾（负向 aissh 去 AI，OA20–OA22）：
+手动烟雾（负向 aitssh 去 AI，OA20–OA22）：
 
 ```bash
-./bin/aissh ai                      # OA20：unknown
+./bin/aitssh ai                      # OA20：unknown
 # SSH 内：!!ls 应进远端；!ait ai → unknown + Try   # OA21/OA22
 ```
 
@@ -963,7 +946,7 @@ Loopback mocks for required external services (no real hosts or personal infra).
 
 ```bash
 # 本机
-./bin/ai                    # AG-1：help + Try ait agent
+./bin/ait                    # AG-1：进 Loop
 ./bin/ait agent             # AG-1：进 Loop
 # 自然语言：列出文件          # AG-2：ls 自动执行无确认
 # 自然语言：查看进程          # AG-2
@@ -977,42 +960,42 @@ run rm -rf /tmp/test        # AG-4：高危仍每次确认
 # step limit 后回车            # AG-13：立即响应，不挂起
 
 # 远程
-./bin/ai connect user@host  # OA5：远程 Loop（AG-12：远程超时兜底，Ctrl+C 走远端）
+./bin/ait agent connect user@host  # OA5：远程 Loop（AG-12：远程超时兜底，Ctrl+C 走远端）
 ```
 
 手动烟雾（远程提示符，W*）：
 
 ```bash
 # 默认 short（末级目录名）
-aissh user@host          # W15：连接后直接见 AiT user@host:…> ，无需 Enter
-./bin/aissh config get session.remote_prompt.path
+aitssh user@host          # W15：连接后直接见 AiT user@host:…> ，无需 Enter
+./bin/aitssh config get session.remote_prompt.path
 
-aissh config set session.remote_prompt.path absolute
-aissh session --load <id>      # W10：与 connect 相同 absolute 表现
+aitssh config set session.remote_prompt.path absolute
+aitssh session --load <id>      # W10：与 connect 相同 absolute 表现
 
 # 链式（-J 或 !ait chain 传输）
-aissh -J jump user@final # 提示符 user@final:…
+aitssh -J jump user@final # 提示符 user@final:…
 !ait chain on && !ait get …  # T* 仍绿；提示符不变
 
 # local → remote（沿用 connect 时 PS1）
 !ait local && !ait remote
 
 # nested manual ssh（W11–W14）
-aissh root@proxy
+aitssh root@proxy
 ssh root@final -p2222         # W11：final 上 AiT 提示符；W14：!ait chain → on
 ```
 
-对比：`aissh -J proxy,final` 应直接在内层出现 AiT 提示符（无 proxy 提示符阶段）。
+对比：`aitssh -J proxy,final` 应直接在内层出现 AiT 提示符（无 proxy 提示符阶段）。
 
 手动烟雾（connect `--tmux` / 提示符 CRLF，TM9–TM13）：
 
 ```bash
-aissh devhost
+aitssh devhost
 # TM11/W15：单行 AiT user@host:path> 起于列 0，无阶梯重复；无需 Enter
 exit
-aissh devhost
+aitssh devhost
 exit
-aissh devhost --tmux
+aitssh devhost --tmux
 # TM13/TM9：成功进入 tmux；setup 无泄漏；提示符起于列 0
 # TM12：若失败 stderr 多行 Try（tmux pane setup / attach failed），非静默
 # TM10：先非 tmux 再 --tmux 可切换；省略 --tmux 重登清除 tmux_enabled（TM10a）
@@ -1022,7 +1005,7 @@ aissh devhost --tmux
 
 ```bash
 # 需 nested SSH + active shell 安装 lrzsz（apt/brew install lrzsz）
-aissh devhost
+aitssh devhost
 ssh root@internal-host
 echo remote > test
 !ait get ./test ./test.local    # Z6/Z7/U26/U30/F4：handshake inline → copying… N%（单行刷新）→ done；stdout 无协议乱码
@@ -1036,7 +1019,7 @@ cat test                        # 仅含 remote，无 sz/rz 命令行
 
 ```bash
 # 直连 SFTP（会话内）
-aissh user@host
+aitssh user@host
 !ait get /remote/big.bin ./big.bin   # V6：100% → closing… → done
 
 # 链式 ZMODEM（需 lrzsz）
@@ -1045,14 +1028,14 @@ ssh internal
 
 # Ctrl+C（copying… 或 finishing…/closing…）
 # 会话内：数秒内 cancelled，回到 AiT 提示符  # V7
-# 独立：aissh get … 传输中 Ctrl+C → 非 0  # V9
+# 独立：aitssh get … 传输中 Ctrl+C → 非 0  # V9
 ```
 
 手动烟雾（SSH 会话内 login/load/switch，N*）：
 
 ```bash
 # 需真实 SSH hostA/hostB
-aissh hostA                    # 无 --save
+aitssh hostA                    # 无 --save
 # 在 hostA：
 !ait user@hostB            # N2：auto-persist + 切 hostB
 !ait session --list              # N5
@@ -1061,13 +1044,13 @@ aissh hostA                    # 无 --save
 !ait suspend                     # N9：ephemeral 亦 auto-persist
 ```
 
-自动化映射（AI）：OA* → `TestOpsAI_*` / `TestAissh_*` / connect 测例；AG* / AC-V4* / RO* → `internal/pkg/agentcore/*_test.go` + opsai；R15 → OA14。SSH / transfer / session / shell 映射见各 **字母前缀明细** 表（勿再引用已删 aimode / A20–A22 / aichat / R18a–b 测例名）。
+自动化映射（AI）：OA* → `TestOpsAI_*` / `TestAissh_*` / connect 测例；AG* / AC-V4* / RO* → `internal/pkg/agentcore/*_test.go`；R15 → OA14。SSH / transfer / session / shell 映射见各 **字母前缀明细** 表。
 
 ## 新功能
 
 - 须附专项验收项（如 A1–A19）并在 PR 中说明
-- 用户可见行为变更须同步 [docs/tools/aissh.md](docs/tools/aissh.md) 或 [docs/tools/ai.md](docs/tools/ai.md)（按工具）
-- package 分层/注册约定变更须同步 [docs/tools/aissh-internals.md](docs/tools/aissh-internals.md) / [docs/tools/ai-internals.md](docs/tools/ai-internals.md) 与 [package-layering.mdc](package-layering.mdc)
+- 用户可见行为变更须同步 [docs/tools/aissh.md](docs/tools/aissh.md) 或 [docs/tools/ait.md](docs/tools/ait.md)（按工具）
+- package 分层/注册约定变更须同步 [docs/tools/aissh-internals.md](docs/tools/aissh-internals.md) / [docs/tools/ait-internals.md](docs/tools/ait-internals.md) 与 [package-layering.mdc](package-layering.mdc)
 - CLI 新命令遵守 [cli-help.mdc](cli-help.mdc)
 
 ### 验收清单维护（新功能实现时强制）
@@ -1080,7 +1063,7 @@ aissh hostA                    # 无 --save
 | 2. 实现测试 | 每个 ID **至少一条** `*_test.go` 用例；测试名与 ID 在 PR 中可对照；禁止仅手测、零自动化的用户可见行为。 |
 | 3. 纳入交付勾选 | PR / Agent 交付清单须列出本功能全部 ID；`make test` 须覆盖这些测试。 |
 | 4. 纳入后续回归 | 合入后 ID 与测试并入**永久回归集**：此后每次 `make test`、合并前门禁及交付勾选均须仍通过；与 **OA\***、**AG\***、**AC-V4\***、**R1–R14** 同等。 |
-| 5. 文档与 help | 用户可见行为同步 `docs/tools/aissh.md` / `docs/tools/ai.md`（按工具）；CLI 同步 `internal/pkg/helpdoc` 与各命令 `help.go`。 |
+| 5. 文档与 help | 用户可见行为同步 `docs/tools/aissh.md` / `docs/tools/ait.md`（按工具）；CLI 同步 `internal/pkg/helpdoc` 与各命令 `help.go`。 |
 
 **示例（已登记专项，后续 PR 须继续验证）**
 
@@ -1088,20 +1071,19 @@ aissh hostA                    # 无 --save
 |------|------|------------|
 | U* | 本地 REPL UTF-8 输入 | `TestReadLineRawUTF8Chinese`、`TestReadLineRawBackspaceUTF8` |
 | C* | internal 字符串常量化（语义不变） | `TestLoginHelpMatchesLegacyGolden`、`TestSaveYAML_NoRootDeepseek`、`TestHints_ConfigSetAPIKeyCmd`、`TestHints_NotConfiguredTryLines`、`TestConstants_TableHeaderGolden`；`internal/pkg/ai/agent/*_test.go`、`client/router_test.go` 仍过；**C17–C22**（`internal/pkg`）、**C23–C28**（`internal/ssh`）见上表 |
-| A* | `aissh shell` 清屏（`clear` / Ctrl+L） | `TestClearScreen`、`TestExecuteLineClear`、`TestReadLineRawCtrlLRedrawsLine` |
+| A* | `aitssh shell` 清屏（`clear` / Ctrl+L） | `TestClearScreen`、`TestExecuteLineClear`、`TestReadLineRawCtrlLRedrawsLine` |
 | L* | login 可选保存（`--save` / `--alias` 隐含保存） | `TestShouldPersistLogin`、`TestPersistLoginSessionSaveOnly`、`TestPersistLoginSessionAliasOnly`、`TestParseSave`、`TestLoginHelpMatchesLegacyGolden` |
 | D* | login 连接键 dedupe 与 TTL（username+host+port+alias） | `TestResolvePersistSessionID_*`、`TestFindSessionByKey_*`、`TestMigrate_DedupeConnectionKeyKeepsNewest`、`TestPersistLoginSession_ExtendsAuthExpiry` |
 | E* | 同主机多 alias 独立会话行 | `TestResolvePersistSessionID_SeparateAliasesSameHost`、`TestResolvePersistSessionID_SaveAndAliasSeparateRows`、`TestFindSessionByKey_DifferentAliasSameConnection`、`TestPlanLoginPersistence_NoFlagSkipsAliasedOnly` |
-| S* | `aissh session` 统一 flag | `TestTopLevelListLoadSuspendRemoved`、`TestSessionCmd_*`、`TestExecuteLineList`、`TestWriteSessionHelpSections` |
+| S* | `aitssh session` 统一 flag | `TestTopLevelListLoadSuspendRemoved`、`TestSessionCmd_*`、`TestExecuteLineList`、`TestWriteSessionHelpSections` |
 | B* | session 列表 `#` / load 交互 / `-v` FULL_ID | `TestSessionCmd_ListNumberColumn`、`TestSessionCmd_LoadPickNonTTY`、`TestPickSession_SelectByNumber`、`TestListVerbose_IncludesFullID` |
 | H* | 多行 Hint（`errhint.WithTry` + `Print`） | `TestWithTry_PreservesIs`、`TestDestinationRequiredErr_Format`、`TestUnknownConfigKeyErr_Format`、`TestSessionCmd_NoActionFails`、`TestExecute_LoginUnknown`、`TestExecuteBlockedAI` |
 | K* | REPL 行编辑与 history | `TestReadLine_HistoryUpDown`、`TestHistoryCommand_List`、`TestReadLine_CtrlRSearch`、`TestExecuteLineHistory_Shell` |
 | K23–K24 | raw-TTY 输出 CRLF（Agent Loop / shell `load` picker） | `TestExecuteLineLoad_PickerCRLF`、`TestCRLFWriter_IdempotentOnCRLF`、`TestCRLFWriter_KeepsLoneCR`、`TestCRLFWriter_IdempotentAcrossWrites` |
 | P* | AppRoot / AIT_HOME 单目录 | `TestAppRoot_AITHomeOverride`、`TestConfigDir_EqualsDataDir`、`TestConfigLoad_MigratesLegacyConfig` |
-| G* | `aissh config init/view/edit/validate` | `TestConfigEnsureFile_Creates`、`TestConfigInitCmd`、`TestConfigViewCmd`、`TestConfigEditCmd`、`TestConfigValidateCmd_*`、`TestValidate_*`、`TestOpenEditor_Unix` |
-| RA* | ~~SSH 远程 AI REPL~~ **已删除** → OA20–OA22；远程用 `ai connect`（OA5+） | — |
-| OA* | Ops AI Agent 插件 `ai` / `opsai`（正向 OA1–OA17；负向 OA20–OA25） | `TestOpsAI_*`、`TestAissh_AISubtreeRemoved`、`TestMetaScanner_BangBangForwardsPTY`、… |
-| EX* | AI 实验门禁（EX1–EX3 config；EX4+ opsai；EX5–EX6/11–12 删） | `TestAIExperimental_*`、`TestOpsAI_ExperimentalDisabled`、`TestAgentcore_NoProductImports` |
+| G* | `aitssh config init/view/edit/validate` | `TestConfigEnsureFile_Creates`、`TestConfigInitCmd`、`TestConfigViewCmd`、`TestConfigEditCmd`、`TestConfigValidateCmd_*`、`TestValidate_*`、`TestOpenEditor_Unix` |
+| OA* | Ops AI Agent（`ait agent`；正向 OA1–OA17；负向 OA20–OA25） | `TestOpsAI_*`、`TestAissh_AISubtreeRemoved`、`TestMetaScanner_BangBangForwardsPTY`、… |
+| EX* | AI 实验门禁（EX1–EX3 config；EX4+；EX5–EX6/11–12 删） | `TestAIExperimental_*`、`TestOpsAI_ExperimentalDisabled`、`TestAgentcore_NoProductImports` |
 | LG* | `ailog` CLI 查看/搜索系统日志 | `TestWriteRootHelp`、`TestCLI_BuiltinFileSearch`、`TestCLI_SearchRequiresKeyword`、`TestCLI_Sources`、`TestCLI_FollowExpr`、`TestCLI_SearchExprOnly` |
 | AH* | `aihost` 主机监控 CLI / top 仪表盘 | `TestWriteRootHelp`、`TestCLI_Snapshot`、`TestCLI_Proc`、… |
 | AT* / AP* | `ait` toolbox REPL + 插件发现 + install/update/upgrade | `TestExecuteWriters_*`、`TestExecuteLine_*`、`TestWithAbsorbedInterrupt_*`、`TestDiscover_*`、`TestWriteManifest_Builtin`、`TestCompleteFirstToken_*`、`TestReadLine_NilCompleterInsertsTab`、`TestPlan*`、`TestExecute_*`（aitrelease）、`TestExecuteLine_Install*`、`TestWriteManageHelp_*`、`TestOfficialPluginNames_ManifestsAligned` |
@@ -1125,15 +1107,15 @@ aissh hostA                    # 无 --save
 | TM14* | `send-keys` pre-attach + phantom 行清理 | `TestTmuxPreAttachSetup_ClearPaneGolden`、`TestCleanupOnTmuxFailure_NewRowDeletes`、`TestDeleteLoginSession_RemovesRow`、`TestCleanupOnTmuxFailure_ExistingRowSuspends` |
 | Z* | 链式 ZMODEM `!ait get/put`（lrzsz over PTY） | `TestZModemSession_ExclusiveIO`、`TestHandleTransferPTY_UsesZModem`、`TestBuildSzCmd_Heredoc` |
 | F* | ZMODEM teardown 尾部 drain / strip | `TestDrainZModemTail_SuppressesStdout`、`TestZModemSession_StripProtocolNoise`、`TestHandleTransferPTY_PausesRemoteOut`、`TestHandleRemoteOutput_AfterZModemDrain` |
-| X* | `aissh shell` bin 扩展与 PATH 回退 | `TestExecuteLine_BuiltinWinsOverBin`、`TestResolveAppBin_Found`、`TestDispatchShellCommand_RunsBin`、`TestDispatchShellCommand_AitCLIBeforePATH`、`TestDispatchShellCommand_PATHFallback`、`TestDispatchShellCommand_PATHSkipsCLIError`、`TestBinDir_UnderAppRoot`、`TestResolveAppBin_RejectsUnsafeName`、`TestDispatchShellCommand_NotFoundHint` |
-| Y* | `aissh shell` 内置 `ll`（仅 shell 模式） | `TestShellLL_CurrentDir`、`TestShellLL_TargetPath`、`TestExecuteLine_LLWinsOverBin`、`TestDirlist_FormatMode`、`TestDirlist_SymlinkSuffix`、`TestShellLL_NotFoundHint`、`TestShellLL_TooManyArgs`、`TestAIMode_LLNotBuiltin`、`TestTopLevelLLUnknown` |
+| X* | `aitssh shell` bin 扩展与 PATH 回退 | `TestExecuteLine_BuiltinWinsOverBin`、`TestResolveAppBin_Found`、`TestDispatchShellCommand_RunsBin`、`TestDispatchShellCommand_AitCLIBeforePATH`、`TestDispatchShellCommand_PATHFallback`、`TestDispatchShellCommand_PATHSkipsCLIError`、`TestBinDir_UnderAppRoot`、`TestResolveAppBin_RejectsUnsafeName`、`TestDispatchShellCommand_NotFoundHint` |
+| Y* | `aitssh shell` 内置 `ll`（仅 shell 模式） | `TestShellLL_CurrentDir`、`TestShellLL_TargetPath`、`TestExecuteLine_LLWinsOverBin`、`TestDirlist_FormatMode`、`TestDirlist_SymlinkSuffix`、`TestShellLL_NotFoundHint`、`TestShellLL_TooManyArgs`、`TestAIMode_LLNotBuiltin`、`TestTopLevelLLUnknown` |
 | T* | 统一 get/put 路由（直连 SFTP / 链式 ZMODEM / 握手修复） | `TestRoute_DirectUsesSFTPWhenLrzszPresent`、`TestRoute_ChainPrefersZModemWhenLrzszPresent`、`TestInjectZModem_NoSttyNoQuietWait`、`TestSession_WaitHandshakeTimeout`、`TestHandleTransfer_ZModemFallbackSFTP` |
 | TR* | get/put 相对 remote cwd 解析 + 默认目标 basename | `TestJoinRemotePath_RelativeUnderCwd`、`TestResolveTransferArgs_SFTPRelativeRemote`、`TestNormalizeMetaTransferArgs_GetDefaultLocal`、`TestNormalizeMetaTransferArgs_GetDirTarget`、`TestParseTransfer_GetSinglePath`、`TestDefaultLocalPathForGet`、`TestWrapTransferWrongHop_SkipsSameHostAfterResolve`、`TestNormalizeMetaTransferArgs_PutDefaultRemote`、`TestNormalizeMetaTransferArgs_PutDirTarget`、`TestParseTransfer_PutSinglePath`、`TestDefaultRemotePathForPut`、`TestRemotePathWithDirDefault` |
 | N* | SSH 会话内 connect/load/switch 链式切换 + auto-persist | `TestHandleMetaLine_ChainLogin`、`TestEnsureSessionPersisted_*`、`TestRunInteractive_ChainLoad`、`TestRunInteractive_ChainSwitch`、`TestParseMetaChainLine_*` |
 | LC* | 去掉 `login` 子命令 / SSH 默认路由 | `TestExecuteWriters_*`、`TestExecuteLine_*`、`TestParseMetaChainLine_*` | 见 plan LC1–LC11 |
 | V* | 传输收尾 / 可取消 / ZEOF / ZFIN / send put 100% | `TestSession_Wait_TeardownAfterDone`、`TestSession_Wait_TeardownTimeout`、`TestSession_Wait_TeardownAfterZFINWithPrefix`、`TestSession_Wait_TeardownChainTimeout`、`TestSession_Wait_SendTeardownAfterUpload`、`TestZModem_ResyncSkipsPrefix`、`TestZModemReceive_ZEOFOffsetMismatch`、`TestBlockBuffer_CloseLargeSlowReader`、`TestZModemTransfer_FinishingPhase`、`TestZModemTransfer_PutWaitAfterProgress100`、`TestPTYZModemErrHint_TeardownTimeout`、`TestTransferProgress_SFTPClosingPhase`、`TestProcessForwardStdin_TransferCtrlC`、`TestSession_Wait_ContextCancelAborts`、`TestCopyWithContext_CancelDuringBlockedRead` |
-| EX* | AI 实验门禁（EX1–EX3 config；EX4+ opsai） | `TestAIExperimental_*`、`TestOpsAI_ExperimentalDisabled`、`TestAgentcore_NoProductImports` |
-| OA* | Ops AI Agent `ai` / `opsai` | `TestOpsAI_*`、`TestAissh_AISubtreeRemoved`、`TestMetaScanner_BangBangForwardsPTY`、`TestExecute_AIMetaUnknownHint` |
+| EX* | AI 实验门禁（EX1–EX3 config；EX4+） | `TestAIExperimental_*`、`TestOpsAI_ExperimentalDisabled`、`TestAgentcore_NoProductImports` |
+| OA* | Ops AI Agent（`ait agent`） | `TestOpsAI_*`、`TestAissh_AISubtreeRemoved`、`TestMetaScanner_BangBangForwardsPTY`、`TestExecute_AIMetaUnknownHint` |
 
 ### KP* 明细（`aitkeep` / 包 `keepalive`）
 

@@ -1,5 +1,5 @@
 # AiT example configuration
-# Copy to AppRoot as config.yaml (see docs/tools/aissh.md#data-directory); or: aissh config init / aissh config edit / aissh config validate
+# Copy to AppRoot as config.yaml (see docs/tools/aissh.md#data-directory); or: aitssh config init / aitssh config edit / aitssh config validate
 
 session:
   # Authentication cache TTL for load/switch without re-entering password
@@ -9,7 +9,7 @@ session:
     path: short
 
 ai:
-  # AI features (ai plugin) are on by default; set false to opt out.
+  # AI features (ait / ait agent) are on by default; set false to opt out.
   # One-process override: AIT_AI_EXPERIMENTAL=0
   experimental:
     enabled: true
@@ -28,11 +28,11 @@ ai:
     command_timeout: 2m
   providers:
     ollama:
-      enabled: true   # ai provider disable ollama to stop local routing
+      enabled: true   # ait agent provider disable ollama to stop local routing
       api_style: openai
       base_url: http://127.0.0.1:11434/v1
       model: llama3.2
-      # models_dir: /path/to/ollama/models   # OLLAMA_MODELS; set via ai ollama setup
+      # models_dir: /path/to/ollama/models   # OLLAMA_MODELS; set via ait agent ollama setup
     deepseek:
       enabled: true
       api_style: openai
@@ -45,10 +45,10 @@ ai:
       model: MiniMax-M2.5
 
 # API keys (OS keyring, not in this file):
-#   aissh config set ai.deepseek.api_key <key>
-#   aissh config set ai.minimax.api_key <key>
+#   ait agent config set ai.deepseek.api_key <key>
+#   ait agent config set ai.minimax.api_key <key>
 # Ollama does not need a key when tiered is enabled.
-# Quick setup: ai ollama setup   (choose models_dir; or --models-dir)
-# Providers: ai provider enable|disable <deepseek|minimax|ollama>
-# Status/service: ai ollama status | start --wait | stop | disable
-# List providers: ai model list
+# Quick setup: ait agent ollama setup   (choose models_dir; or --models-dir)
+# Providers: ait agent provider enable|disable <deepseek|minimax|ollama>
+# Status/service: ait agent ollama status | start --wait | stop | disable
+# List providers: ait agent model list

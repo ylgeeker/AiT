@@ -3,8 +3,8 @@
 ## Package layering
 
 ```text
-cmd/ailog/main.go
-  → internal/ailog (package ailog: Run, Execute, WriteRootHelp)
+cmd/log/main.go
+  → internal/log (package ailog: Run, Execute, WriteRootHelp)
        → registry (wraps internal/pkg/subregistry)  ← OCP registration
        → view (default route, not registered)
        → search / sources / version (registered)

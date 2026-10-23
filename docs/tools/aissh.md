@@ -1,5 +1,7 @@
 # aissh
 > AiT SSH tool guide for connect, session persistence, and transfer workflows.
+>
+> **Names:** binary `aitssh`, plugin command `ssh` (`ait ssh …`), Go package `aissh`, docs title aissh.
 
 ## Table of contents
 - [Overview](#overview)
@@ -21,16 +23,16 @@
 
 ## Overview
 
-`aissh` is the SSH tool in the AiT toolbox. It combines:
+`aitssh` (docs title **aissh**) is the SSH tool in the AiT toolbox. It combines:
 
 - OpenSSH-style connect and argument compatibility (`-p`, `-i`, `-J`, `-o`, and more)
 - session persistence in SQLite with optional alias bookmarks
 - optional remote `tmux` keep-alive mode
-- in-session meta commands (`!ait`) — **no** in-session AI (`!!` / `!ait ai` removed)
+- in-session meta commands (`!ait`); no in-session AI
 - standalone and in-session file transfer (`get`, `put`)
 - local shell REPL with UTF-8 line editing and history
 
-Ops AI Agent lives in the separate **`ai`** plugin — see [`ai.md`](ai.md). `aissh` has zero AI subtree.
+Ops AI Agent lives under **`ait agent`** — see [`ait.md`](ait.md). `aitssh` has zero AI subtree.
 
 Toolbox structure: [`../architecture.md`](../architecture.md). Implementation details (package layering, workflows, source map): [`aissh-internals.md`](aissh-internals.md).
 
@@ -39,33 +41,30 @@ Toolbox structure: [`../architecture.md`](../architecture.md). Implementation de
 ## CLI surface
 
 ```text
-aissh shell                                    # AiT> REPL (ssh-style connect, list/load, etc.)
-aissh                                          # no args: root help (not SSH connect)
-aissh [ssh-options] destination [command ...] [--save] [--alias NAME] [--password] [--tmux]
+aitssh shell                                    # AiT> REPL (ssh-style connect, list/load, etc.)
+aitssh                                          # no args: root help (not SSH connect)
+aitssh [ssh-options] destination [command ...] [--save] [--alias NAME] [--password] [--tmux]
         # OpenSSH-compatible: -p -l -i -F -J -o, etc.; destination is [user@]host or a config Host alias
         # Requires local OpenSSH client (ssh -G) for config resolution; data plane is Go x/crypto/ssh
         # Persists to SQLite with --save (bookmark by id) or --alias (named save; implies --save)
         # Also updates an existing empty-alias row when the connection key matches (refreshes auth TTL)
         # With command: one-shot execution (similar to ssh host cmd); new hosts need --save or --alias
         # Legacy --host/--user remain supported for backward compatibility
-aissh session --list [-v]   # # column for pick-by-number; -v adds FULL_ID (complete UUID)
-aissh session --load [<id|alias>] [--tmux] [--password]   # Omit id to pick; id must be alias or full UUID (not list ID)
-aissh session --suspend         # Local CLI only; inside SSH use !ait suspend
-aissh session --switch [id|alias] [--tmux] [--password] [--force]  # Switch session; omit id to pick
-aissh session --delete <id|alias|all> [--force]                     # Delete one or all saved sessions
-aissh get [ssh-flags] <paths...>   # OpenSSH flags; paths/order like default SSH connect
-aissh put [ssh-flags] <paths...>
-aissh config init|view|edit|validate|set|get ...   # YAML config; edit uses $VISUAL/$EDITOR
-                                                   # Can set ai.* keys used by the `ai` plugin
+aitssh session --list [-v]   # # column for pick-by-number; -v adds FULL_ID (complete UUID)
+aitssh session --load [<id|alias>] [--tmux] [--password]   # Omit id to pick; id must be alias or full UUID (not list ID)
+aitssh session --suspend         # Local CLI only; inside SSH use !ait suspend
+aitssh session --switch [id|alias] [--tmux] [--password] [--force]  # Switch session; omit id to pick
+aitssh session --delete <id|alias|all> [--force]                     # Delete one or all saved sessions
+aitssh get [ssh-flags] <paths...>   # OpenSSH flags; paths/order like default SSH connect
+aitssh put [ssh-flags] <paths...>
+aitssh config init|view|edit|validate|set|get ...   # YAML config; edit uses $VISUAL/$EDITOR
 ```
-
-**Breaking (v3.1):** `aissh ai …`, `!!`, and `!ait ai` are removed. Use the [`ai`](ai.md) plugin instead.
 
 **Important connect parsing note**
 
 - First token `login` is intentionally **not** treated as SSH connect routing.
-- `aissh login ...` is unknown.
-- In `aissh shell`, typing `login ...` is also unknown.
+- `aitssh login ...` is unknown.
+- In `aitssh shell`, typing `login ...` is also unknown.
 
 ### Two recovery modes (default vs `--tmux`)
 
@@ -97,7 +96,7 @@ flowchart TD
 - Empty alias and named alias rows are distinct records.
 - `--alias` implies save behavior.
 - `login_destination` stores the original destination form (for example an ssh config host alias).
-- Plain `aissh user@host` only updates an existing matching **empty-alias** row; otherwise it is ephemeral.
+- Plain `aitssh user@host` only updates an existing matching **empty-alias** row; otherwise it is ephemeral.
 
 ---
 
@@ -114,34 +113,34 @@ export AIT_KEYRING_FILE_PASSWORD='your-secret'
 # Aliases still work: deepseek.api_key, minimax.api_key
 
 # Connect: see help for full flags
-./bin/aissh --help
+./bin/aitssh --help
 
 # Interactive connect and persist session
-./bin/aissh deploy@example.com --alias prod
-./bin/aissh -p 22 -i ~/.ssh/id_ed25519 deploy@10.0.0.5
-./bin/aissh -J bastion app.internal
+./bin/aitssh deploy@example.com --alias prod
+./bin/aitssh -p 22 -i ~/.ssh/id_ed25519 deploy@10.0.0.5
+./bin/aitssh -J bastion app.internal
 
 # One-shot remote command (like ssh host cmd; not persisted for a new host by default)
-./bin/aissh deploy@example.com uptime
+./bin/aitssh deploy@example.com uptime
 
 # List, restore, switch sessions
-./bin/aissh session --list
-./bin/aissh session --list -v
-./bin/aissh session --load
-./bin/aissh session --load prod
-./bin/aissh session --switch staging
+./bin/aitssh session --list
+./bin/aitssh session --list -v
+./bin/aitssh session --load
+./bin/aitssh session --load prod
+./bin/aitssh session --switch staging
 
 # File transfer (OpenSSH flags; paths and flags in any order)
-./bin/aissh get -p22 -i~/.ssh/id ./app.log user@deploy:/var/log/app.log
-./bin/aissh get deploy@10.0.0.5 /var/log/app.log ./app.log
-./bin/aissh get ./app.log /var/log/app.log --session prod
-./bin/aissh put -l root ./bin/app user@host:/usr/local/bin/app
+./bin/aitssh get -p22 -i~/.ssh/id ./app.log user@deploy:/var/log/app.log
+./bin/aitssh get deploy@10.0.0.5 /var/log/app.log ./app.log
+./bin/aitssh get ./app.log /var/log/app.log --session prod
+./bin/aitssh put -l root ./bin/app user@host:/usr/local/bin/app
 ```
 
 Optional template bootstrap:
 
 ```bash
-./bin/aissh config init
+./bin/aitssh config init
 # Or manually copy:
 mkdir -p ~/.local/share/ait
 cp ../../configs/ait.example.yaml ~/.local/share/ait/config.yaml
@@ -153,21 +152,21 @@ cp ../../configs/ait.example.yaml ~/.local/share/ait/config.yaml
 
 | Command | Description |
 |---------|-------------|
-| `aissh shell` | Interactive local REPL (`AiT>`): builtins first, then `<AppRoot>/bin`, then `aissh` CLI, then PATH, then narrow connect routing |
-| `aissh [flags] destination` | OpenSSH-style connect (`aissh user@host`, `aissh -J jump final`); `--save` or `--alias` persists |
-| `aissh session --list` | List saved sessions (`#` display column; use `-v` for `FULL_ID`) |
-| `aissh session --load [<id\|alias>]` | Restore session; omit id to pick; use alias or full UUID, not short list ID |
-| `aissh session --suspend` | Local CLI suspend; in-session use `!ait suspend` |
-| `aissh session --switch [id\|alias]` | Switch session; blocked if current is active unless `--force` |
-| `aissh session --delete <id\|alias>` | Delete one session |
-| `aissh session --delete all` | Delete all sessions (confirmation unless `--force`) |
-| `aissh get [flags] <paths...>` | Download one file |
-| `aissh put [flags] <paths...>` | Upload one file |
-| `aissh config init [--dry-run]` | Create/merge `config.yaml` with missing keys |
-| `aissh config view` | Print config YAML (creates when missing) |
-| `aissh config edit` | Open editor (`$VISUAL`/`$EDITOR`) and validate |
-| `aissh config validate` | Validate syntax and values; exits non-zero on errors |
-| `aissh config set/get <key>` | Get/set config values; API keys go through keyring |
+| `aitssh shell` | Interactive local REPL (`AiT>`): builtins first, then `<AppRoot>/bin`, then `aitssh` CLI, then PATH, then narrow connect routing |
+| `aitssh [flags] destination` | OpenSSH-style connect (`aitssh user@host`, `aitssh -J jump final`); `--save` or `--alias` persists |
+| `aitssh session --list` | List saved sessions (`#` display column; use `-v` for `FULL_ID`) |
+| `aitssh session --load [<id\|alias>]` | Restore session; omit id to pick; use alias or full UUID, not short list ID |
+| `aitssh session --suspend` | Local CLI suspend; in-session use `!ait suspend` |
+| `aitssh session --switch [id\|alias]` | Switch session; blocked if current is active unless `--force` |
+| `aitssh session --delete <id\|alias>` | Delete one session |
+| `aitssh session --delete all` | Delete all sessions (confirmation unless `--force`) |
+| `aitssh get [flags] <paths...>` | Download one file |
+| `aitssh put [flags] <paths...>` | Upload one file |
+| `aitssh config init [--dry-run]` | Create/merge `config.yaml` with missing keys |
+| `aitssh config view` | Print config YAML (creates when missing) |
+| `aitssh config edit` | Open editor (`$VISUAL`/`$EDITOR`) and validate |
+| `aitssh config validate` | Validate syntax and values; exits non-zero on errors |
+| `aitssh config set/get <key>` | Get/set session config values |
 
 Common flags:
 
@@ -179,7 +178,7 @@ Common flags:
 
 ## Local REPL input (UTF-8)
 
-Local REPL behavior applies to `aissh shell`.
+Local REPL behavior applies to `aitssh shell`.
 
 ### Platform support
 
@@ -208,7 +207,7 @@ Local REPL behavior applies to `aissh shell`.
 
 ### Clear behavior
 
-- `aissh shell`: `clear` command and Ctrl+L clear terminal display.
+- `aitssh shell`: `clear` command and Ctrl+L clear terminal display.
 
 ### Scope boundary
 
@@ -221,7 +220,7 @@ Local REPL behavior applies to `aissh shell`.
 
 | Context | Prompt |
 |---------|--------|
-| `aissh shell` | `AiT> ` |
+| `aitssh shell` | `AiT> ` |
 | SSH remote | `AiT user@host:dir[:git-branch]> ` |
 | SSH nested | same format on active nested host |
 | `!ait local` | `AiT Local> ` |
@@ -233,7 +232,7 @@ Prompt path mode is controlled by `session.remote_prompt.path`:
 
 Expected connect/load UX:
 
-- After `aissh user@host` or `aissh session --load`, the remote `AiT user@host:...>` prompt should appear immediately.
+- After `aitssh user@host` or `aitssh session --load`, the remote `AiT user@host:...>` prompt should appear immediately.
 - No extra Enter should be required to reveal first prompt.
 - Default is AiT-managed remote prompt. Set `AIT_REMOTE_SYSTEM_PROMPT=1` to keep the remote shell's native prompt instead (meta/`!ait` still work; nested `ssh` still auto-enables chain mode).
 
@@ -248,7 +247,7 @@ Expected connect/load UX:
 
 Credential storage model:
 
-- SSH secrets and AI API keys (for the `ai` plugin): keyring-backed
+- SSH secrets and AI API keys (for `ait` / `ait agent`): keyring-backed
 - SQLite stores metadata and key paths, not plaintext SSH passwords
 - file-based encrypted keyring fallback under `<AppRoot>/keyring` for headless setups
 
@@ -256,23 +255,7 @@ Credential storage model:
 
 ## AI configuration note
 
-`aissh` does **not** run AI. Use **`ait`** / **`ait agent`** for the Agent Loop and **`ait agent connect`** for remote sessions. See [`ai.md`](ai.md) (migration) and [`ait.md`](ait.md).
-
-You can still configure shared `ai.*` keys via `aissh config` (same YAML / keyring as other tools), for example:
-
-```bash
-aissh config set ai.experimental.enabled true
-aissh config set ai.deepseek.api_key …
-```
-
-Enable and use AI with:
-
-```bash
-ai --ai-experimental          # or AIT_AI_EXPERIMENTAL=1 / config
-ai                            # help + Try ait agent
-ait agent                     # local Agent Loop
-ai connect user@host          # remote Agent (not !! / !ait ai)
-```
+`aitssh` does **not** run AI. Use **`ait`** / **`ait agent`** for the Agent Loop and **`ait agent connect`** for remote sessions. Configure `ai.*` with **`ait agent config`** (see the quick start above and [`ait.md`](ait.md)). AI is on by default. Turn it off with `ai.experimental.enabled false` or `AIT_AI_EXPERIMENTAL=0`.
 
 ---
 
@@ -283,7 +266,7 @@ Meta prefix inside SSH is `!ait` (not `!aitssh`).
 | Input | Action |
 |-------|--------|
 | `!ait` / `!ait help` | print in-session help |
-| `!ait <subcmd> ...` | run supported local `aissh` subcommands |
+| `!ait <subcmd> ...` | run supported local `aitssh` subcommands |
 | `!ait [flags] dest` | auto-persist if needed, suspend current, connect target |
 | `!ait load [id\|alias]` | auto-persist if needed, suspend current, load target |
 | `!ait session --switch [id\|alias]` | auto-persist if needed, suspend current, switch |
@@ -297,7 +280,6 @@ Meta prefix inside SSH is `!ait` (not `!aitssh`).
 Detection and routing notes:
 
 - meta lines are scanned at byte-level and do not go to remote shell stdin
-- `!ait ai` is unknown (use `ai connect` from the `ai` plugin); bare `!!` is not an AI entry
 - `!ait list` is rewritten to `session --list`
 
 ---
@@ -331,10 +313,10 @@ Runtime layout:
 
 Operational notes:
 
-- `aissh config init` creates/merges missing config keys.
-- `aissh config view` prints current config (creates file if missing).
-- `aissh config edit` opens editor and validates on save.
-- `aissh config validate` checks syntax and value constraints.
+- `aitssh config init` creates/merges missing config keys.
+- `aitssh config view` prints current config (creates file if missing).
+- `aitssh config edit` opens editor and validates on save.
+- `aitssh config validate` checks syntax and value constraints.
 
 ---
 
@@ -348,7 +330,7 @@ Most user-facing validation and routing errors include a multi-line `Try:` block
 | `session --switch` while active session still attached | suspend in-session (`!ait suspend`) or use `--force` |
 | unknown config key | suggest valid key paths and config get/set examples |
 | `config validate` failure | includes field paths and reason |
-| missing config for validate | run `aissh config init` first |
+| missing config for validate | run `aitssh config init` first |
 | editor unavailable for `config edit` | set `EDITOR` / `VISUAL` |
 
 Formatting behavior:
@@ -361,7 +343,7 @@ Formatting behavior:
 ## Limitations
 
 - Without `--tmux`, remote processes are not guaranteed to survive suspend/disconnect.
-- `aissh get` and `aissh put` are single-file transfers (not directory recursion).
+- `aitssh get` and `aitssh put` are single-file transfers (not directory recursion).
 - In-session `!ait put` local path is on the AiT client machine, not remote cwd.
 - Progress output is optimized for TTY; non-TTY logs are still phase-oriented but not interactive refresh.
 - chain ZMODEM depends on remote `lrzsz` (`sz`, `rz`) availability in chain mode.
@@ -382,7 +364,7 @@ Risk watch items:
 
 ### Direct connect path
 
-- `aissh -J jump final` dials the final host through jump chain (OpenSSH-compatible: each `-J` hop is resolved via `ssh -G`, including `Host` aliases such as `devhost`).
+- `aitssh -J jump final` dials the final host through jump chain (OpenSSH-compatible: each `-J` hop is resolved via `ssh -G`, including `Host` aliases such as `devhost`).
 - Jump SSH clients stay open for the lifetime of the final connection (required for direct-tcpip forwarding).
 - For this direct dial target, in-session transfer prefers direct path behavior.
 
@@ -413,7 +395,7 @@ Chain mode is for deeper interactive hops, usually after manual nested `ssh` in 
 |----------|-------------|
 | [`../architecture.md`](../architecture.md) | AiT toolbox project structure |
 | [`aissh-internals.md`](aissh-internals.md) | Package layering, workflows, and source map |
-| [`ai.md`](ai.md) | Ops AI Agent user guide |
+| [`ait.md`](ait.md) | Agent Loop and `ait agent` |
 | [`../../AGENTS.md`](../../AGENTS.md) | Codebase orientation and package responsibilities |
 | [`../../CONTRIBUTING.md`](../../CONTRIBUTING.md) | Development workflow and coding standards |
 | [`../../README.md`](../../README.md) | Project overview and setup |

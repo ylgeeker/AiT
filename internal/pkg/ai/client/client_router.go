@@ -140,7 +140,7 @@ func (c *Client) SetSessionProvider(id ProviderID) error {
 		return fmt.Errorf(errUnknownCloudProviderFmt, id)
 	}
 	if !c.cfg.ProviderEnabled(id) {
-		return fmt.Errorf(errProviderDisabledFmt, id, id)
+		return fmt.Errorf(errProviderDisabledFmt, id, provider.ProviderEnableCmd(string(id)))
 	}
 	if _, ok := c.slots[id]; !ok {
 		return fmt.Errorf(errProviderNoAPIKeyFmt, id, router.APIKeyHint(id))

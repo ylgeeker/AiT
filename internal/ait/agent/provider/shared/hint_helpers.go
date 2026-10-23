@@ -27,9 +27,9 @@ import (
 func UnknownProviderErr(id string) error {
 	return errhint.WithTryMsg(fmt.Sprintf("unknown provider %q", id),
 		"Use deepseek, minimax, or ollama.",
-		toolname.AICLI("provider enable deepseek"),
-		toolname.AICLI("provider enable minimax"),
-		toolname.AICLI("provider enable ollama"),
-		toolname.AICLI("provider --help"),
+		toolname.AgentCLI("provider enable deepseek"),
+		toolname.AgentCLI("provider enable minimax"),
+		toolname.AgentCLI("provider enable ollama"),
+		toolname.AgentCLI("provider --help"),
 	)
 }

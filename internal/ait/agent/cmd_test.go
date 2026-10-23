@@ -33,17 +33,17 @@ func TestWriteAIHelpSections(t *testing.T) {
 	}
 	out := buf.String()
 	for _, want := range []string{
-		"Usage:", "Examples:", "help for ai", toolname.AICLI(""), toolname.AICLI("model list"), toolname.AICLI("ollama status"), toolname.AICLI("ollama setup"),
-		toolname.AICLI("--model minimax"), "Subcommands:", "provider enable", "ollama status", "start", "stop", "disable",
-		"--model", toolname.AICLI("connect"), toolname.AITCLI("agent"),
+		"Usage:", "Examples:", "help for " + toolname.AgentCLI(""), toolname.AgentCLI("model list"), toolname.AgentCLI("ollama status"), toolname.AgentCLI("ollama setup"),
+		toolname.AgentCLI("--model minimax"), "Subcommands:", "provider enable", "ollama status", "start", "stop", "disable",
+		"--model", toolname.AgentCLI("connect"), toolname.AITCLI("agent"),
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("missing %q in:\n%s", want, out)
 		}
 	}
 	for _, gone := range []string{
-		toolname.AICLI(`ask "summarize this"`),
-		toolname.AICLI(`agent "find large files in /var/log"`),
+		toolname.AgentCLI(`ask "summarize this"`),
+		toolname.AgentCLI(`agent "find large files in /var/log"`),
 		"One-shot agent:",
 	} {
 		if strings.Contains(out, gone) {

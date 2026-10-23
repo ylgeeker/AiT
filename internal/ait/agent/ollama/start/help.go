@@ -32,12 +32,12 @@ const (
 )
 
 var (
-	usageLine        = toolname.AICLI("ollama start [flags]")
-	exampleStart     = toolname.AICLI("ollama start")
-	exampleStartWait = toolname.AICLI("ollama start --wait")
+	usageLine        = toolname.AgentCLI("ollama start [flags]")
+	exampleStart     = toolname.AgentCLI("ollama start")
+	exampleStartWait = toolname.AgentCLI("ollama start --wait")
 )
 
-// WriteHelp prints ai ollama start --help to w.
+// WriteHelp prints ait agent ollama start --help to w.
 func WriteHelp(w io.Writer) error {
 	b := pkghelpdoc.NewBody(w)
 	if err := b.WriteIntro(introMain, introAPI); err != nil {

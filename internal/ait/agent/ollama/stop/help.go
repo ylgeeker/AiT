@@ -29,11 +29,11 @@ const (
 )
 
 var (
-	usageLine   = toolname.AICLI("ollama stop")
-	exampleStop = toolname.AICLI("ollama stop")
+	usageLine   = toolname.AgentCLI("ollama stop")
+	exampleStop = toolname.AgentCLI("ollama stop")
 )
 
-// WriteHelp prints ai ollama stop --help to w.
+// WriteHelp prints ait agent ollama stop --help to w.
 func WriteHelp(w io.Writer) error {
 	b := pkghelpdoc.NewBody(w)
 	if err := b.WriteIntro(introMain, introWindows); err != nil {

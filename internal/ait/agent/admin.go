@@ -82,11 +82,11 @@ func newAdminCmd(d Deps) *cobra.Command {
 				})
 			}
 			return errhint.WithTryMsg(
-				"unknown ai command",
-				"Use ai subcommands or ait agent for the task loop.",
+				"unknown agent command",
+				"Use "+toolname.AgentCLI("")+" subcommands for the task loop.",
 				clihints.TryAitAgent(),
-				toolname.AICLI("connect user@host"),
-				toolname.AICLI("model list"),
+				toolname.AgentCLI("connect user@host"),
+				toolname.AgentCLI("model list"),
 			)
 		},
 	}

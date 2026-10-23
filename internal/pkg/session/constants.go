@@ -18,7 +18,10 @@ package session
 
 import "github.com/os-artificer/AiT/internal/pkg/toolname"
 
-var msgSuspendLocalUseSSH = "Reconnect to the session and run " + toolname.MetaLine("suspend") + " inside SSH."
+var (
+	msgSuspendLocalUseSSH              = "Reconnect to the session and run " + toolname.MetaLine("suspend") + " inside SSH."
+	errEphemeralSuspendRequiresPersist = "suspend requires a saved session; use " + toolname.CLI("--save") + " or " + toolname.CLI("--alias <name>")
+)
 
 // Ports and lengths.
 const (
@@ -28,14 +31,13 @@ const (
 
 // Errhint sentinels (errors.Is / WithTry first line — do not change wording).
 const (
-	errInvalidSelection                = "invalid selection"
-	errEphemeralSuspendRequiresPersist = "suspend requires a saved session; use aissh --save or --alias <name>"
-	errNoSavedSessions                 = "no saved sessions"
-	errNoCurrentSession                = "no current session"
-	errNonInteractiveTerminal          = "non-interactive terminal"
-	errPickCancelled                   = "session pick cancelled"
-	errCurrentSessionActiveFmt         = "current session %s is still active"
-	errUnknownTransferOp               = "unknown transfer operation"
+	errInvalidSelection        = "invalid selection"
+	errNoSavedSessions         = "no saved sessions"
+	errNoCurrentSession        = "no current session"
+	errNonInteractiveTerminal  = "non-interactive terminal"
+	errPickCancelled           = "session pick cancelled"
+	errCurrentSessionActiveFmt = "current session %s is still active"
+	errUnknownTransferOp       = "unknown transfer operation"
 )
 
 // Hint explanations (WithTryMsg body — unchanged).

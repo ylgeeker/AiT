@@ -17,8 +17,8 @@
 package shared
 
 const (
-	// MsgEnabledFmt is the stdout line after `ai provider enable`.
+	// MsgEnabledFmt is the stdout line after `ait agent provider enable`.
 	MsgEnabledFmt = "enabled provider %s\n"
-	// MsgDisabledFmt is the stdout line after `ai provider disable`.
+	// MsgDisabledFmt is the stdout line after `ait agent provider disable`.
 	MsgDisabledFmt = "disabled provider %s\n"
 )

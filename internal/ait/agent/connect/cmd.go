@@ -30,12 +30,12 @@ import (
 
 const name = "connect"
 
-// New builds the `ai connect` cobra command.
+// New builds the `ait agent connect` cobra command.
 func New(d deps.Deps) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "connect [ssh-options] destination",
 		Short:         "Open a remote Ops Agent session over SSH",
-		Long:          pkghelpdoc.LongHint(toolname.AICLI("connect")),
+		Long:          pkghelpdoc.LongHint(toolname.AgentCLI("connect")),
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

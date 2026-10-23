@@ -3,8 +3,8 @@
 ## Package layering
 
 ```text
-cmd/aihost/main.go
-  → internal/aihost (package aihost: Run, Execute, WriteRootHelp)
+cmd/host/main.go
+  → internal/host (package aihost: Run, Execute, WriteRootHelp)
        → registry (wraps internal/pkg/subregistry)  ← OCP registration
        → top (default empty-argv route + registered)
        → cpu / mem / disk / net / proto / proc / snapshot / sources / version

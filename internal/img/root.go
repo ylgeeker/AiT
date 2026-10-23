@@ -25,7 +25,7 @@ import (
 	"github.com/os-artificer/AiT/internal/pkg/imgmeta"
 )
 
-// Run is the application entry invoked from cmd/aiimg.
+// Run is the application entry invoked from cmd/img.
 // args are os.Args[1:] passed to Execute.
 func Run(args []string) error {
 	if err := Execute(args); err != nil {

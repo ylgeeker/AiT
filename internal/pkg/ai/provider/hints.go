@@ -31,17 +31,17 @@ const (
 )
 
 var (
-	hintSetDeepseekAPIKey = toolname.CLI("config set ai.deepseek.api_key <key>")
-	hintSetMinimaxAPIKey  = toolname.CLI("config set ai.minimax.api_key <key>")
-	hintEnableOllama      = toolname.AICLI("provider enable ollama")
-	hintAIHelp            = toolname.AICLI("--help")
-	hintOllamaSetup       = toolname.AICLI("ollama setup")
+	hintSetDeepseekAPIKey = toolname.AgentCLI("config set ai.deepseek.api_key <key>")
+	hintSetMinimaxAPIKey  = toolname.AgentCLI("config set ai.minimax.api_key <key>")
+	hintEnableOllama      = toolname.AgentCLI("provider enable ollama")
+	hintAIHelp            = toolname.AgentCLI("--help")
+	hintOllamaSetup       = toolname.AgentCLI("ollama setup")
 	hintAitAgent          = toolname.AITCLI("agent")
 	hintAitAgentGoal      = toolname.AITCLI(`agent "check disk usage"`)
 
-	// HintAIHelp is the standard ai --help Try line (shared with client).
+	// HintAIHelp is the standard ait agent --help Try line (shared with client).
 	HintAIHelp = hintAIHelp
-	// HintOllamaSetup is the ai ollama setup Try line.
+	// HintOllamaSetup is the ait agent ollama setup Try line.
 	HintOllamaSetup = hintOllamaSetup
 	// HintStoreAPIKeyInKeyring explains keyring storage in API key errors.
 	HintStoreAPIKeyInKeyring = hintStoreAPIKeyInKeyring
@@ -49,17 +49,17 @@ var (
 	HintSetCloudAPIKey = hintSetCloudAPIKey
 )
 
-// ConfigSetAPIKeyCmd returns the aissh config set command for a provider API key.
+// ConfigSetAPIKeyCmd returns the ait agent config set command for a provider API key.
 func ConfigSetAPIKeyCmd(id string) string {
-	return toolname.CLI(fmt.Sprintf("config set ai.%s.api_key <key>", id))
+	return toolname.AgentCLI(fmt.Sprintf("config set ai.%s.api_key <key>", id))
 }
 
-// ConfigGetAPIKeyCmd returns the aissh config get command for a provider API key.
+// ConfigGetAPIKeyCmd returns the ait agent config get command for a provider API key.
 func ConfigGetAPIKeyCmd(id string) string {
-	return toolname.CLI(fmt.Sprintf("config get ai.%s.api_key", id))
+	return toolname.AgentCLI(fmt.Sprintf("config get ai.%s.api_key", id))
 }
 
-// ProviderEnableCmd returns the ai provider enable command for id.
+// ProviderEnableCmd returns the ait agent provider enable command for id.
 func ProviderEnableCmd(id string) string {
-	return toolname.AICLI("provider enable " + id)
+	return toolname.AgentCLI("provider enable " + id)
 }

@@ -27,7 +27,7 @@ cmd/ait → internal/ait (package ait: Run, Execute, help)
 | (empty) | `loop.Run` — Agent Loop |
 | `agent …` | admin verb → `agent.RunAdmin`; else Loop with optional `--plain` |
 | `shell` | toolbox REPL (`shell.RunREPL`) |
-| `aissh`, `log`, … | `dispatch.RunPlugin` (aliases via `ResolvePluginName`) |
+| `ssh`, `log`, `img`, `host`, `keep`, … | `dispatch.RunPlugin` (legacy aliases via `ResolvePluginName` / `LegacyPluginNames`) |
 | `help` / `-h` | `WriteRootHelp` |
 
 ## Key types
@@ -39,13 +39,13 @@ cmd/ait → internal/ait (package ait: Run, Execute, help)
 | `tooldispatch.Exec` | Lookup plugin + `pluginbin.ExecPath` (stdin/stdout/stderr) |
 | `shell.ExecuteLine` | one REPL line; swallows bare `*exec.ExitError` (AT14) |
 | `aitrelease.Execute` | install/update/upgrade from GitHub Release |
-| `agentwire.LocalLoopConfig` | TUI/plain, timeout, aissh CLI runner for Loop |
+| `agentwire.LocalLoopConfig` | TUI/plain, timeout, SSH CLI runner (`aitssh`) for Loop |
 | `agent.RunAdmin` | Cobra tree for connect/model/provider/ollama/config |
 
 ## Config scope
 
 - **`ait agent config`** — `ai.*` keys (`config.ValidateAI`, `EnsureAIDefaults`)
-- **`aissh config`** — SSH/session keys only; rejects `ai.*` (`config.ValidateSSH`)
+- **`aitssh config`** (plugin `ssh`) — SSH/session keys only; rejects `ai.*` (`config.ValidateSSH`)
 
 ## Release install (`aitrelease`)
 
@@ -61,5 +61,4 @@ Each shipped tool's `ExecuteWriters` handles `ait-plugin-manifest` before defaul
 ## Further reading
 
 - User guide: [`ait.md`](ait.md)
-- Agent admin (former `ai`): [`ai-internals.md`](ai-internals.md)
 - Loop kernel: `internal/pkg/agentcore`

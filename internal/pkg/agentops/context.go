@@ -46,7 +46,7 @@ func BuildContext(ctx context.Context, warn func(string)) string {
 	if s := listSessions(ctx); s != "" {
 		parts = append(parts, s)
 	} else if warn != nil {
-		warn("aissh session list unavailable")
+		warn(toolname.AITSSH + " session list unavailable")
 	}
 	return strings.Join(parts, "\n")
 }

@@ -28,13 +28,13 @@ import (
 )
 
 var (
-	ollamaIntroMain       = fmt.Sprintf("Manage local Ollama for tiered AI routing (under %s).", toolname.AICLI(""))
-	ollamaIntroSubcmdHelp = fmt.Sprintf("Run '%s <subcommand> --help' for flags and examples.", toolname.AICLI("ollama"))
-	ollamaUsageMain       = toolname.AICLI("ollama")
-	ollamaExampleStop     = toolname.AICLI("ollama stop")
+	ollamaIntroMain       = fmt.Sprintf("Manage local Ollama for tiered AI routing (under %s).", toolname.AgentCLI(""))
+	ollamaIntroSubcmdHelp = fmt.Sprintf("Run '%s <subcommand> --help' for flags and examples.", toolname.AgentCLI("ollama"))
+	ollamaUsageMain       = toolname.AgentCLI("ollama")
+	ollamaExampleStop     = toolname.AgentCLI("ollama stop")
 )
 
-// WriteAIOllamaHelp prints ai ollama --help to w.
+// WriteAIOllamaHelp prints ait agent ollama --help to w.
 func WriteAIOllamaHelp(w io.Writer) error {
 	b := pkghelpdoc.NewBody(w)
 	if err := b.WriteIntro(ollamaIntroMain, ollamaIntroSubcmdHelp); err != nil {

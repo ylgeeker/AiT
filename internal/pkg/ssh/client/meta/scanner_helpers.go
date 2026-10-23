@@ -22,11 +22,6 @@ import (
 	"github.com/os-artificer/AiT/internal/pkg/toolname"
 )
 
-// AIPromptFromLine is deprecated; AI meta lines are no longer recognized by aissh.
-func AIPromptFromLine(line string) (prompt string, isAI bool) {
-	return "", false
-}
-
 // normalizeBangAitTypo maps a common typo (!!ait → !ait) to the real meta opener.
 // Does not alter !! AI lines (those require a space or newline after !!).
 func normalizeBangAitTypo(s string) string {

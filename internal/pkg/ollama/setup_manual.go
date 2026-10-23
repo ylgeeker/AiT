@@ -47,7 +47,7 @@ func ManualSetupInstructions(w io.Writer, cfg *config.Config) {
 	}
 	_, _ = fmt.Fprintln(w, "  ollama serve")
 	_, _ = fmt.Fprintf(w, "  ollama pull %s\n", model)
-	_, _ = fmt.Fprintln(w, "  Or run: "+toolname.AICLI("ollama setup"))
+	_, _ = fmt.Fprintln(w, "  Or run: "+toolname.AgentCLI("ollama setup"))
 	_, _ = fmt.Fprintln(w, "")
 	_, _ = fmt.Fprintln(w, "Config snippet (config.yaml):")
 	_, _ = fmt.Fprintln(w, "  ai:")

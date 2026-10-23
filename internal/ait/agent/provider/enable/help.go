@@ -34,9 +34,9 @@ const (
 `
 )
 
-var usageLine = toolname.AICLI("provider enable <provider> [flags]")
+var usageLine = toolname.AgentCLI("provider enable <provider> [flags]")
 
-// WriteHelp prints ai provider enable --help to w.
+// WriteHelp prints ait agent provider enable --help to w.
 func WriteHelp(w io.Writer) error {
 	b := pkghelpdoc.NewBody(w)
 	if err := b.WriteIntro(introMain, introOllama); err != nil {

@@ -30,11 +30,11 @@ import (
 const introMain = "Enable or disable AI provider routing without editing config.yaml by hand."
 
 var (
-	introOllamaHint = fmt.Sprintf("For Ollama install, models directory, and tiered setup, prefer: %s", toolname.AICLI("ollama setup"))
-	usageLine       = toolname.AICLI("provider")
+	introOllamaHint = fmt.Sprintf("For Ollama install, models directory, and tiered setup, prefer: %s", toolname.AgentCLI("ollama setup"))
+	usageLine       = toolname.AgentCLI("provider")
 )
 
-// WriteHelp prints ai provider --help to w.
+// WriteHelp prints ait agent provider --help to w.
 func WriteHelp(w io.Writer) error {
 	b := pkghelpdoc.NewBody(w)
 	if err := b.WriteIntro(introMain, introOllamaHint); err != nil {

@@ -26,19 +26,19 @@ import (
 	"github.com/os-artificer/AiT/internal/pkg/toolname"
 )
 
-// WriteHelp prints ai model --help to w.
+// WriteHelp prints ait agent model --help to w.
 func WriteHelp(w io.Writer) error {
 	b := pkghelpdoc.NewBody(w)
 	if err := b.WriteIntro("Show current AI routing or list configured providers.", ""); err != nil {
 		return err
 	}
-	if err := b.WriteUsage(toolname.AICLI("model")); err != nil {
+	if err := b.WriteUsage(toolname.AgentCLI("model")); err != nil {
 		return err
 	}
 	if err := b.WriteSection(pkghelpdoc.SectionSubcommands, pkgsubregistry.FormatSubcommandLines(subregistry.Entries())); err != nil {
 		return err
 	}
-	if err := b.WriteExamples(toolname.AICLI("model"), toolname.AICLI("model list")); err != nil {
+	if err := b.WriteExamples(toolname.AgentCLI("model"), toolname.AgentCLI("model list")); err != nil {
 		return err
 	}
 	return b.Finish("model")

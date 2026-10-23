@@ -3,7 +3,7 @@
 ## Package layering
 
 ```text
-cmd/aiimg/main.go                → thin main; delegates to aiimg.Run
+cmd/img/main.go                → thin main; delegates to aiimg.Run
 internal/aiimg                   → Run, ExecuteWriters (route), WriteRootHelp
 internal/img/registry          → TopLevel Register / AttachRoot / IsRegistered
 internal/img/registry/all      → blank-imports command registrars

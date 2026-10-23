@@ -24,18 +24,19 @@ import (
 	pkgai "github.com/os-artificer/AiT/internal/pkg/ai"
 	"github.com/os-artificer/AiT/internal/pkg/config"
 	pkghelpdoc "github.com/os-artificer/AiT/internal/pkg/helpdoc"
+	"github.com/os-artificer/AiT/internal/pkg/toolname"
 
 	"github.com/spf13/cobra"
 )
 
 const name = "list"
 
-// New builds the `ai model list` cobra command.
+// New builds the `ait agent model list` cobra command.
 func New(d deps.Deps) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           name,
 		Short:         "List configured providers and Ollama models (non-interactive)",
-		Long:          pkghelpdoc.LongHint("ai model list"),
+		Long:          pkghelpdoc.LongHint(toolname.AgentCLI("model list")),
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

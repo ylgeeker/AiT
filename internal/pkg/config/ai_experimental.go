@@ -38,8 +38,8 @@ const (
 	// FlagAIExperimental is the process-entry CLI flag (stripped before route/parse).
 	FlagAIExperimental = "--ai-experimental"
 
-	hintAIExperimentalExplain = "AI features are provided by the ai plugin " +
-		"(disable via ai.experimental.enabled false or AIT_AI_EXPERIMENTAL=0)."
+	hintAIExperimentalExplain = "AI features are provided by ait and ait agent " +
+		"(disable with ai.experimental.enabled false or AIT_AI_EXPERIMENTAL=0)."
 )
 
 // SetAIExperimentalCLI records whether the process-entry CLI flag was seen.

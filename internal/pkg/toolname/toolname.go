@@ -61,11 +61,6 @@ func AgentCLI(subcmd string) string {
 	return AITCLI("agent " + subcmd)
 }
 
-// AICLI returns the agent admin CLI path (deprecated name; use AgentCLI).
-func AICLI(subcmd string) string {
-	return AgentCLI(subcmd)
-}
-
 // AITCLI returns "ait" or "ait <subcmd>" when subcmd is non-empty.
 func AITCLI(subcmd string) string {
 	if subcmd == "" {

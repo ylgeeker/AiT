@@ -19,6 +19,7 @@ package helpdoc
 import (
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/os-artificer/AiT/internal/pkg/toolname"
 )
@@ -31,6 +32,9 @@ func LongHint(cmdName string) string {
 	}
 	if cmdName == toolname.Agent {
 		return fmt.Sprintf(longHintRoot, toolname.AgentCLI(""))
+	}
+	if cmdName == toolname.AIT || strings.HasPrefix(cmdName, toolname.AIT+" ") {
+		return fmt.Sprintf(longHintSub, cmdName)
 	}
 	return fmt.Sprintf(longHintSub, toolname.CLI(cmdName))
 }

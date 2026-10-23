@@ -24,19 +24,20 @@ import (
 	"github.com/os-artificer/AiT/internal/pkg/config"
 	pkghelpdoc "github.com/os-artificer/AiT/internal/pkg/helpdoc"
 	pkgollama "github.com/os-artificer/AiT/internal/pkg/ollama"
+	"github.com/os-artificer/AiT/internal/pkg/toolname"
 
 	"github.com/spf13/cobra"
 )
 
 const name = "disable"
 
-// New builds the `ai ollama disable` cobra command.
+// New builds the `ait agent ollama disable` cobra command.
 func New() *cobra.Command {
 	var withStop bool
 	cmd := &cobra.Command{
 		Use:           name,
 		Short:         "Disable Ollama provider in config",
-		Long:          pkghelpdoc.LongHint("ai ollama disable"),
+		Long:          pkghelpdoc.LongHint(toolname.AgentCLI("ollama disable")),
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -35,7 +35,7 @@ func WriteRootHelp(w io.Writer) error {
 	b := pkghelpdoc.NewBody(w)
 	if err := b.WriteIntro(
 		"AiT Agent interaction entry.",
-		"Run without arguments to start the Agent Loop. Plugin tools run as ait <name> (e.g. ait aissh).",
+		"Run without arguments to start the Agent Loop. Plugin tools run as "+toolname.AIT+" <name> (e.g. "+toolname.AIT+" "+toolname.SSH+").",
 	); err != nil {
 		return err
 	}

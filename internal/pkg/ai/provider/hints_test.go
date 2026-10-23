@@ -26,14 +26,14 @@ import (
 // TestHints_ConfigSetAPIKeyCmd (C13) keeps API key hint command format stable.
 func TestHints_ConfigSetAPIKeyCmd(t *testing.T) {
 	got := ConfigSetAPIKeyCmd(Deepseek)
-	want := toolname.CLI("config set ai.deepseek.api_key <key>")
+	want := toolname.AgentCLI("config set ai.deepseek.api_key <key>")
 	if got != want {
 		t.Fatalf("ConfigSetAPIKeyCmd: got %q want %q", got, want)
 	}
-	if ConfigGetAPIKeyCmd(Minimax) != toolname.CLI("config get ai.minimax.api_key") {
+	if ConfigGetAPIKeyCmd(Minimax) != toolname.AgentCLI("config get ai.minimax.api_key") {
 		t.Fatal("ConfigGetAPIKeyCmd mismatch")
 	}
-	if ProviderEnableCmd(Ollama) != toolname.AICLI("provider enable ollama") {
+	if ProviderEnableCmd(Ollama) != toolname.AgentCLI("provider enable ollama") {
 		t.Fatal("ProviderEnableCmd mismatch")
 	}
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
 **/
 
-// Package provider builds the `ai provider` Cobra subtree.
+// Package provider builds the `ait agent provider` Cobra subtree.
 package provider
 
 import (
@@ -23,18 +23,19 @@ import (
 	"github.com/os-artificer/AiT/internal/ait/agent/deps"
 	"github.com/os-artificer/AiT/internal/ait/agent/provider/subregistry"
 	pkghelpdoc "github.com/os-artificer/AiT/internal/pkg/helpdoc"
+	"github.com/os-artificer/AiT/internal/pkg/toolname"
 
 	"github.com/spf13/cobra"
 )
 
 const name = "provider"
 
-// New builds the `ai provider` cobra command.
+// New builds the `ait agent provider` cobra command.
 func New(_ deps.Deps) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           name,
 		Short:         "Enable or disable AI provider routing",
-		Long:          pkghelpdoc.LongHint("ai provider"),
+		Long:          pkghelpdoc.LongHint(toolname.AgentCLI("provider")),
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}

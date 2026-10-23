@@ -75,7 +75,7 @@ func TestOpsAI_AskAgentRemoved(t *testing.T) {
 			t.Fatalf("%v: expected unknown command", argv)
 		}
 		msg := err.Error()
-		if !strings.Contains(msg, "unknown ai command") && !strings.Contains(strings.ToLower(msg), "unknown") {
+		if !strings.Contains(msg, "unknown agent command") {
 			t.Fatalf("%v: want unknown, got %v", argv, err)
 		}
 		if !strings.Contains(msg, clihints.TryAitAgent()) {

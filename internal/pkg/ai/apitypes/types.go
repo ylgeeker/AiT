@@ -22,7 +22,7 @@ import "github.com/os-artificer/AiT/internal/pkg/ai/provider"
 const (
 	// ScopeLocal is local ai Agent mode (non-SSH).
 	ScopeLocal Scope = iota
-	// ScopeRemote is ai connect / remote Agent session over SSH.
+	// ScopeRemote is an ait agent connect remote Agent session over SSH.
 	ScopeRemote
 )
 

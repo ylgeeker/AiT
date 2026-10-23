@@ -43,7 +43,7 @@ type RemoteOpts struct {
 	ErrOut         io.Writer
 }
 
-// RemoteSessionConfig builds agentcore.Config for ai connect remote sessions.
+// RemoteSessionConfig builds agentcore.Config for ait agent connect remote sessions.
 func RemoteSessionConfig(opts RemoteOpts) agentcore.Config {
 	out, errOut := opts.Out, opts.ErrOut
 	if out == nil {

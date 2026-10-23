@@ -59,7 +59,7 @@ func TryShellList() string { return toolname.CLI("list") }
 
 // AI plugin Try lines (ai binary / env; never aissh config).
 
-func TryAIBinary() string          { return toolname.AICLI("") }
-func TryAIExperimentalCLI() string { return toolname.AICLI("--ai-experimental") }
-func TryAIExperimentalEnv() string { return "AIT_AI_EXPERIMENTAL=1 " + toolname.AICLI("") }
+func TryAIBinary() string          { return toolname.AgentCLI("") }
+func TryAIExperimentalCLI() string { return toolname.AgentCLI("--ai-experimental") }
+func TryAIExperimentalEnv() string { return "AIT_AI_EXPERIMENTAL=1 " + toolname.AgentCLI("") }
 func TryAitAgent() string          { return toolname.AITCLI("agent") }

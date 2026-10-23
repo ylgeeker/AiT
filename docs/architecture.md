@@ -9,14 +9,14 @@ This document is the structure overview for the AiT repository: what lives where
 AiT is a Go CLI toolbox.  
 Go module path: `github.com/os-artificer/AiT`.
 
-Shipped tools:
+Shipped tools (binary / plugin command; docs may use legacy product titles such as aissh):
 
-- `ait`: Agent interaction entry — bare `ait` / `ait agent` starts the Agent Loop; `ait shell` is the toolbox REPL; top-level plugin dispatch (`ait aissh`, `ait log`, …).
-- `aissh`: SSH client with session persistence, transfer support, and shell/meta workflows (**no AI subtree**).
-- `aiimg`: Image metadata extractor (EXIF device/time/GPS + Nominatim reverse-geocoded address).
-- `ailog`: System log viewer and search (Linux/macOS/Windows) with native tools and built-in fallbacks.
-- `aihost`: Live host CPU, memory, disk, network, and process monitor (Bubble Tea dashboard).
-- `aitkeep`: Process supervisor (`keep` plugin command) with `GET /ping` and CPU, memory, and disk limits.
+- `ait`: Agent interaction entry — bare `ait` / `ait agent` starts the Agent Loop; `ait shell` is the toolbox REPL; top-level plugin dispatch (`ait ssh`, `ait log`, …).
+- `aitssh` (`ssh`): SSH client with session persistence, transfer support, and shell/meta workflows (**no AI subtree**); Go package `aissh`.
+- `aitimg` (`img`): Image metadata extractor (EXIF device/time/GPS + Nominatim reverse-geocoded address).
+- `aitlog` (`log`): System log viewer and search (Linux/macOS/Windows) with native tools and built-in fallbacks.
+- `aithost` (`host`): Live host CPU, memory, disk, network, and process monitor (Bubble Tea dashboard).
+- `aitkeep` (`keep`): Process supervisor with `GET /ping` and CPU, memory, and disk limits.
 
 Shared capabilities (not separate binaries) live under `internal/pkg/` and are consumed by tools. Agent Loop kernel is `internal/pkg/agentcore` (engine: `internal/pkg/ai`; ops toolbox: `agentops` + `tooldispatch`; wire: `agentwire`; UI: `agentui`). Admin CLI and connect live in `internal/ait/agent`; routing in `internal/ait/router`.
 
@@ -32,8 +32,6 @@ Shared capabilities (not separate binaries) live under `internal/pkg/` and are c
 | [tools/ait-internals.md](tools/ait-internals.md) | `ait` implementation (plugin discovery) |
 | [tools/aissh.md](tools/aissh.md) | `aissh` user guide (CLI, prompts, behavior) |
 | [tools/aissh-internals.md](tools/aissh-internals.md) | `aissh` implementation (package layering, workflows, source map) |
-| [tools/ai.md](tools/ai.md) | `ai` Ops AI Agent user guide |
-| [tools/ai-internals.md](tools/ai-internals.md) | `ai` implementation (package layering) |
 | [tools/aiimg.md](tools/aiimg.md) | `aiimg` user guide |
 | [tools/aiimg-internals.md](tools/aiimg-internals.md) | `aiimg` implementation (package layering) |
 | [tools/ailog.md](tools/ailog.md) | `ailog` user guide |
@@ -55,19 +53,18 @@ Shared capabilities (not separate binaries) live under `internal/pkg/` and are c
 ## 3. Tools catalog
 
 
-| Tool     | Status  | Entry binary | App package       | User guide                         | Internals                                              |
-| -------- | ------- | ------------ | ----------------- | ---------------------------------- | ------------------------------------------------------ |
-| `ait` | Shipped | `bin/ait` | `internal/ait` (+ `internal/ait/agent` for admin CLI) | [tools/ait.md](tools/ait.md) | [tools/ait-internals.md](tools/ait-internals.md) |
-| `aissh` | Shipped | `bin/aissh` | `internal/ssh`  | [tools/aissh.md](tools/aissh.md) | [tools/aissh-internals.md](tools/aissh-internals.md) |
-| `ai` | **Retired** | — | merged into `internal/ait/agent` | [tools/ai.md](tools/ai.md) (migration) | [tools/ai-internals.md](tools/ai-internals.md) |
-| `aiimg` | Shipped | `bin/aiimg` | `internal/img` | [tools/aiimg.md](tools/aiimg.md) | [tools/aiimg-internals.md](tools/aiimg-internals.md) |
-| `ailog` | Shipped | `bin/ailog` | `internal/log` | [tools/ailog.md](tools/ailog.md) | [tools/ailog-internals.md](tools/ailog-internals.md) |
-| `aihost` | Shipped | `bin/aihost` | `internal/host` | [tools/aihost.md](tools/aihost.md) | [tools/aihost-internals.md](tools/aihost-internals.md) |
-| `aitkeep` | Shipped | `bin/aitkeep` | `internal/pkg/keepalive` | [tools/aitkeep.md](tools/aitkeep.md) | [tools/aitkeep-internals.md](tools/aitkeep-internals.md) |
+| Tool (docs) | Status  | Entry binary | Plugin | App package | User guide | Internals |
+| -------- | ------- | ------------ | ------ | ----------------- | ---------------------------------- | ------------------------------------------------------ |
+| `ait` | Shipped | `bin/ait` | — | `internal/ait` (+ `internal/ait/agent`) | [tools/ait.md](tools/ait.md) | [tools/ait-internals.md](tools/ait-internals.md) |
+| aissh | Shipped | `bin/aitssh` | `ssh` | `internal/ssh` (package `aissh`) | [tools/aissh.md](tools/aissh.md) | [tools/aissh-internals.md](tools/aissh-internals.md) |
+| aiimg | Shipped | `bin/aitimg` | `img` | `internal/img` | [tools/aiimg.md](tools/aiimg.md) | [tools/aiimg-internals.md](tools/aiimg-internals.md) |
+| ailog | Shipped | `bin/aitlog` | `log` | `internal/log` | [tools/ailog.md](tools/ailog.md) | [tools/ailog-internals.md](tools/ailog-internals.md) |
+| aihost | Shipped | `bin/aithost` | `host` | `internal/host` | [tools/aihost.md](tools/aihost.md) | [tools/aihost-internals.md](tools/aihost-internals.md) |
+| `aitkeep` | Shipped | `bin/aitkeep` | `keep` | `internal/pkg/keepalive` | [tools/aitkeep.md](tools/aitkeep.md) | [tools/aitkeep-internals.md](tools/aitkeep-internals.md) |
 
 
-AiT is intentionally toolbox-first: each tool gets a thin `cmd/<tool>/main.go` entry, an app layer under `internal/<tool>/`, and shared primitives in `internal/pkg/*`.  
-Agent admin (former `ai` plugin) lives under `internal/ait/agent`. The toolbox ships `ait`, `aissh`, `aiimg`, `ailog`, `aihost`, and `aitkeep`. `aitkeep` keeps its CLI in `internal/pkg/keepalive` (package `keepalive`); `cmd/keep` only calls `keepalive.Run`.
+AiT is intentionally toolbox-first: each tool gets a thin `cmd/<dir>/main.go` entry (`cmd/ssh`, `cmd/host`, …), an app layer under `internal/<app>/` (or `internal/pkg/keepalive` for aitkeep), and shared primitives in `internal/pkg/*`.  
+Agent admin lives under `internal/ait/agent`. The toolbox ships `ait`, `aitssh`, `aitimg`, `aitlog`, `aithost`, and `aitkeep`. `aitkeep` keeps its CLI in `internal/pkg/keepalive` (package `keepalive`); `cmd/keep` only calls `keepalive.Run`.
 
 ---
 
@@ -197,8 +194,6 @@ For a future toolbox tool `<tool>`:
 | -------- | ----- |
 | [tools/aissh.md](tools/aissh.md) | `aissh` operator-facing CLI guide |
 | [tools/aissh-internals.md](tools/aissh-internals.md) | `aissh` code layout and workflows |
-| [tools/ai.md](tools/ai.md) | Migration: former `ai` binary → `ait` / `ait agent` |
-| [tools/ai-internals.md](tools/ai-internals.md) | Historical `ai` layout (now `internal/ait/agent`) |
 | [tools/ait.md](tools/ait.md) | `ait` operator-facing CLI guide |
 | [tools/ait-internals.md](tools/ait-internals.md) | `ait` code layout |
 | [tools/aiimg.md](tools/aiimg.md) | `aiimg` operator-facing CLI guide |

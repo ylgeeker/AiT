@@ -25,9 +25,9 @@ import (
 
 const introMain = "Disable routing to a provider; no Chat/Assist traffic is sent to it."
 
-var usageLine = toolname.AICLI("provider disable <provider>")
+var usageLine = toolname.AgentCLI("provider disable <provider>")
 
-// WriteHelp prints ai provider disable --help to w.
+// WriteHelp prints ait agent provider disable --help to w.
 func WriteHelp(w io.Writer) error {
 	b := pkghelpdoc.NewBody(w)
 	if err := b.WriteIntro(introMain); err != nil {
@@ -38,7 +38,7 @@ func WriteHelp(w io.Writer) error {
 	}
 	if err := b.WriteExamples(
 		pkghelpdoc.ExampleAIProviderDisableMinimax,
-		toolname.AICLI("provider disable ollama"),
+		toolname.AgentCLI("provider disable ollama"),
 	); err != nil {
 		return err
 	}

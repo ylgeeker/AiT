@@ -27,7 +27,7 @@ import (
 
 // ErrAIKeyOnSSHConfig is returned when an AI config key is used on aissh config.
 var ErrAIKeyOnSSHConfig = errhint.WithTryMsg(
-	"AI config keys are not available via aissh config",
+	"AI config keys are not available via "+toolname.CLI("config"),
 	"Configure AI providers and agent settings with ait agent config.",
 	toolname.AgentCLI("config set ai.deepseek.api_key <key>"),
 	toolname.AgentCLI("config init"),
@@ -99,8 +99,8 @@ func RejectSSHConfigKey(key string) error {
 		return nil
 	}
 	return errhint.WithTryMsg(
-		"key belongs to aissh config",
-		"Session and SSH settings are managed with aissh config.",
+		"key belongs to "+toolname.CLI("config"),
+		"Session and SSH settings are managed with "+toolname.CLI("config")+".",
 		toolname.CLI("config get "+key),
 		toolname.CLI("config set "+key+" <value>"),
 	)

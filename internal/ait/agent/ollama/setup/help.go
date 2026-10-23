@@ -39,13 +39,13 @@ const (
 )
 
 var (
-	usageLine        = toolname.AICLI("ollama setup [flags]")
-	exampleSetup     = toolname.AICLI("ollama setup")
-	exampleSetupYes  = toolname.AICLI("ollama setup --yes")
-	exampleNoInstall = toolname.AICLI("ollama setup --no-install")
+	usageLine        = toolname.AgentCLI("ollama setup [flags]")
+	exampleSetup     = toolname.AgentCLI("ollama setup")
+	exampleSetupYes  = toolname.AgentCLI("ollama setup --yes")
+	exampleNoInstall = toolname.AgentCLI("ollama setup --no-install")
 )
 
-// WriteHelp prints ai ollama setup --help to w.
+// WriteHelp prints ait agent ollama setup --help to w.
 func WriteHelp(w io.Writer) error {
 	b := pkghelpdoc.NewBody(w)
 	if err := b.WriteIntro(introMain, introModels, introInstall, introDecline); err != nil {

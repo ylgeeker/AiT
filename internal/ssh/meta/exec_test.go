@@ -83,7 +83,7 @@ func TestExecute_AIMetaUnknownHint(t *testing.T) {
 	if !strings.Contains(err.Error(), "Try:") {
 		t.Errorf("expected Try block: %v", err)
 	}
-	if !strings.Contains(err.Error(), toolname.AICLI("")) {
+	if !strings.Contains(err.Error(), toolname.AgentCLI("")) {
 		t.Errorf("expected ai binary hint: %v", err)
 	}
 }

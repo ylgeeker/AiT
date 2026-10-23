@@ -1,28 +1,30 @@
 # ailog
 
+> **Names:** binary `aitlog`, plugin command `log` (`ait log …`), Go package `ailog`.
+
 View and search system logs from the command line on Linux, macOS, and Windows.
 
 ## Build
 
 ```bash
-make build   # → bin/ailog
-./bin/ailog --help
+make build   # → bin/aitlog
+./bin/aitlog --help
 ```
 
 ## Usage
 
 ```text
-ailog [flags] [keyword...]
-ailog search [flags] <keyword...>
-ailog sources [--json] [--backend auto|native|builtin]
-ailog version
+aitlog [flags] [keyword...]
+aitlog search [flags] <keyword...>
+aitlog sources [--json] [--backend auto|native|builtin]
+aitlog version
 ```
 
-Default route views or searches logs. Keywords are case-insensitive **AND** matches against the message. Use `ailog search …` when a keyword would collide with a subcommand name (for example `version`).
+Default route views or searches logs. Keywords are case-insensitive **AND** matches against the message. Use `aitlog search …` when a keyword would collide with a subcommand name (for example `version`).
 
 Use `--expr` for boolean matching (`&`/`|`/`!` or `AND`/`OR`/`NOT`, parentheses, `"phrases"`). Shell-quote the value so `|` and `!` are not interpreted by the shell. `--expr` cannot be combined with positional keywords or `-e/--regex`.
 
-Watch-style streaming: `ailog -f --expr '…'` follows new entries and prints only matches (silent until a hit). With `-f`, `-n`/`--head` are ignored; stop with Ctrl+C.
+Watch-style streaming: `aitlog -f --expr '…'` follows new entries and prints only matches (silent until a hit). With `-f`, `-n`/`--head` are ignored; stop with Ctrl+C.
 
 On macOS, keyword/regex/`--expr` queries use `log show --predicate` and expand at most through the last hour (stderr notes the window). Pass `--since` to search a wider explicit range.
 
@@ -65,19 +67,19 @@ Every filter/search/pager feature runs in Go over a normalized record stream. Mi
 | Windows | `setup` | — | `C:\Windows\Logs\…` |
 | Any | `-S path` | — | Builtin file reader (rotations + `.gz`) |
 
-`ailog sources` shows the chain and marks the selected layer with `*`. Windows Event Log does not support `-f`; use `-f --expr -S file` or historical `--expr` without follow.
+`aitlog sources` shows the chain and marks the selected layer with `*`. Windows Event Log does not support `-f`; use `-f --expr -S file` or historical `--expr` without follow.
 
 ## Examples
 
 ```bash
-ailog -n 50
-ailog error --since 1h
-ailog -e 'fail(ed|ure)' -n 100
-ailog -f --expr '(error|fail) & !debug'
-ailog --expr '(error OR fail) AND NOT timeout' -n 50 --since 1h
-ailog search --expr 'error|fail' --since 1h
-ailog --backend builtin -S /var/log/system.log -n 20
-ailog --json --no-pager -n 5
-ailog search version
-ailog sources --json
+aitlog -n 50
+aitlog error --since 1h
+aitlog -e 'fail(ed|ure)' -n 100
+aitlog -f --expr '(error|fail) & !debug'
+aitlog --expr '(error OR fail) AND NOT timeout' -n 50 --since 1h
+aitlog search --expr 'error|fail' --since 1h
+aitlog --backend builtin -S /var/log/system.log -n 20
+aitlog --json --no-pager -n 5
+aitlog search version
+aitlog sources --json
 ```

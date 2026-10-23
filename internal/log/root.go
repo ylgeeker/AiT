@@ -23,7 +23,7 @@ import (
 	"github.com/os-artificer/AiT/internal/pkg/errhint"
 )
 
-// Run is the application entry invoked from cmd/ailog.
+// Run is the application entry invoked from cmd/log.
 func Run(args []string) error {
 	if err := Execute(args); err != nil {
 		errhint.Print(os.Stderr, errhint.SurfaceCLI, err)

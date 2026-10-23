@@ -1,5 +1,7 @@
 # aissh internals
 
+> Binary `aitssh`, plugin `ssh`, Go package `aissh`.
+>
 > Code layout, package rules, and implementation workflows for contributors.
 
 ## Table of contents
@@ -21,7 +23,7 @@
 
 ## Overview
 
-This document is the implementation reference for `aissh`: where code lives, how argv routes, package boundaries, and end-to-end workflows with source pointers.
+This document is the implementation reference for `aitssh` (Go package `aissh`): where code lives, how argv routes, package boundaries, and end-to-end workflows with source pointers.
 
 | Document | Audience |
 |----------|----------|
@@ -37,7 +39,7 @@ This document is the implementation reference for `aissh`: where code lives, how
 ```mermaid
 flowchart TB
   subgraph Entry
-    Main["cmd/aissh/main.go"]
+    Main["cmd/ssh/main.go"]
     Run["aissh.Run / Execute"]
   end
 
@@ -78,7 +80,7 @@ flowchart TB
   Resolve --> Plat
 ```
 
-Agent Loop and admin CLI live under **`ait`** (`internal/ait/agent`); see [`ait-internals.md`](ait-internals.md) and [`ai.md`](ai.md) (migration). `aissh` does not import `agentcore` or `internal/ait/agent`.
+Agent Loop and admin CLI live under **`ait`** (`internal/ait/agent`); see [`ait-internals.md`](ait-internals.md). `aitssh` does not import `agentcore` or `internal/ait/agent`.
 ---
 
 ## Call chain and argv routing
@@ -86,7 +88,7 @@ Agent Loop and admin CLI live under **`ait`** (`internal/ait/agent`); see [`ait-
 Top-level argv flow:
 
 ```text
-cmd/aissh/main.go      -> minimal main; delegates to aissh.Run
+cmd/ssh/main.go      -> minimal main; delegates to aissh.Run
 internal/ssh            -> package aissh: Run, Execute, NewManager, root wiring
 internal/ssh/<cmd>    -> one package per top-level command (closed loop)
 internal/pkg/*          -> shared module-private libraries
@@ -97,10 +99,10 @@ Routing surfaces:
 
 | Input | Handler | Notes |
 |-------|---------|-------|
-| `aissh` with no args | Root help via `ExecuteWriters` | Not an implicit SSH connect |
-| `aissh [flags] destination` | `internal/ssh/connect` connect route | Not a registered Cobra subcommand |
-| `aissh <registered-cmd> …` | Cobra tree via `registry` | Subcommands register in `init()` |
-| `aissh shell` REPL line | `shell` dispatch chain | Builtins → `AppRoot/bin` → Cobra → PATH → connect route |
+| `aitssh` with no args | Root help via `ExecuteWriters` | Not an implicit SSH connect |
+| `aitssh [flags] destination` | `internal/ssh/connect` connect route | Not a registered Cobra subcommand |
+| `aitssh <registered-cmd> …` | Cobra tree via `registry` | Subcommands register in `init()` |
+| `aitssh shell` REPL line | `shell` dispatch chain | Builtins → `AppRoot/bin` → Cobra → PATH → connect route |
 
 Directory/package note:
 
@@ -198,7 +200,7 @@ AiT product behavior should remain in `internal/*`.
 
 Nested command trees follow the same closure pattern:
 
-- `aissh config` -> `set`, `get`, `init`, `view`, `edit`, `validate`
+- `aitssh config` -> `set`, `get`, `init`, `view`, `edit`, `validate`
 
 Children register via parent subregistry packages, not by hand-appending long `AddCommand` lists.
 
@@ -214,17 +216,17 @@ Keep command-specific flags and user-facing semantics inside the owning command 
 
 ### Command entry surfaces
 
-`aissh` has three distinct entry surfaces:
+`aitssh` has three distinct entry surfaces:
 
 | Surface | Mechanism | Extension point |
 |---|---|---|
 | Cobra command tree | `registry` and nested `subregistry` | add command package + register + blank import |
-| Shell builtins (`aissh shell`) | shell builtin registry | add builtin constant + handler |
+| Shell builtins (`aitssh shell`) | shell builtin registry | add builtin constant + handler |
 | SSH meta (`!ait`) | meta executor | add meta verb handling in the relevant executor |
 
 Special case:
 
-- Agent admin (`ait agent model list`, `ait agent connect`; Loop via bare `ait`) is owned by `internal/ait/agent` — see [`ait-internals.md`](ait-internals.md) / [`ai.md`](ai.md) (migration).
+- Agent admin (`ait agent model list`, `ait agent connect`; Loop via bare `ait`) is owned by `internal/ait/agent` — see [`ait-internals.md`](ait-internals.md).
 
 ### `clihints` as shared try-lines source
 
@@ -246,7 +248,7 @@ Nested commands follow the same pattern under the parent command tree.
 - [ ] New/updated command package is self-contained (`flags`, `parse`, `help`, `run`, `register`)
 - [ ] Registration uses registry/subregistry, not ad-hoc root command edits
 - [ ] `internal/pkg` contains only shared logic and does not import `internal/ssh`
-- [ ] `cmd/aissh/main.go` remains thin
+- [ ] `cmd/ssh/main.go` remains thin
 - [ ] Help content split remains `helpdoc` shared + per-command `help.go`
 - [ ] `clihints` try lines remain single-source
 - [ ] Behavior/regression gates remain aligned with [`change-acceptance.mdc`](../../.cursor/rules/change-acceptance.mdc)
@@ -292,7 +294,7 @@ sequenceDiagram
   participant Client as ssh/client
   participant Remote
 
-  User->>CLI: aissh [flags] destination
+  User->>CLI: aitssh [flags] destination
   CLI->>Connect: route as connect argv
   Connect->>Resolve: parse + ssh -G resolve
   Connect->>Mgr: Manager.Login(opts)
@@ -333,11 +335,11 @@ flowchart TD
 
 ### 3) Shell REPL dispatch (text + flow)
 
-Dispatch order in `aissh shell`:
+Dispatch order in `aitssh shell`:
 
 1. builtin commands
 2. `<AppRoot>/bin/<name>`
-3. `aissh` CLI subcommands
+3. `aitssh` CLI subcommands
 4. system PATH fallback
 5. narrow SSH connect route
 6. not-found hint
@@ -351,7 +353,7 @@ flowchart TD
   B -->|yes| B1[run builtin]
   B -->|no| X{exists in AppRoot/bin?}
   X -->|yes| X1[run extension binary]
-  X -->|no| C{matches aissh CLI cmd?}
+  X -->|no| C{matches aitssh CLI cmd?}
   C -->|yes| C1[ExecuteCobraOnly]
   C -->|no| P{PATH executable?}
   P -->|yes| P1[run PATH command]
@@ -431,7 +433,6 @@ sequenceDiagram
 
 Notes:
 
-- There is **no** AI routing in `aissh` meta (`!ait ai` / `!!` as AI entry removed). Use the `ai` plugin (`ai connect`).
 - `!!` lines are not treated as AI meta; see OA21 (`!!` forwards to PTY where applicable).
 
 ### 7) Get/put transfer workflow
@@ -439,7 +440,7 @@ Notes:
 ```mermaid
 flowchart TD
   S[start transfer] --> T{context}
-  T -->|standalone aissh get/put| A[parse transfer args + resolve + DialChain]
+  T -->|standalone aitssh get/put| A[parse transfer args + resolve + DialChain]
   T -->|in-session !ait get/put| B[reuse live SSH client]
   A --> D{chain mode?}
   B --> D
@@ -581,7 +582,7 @@ Core fields and meanings:
 | [`../../internal/ssh/registry/`](../../internal/ssh/registry/) | top-level command registry | `registry.go`, `root_help.go`, `all/imports.go` |
 | [`../../internal/pkg/helpdoc/`](../../internal/pkg/helpdoc/) | shared CLI help layout | `body.go`, `bind.go`, `common.go` |
 | [`../../internal/ssh/connect/`](../../internal/ssh/connect/) | default connect route adapter | `run.go`, `help.go` |
-| [`../../internal/ssh/shell/`](../../internal/ssh/shell/) | `aissh shell` REPL and dispatch | `repl.go`, `exec.go`, `exec_dispatch.go` |
+| [`../../internal/ssh/shell/`](../../internal/ssh/shell/) | `aitssh shell` REPL and dispatch | `repl.go`, `exec.go`, `exec_dispatch.go` |
 | [`../../internal/ssh/session/`](../../internal/ssh/session/) | session command surface | `cmd.go`, `flags.go`, `run.go` |
 | [`../../internal/ssh/meta/`](../../internal/ssh/meta/) | in-session local CLI execution | `exec.go` |
 | [`../../internal/pkg/session/`](../../internal/pkg/session/) | connect/load/switch/suspend orchestration | `manager.go`, `manager_login.go`, `manager_helpers.go` |
@@ -644,7 +645,7 @@ Core fields and meanings:
 |----------|-------------|
 | [`../architecture.md`](../architecture.md) | AiT toolbox project structure |
 | [`aissh.md`](aissh.md) | Operator-facing CLI guide |
-| [`ai.md`](ai.md) / [`ai-internals.md`](ai-internals.md) | Ops AI Agent (separate plugin) |
+| [`ait.md`](ait.md) / [`ait-internals.md`](ait-internals.md) | Agent Loop and `ait agent` |
 | [`../../AGENTS.md`](../../AGENTS.md) | Codebase orientation and package responsibilities |
 | [`../../CONTRIBUTING.md`](../../CONTRIBUTING.md) | Development workflow and coding standards |
 | [`../../README.md`](../../README.md) | Project overview and setup |

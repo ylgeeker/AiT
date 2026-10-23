@@ -22,18 +22,19 @@ import (
 	"github.com/os-artificer/AiT/internal/pkg/config"
 	pkghelpdoc "github.com/os-artificer/AiT/internal/pkg/helpdoc"
 	pkgollama "github.com/os-artificer/AiT/internal/pkg/ollama"
+	"github.com/os-artificer/AiT/internal/pkg/toolname"
 
 	"github.com/spf13/cobra"
 )
 
 const name = "status"
 
-// New builds the `ai ollama status` cobra command.
+// New builds the `ait agent ollama status` cobra command.
 func New() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           name,
 		Short:         "Show Ollama config and service status",
-		Long:          pkghelpdoc.LongHint("ai ollama status"),
+		Long:          pkghelpdoc.LongHint(toolname.AgentCLI("ollama status")),
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {

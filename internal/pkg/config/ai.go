@@ -86,7 +86,7 @@ type AgentConfig struct {
 	CommandTimeout string `yaml:"command_timeout,omitempty"`
 }
 
-// ExperimentalConfig gates AI features for the ai plugin / ait agent (default on; set enabled false to opt out).
+// ExperimentalConfig gates AI features for ait and ait agent (default on; set enabled false to opt out).
 type ExperimentalConfig struct {
 	Enabled bool `yaml:"enabled"`
 }

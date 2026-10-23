@@ -232,8 +232,8 @@ func printNext(w io.Writer) {
 	if w == nil {
 		return
 	}
-	_, _ = fmt.Fprintln(w, "Next: "+toolname.AICLI("")+"   (simple questions prefer local Ollama when reachable)")
-	_, _ = fmt.Fprintln(w, "      "+toolname.AICLI("model list"))
+	_, _ = fmt.Fprintln(w, "Next: "+toolname.AgentCLI("")+"   (simple questions prefer local Ollama when reachable)")
+	_, _ = fmt.Fprintln(w, "      "+toolname.AgentCLI("model list"))
 }
 
 func printDryRun(opts Options, cfg *config.Config) {
