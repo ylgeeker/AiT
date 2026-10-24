@@ -275,6 +275,25 @@ Run `make fmt` after Go changes. `make fmt` does **not** enforce line width ≤1
 
 ---
 
+## Commit messages
+
+Use this shape for every commit (merge commits are exempt):
+
+```text
+<type>: <one short English sentence>
+
+- <what changed>
+- <what changed>
+```
+
+- **Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`.
+- **Subject:** one short English sentence; no trailing period.
+- **Body:** one or more lines that start with `- ` (dash, then space).
+
+Canonical agent rule: [`.cursor/rules/commit-message.mdc`](.cursor/rules/commit-message.mdc). After `make install-git-hooks`, `scripts/git-hooks/commit-msg` rejects other shapes and strips Cursor attribution trailers ([`.cursor/rules/no-cursor-commit-trailer.mdc`](.cursor/rules/no-cursor-commit-trailer.mdc)).
+
+---
+
 ## Pre-submit checklist
 
 - [ ] `make fmt`

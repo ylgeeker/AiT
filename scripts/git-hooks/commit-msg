@@ -1,5 +1,9 @@
 #!/bin/sh
-# Strip Cursor trailers before commit is recorded (body text path).
+# Strip Cursor trailers, then require:
+#   <type>: <one short English sentence>
+#
+#   - <what changed>
+# Types: feat|fix|docs|refactor|test|chore. Merge commits are exempt.
 # Installed via: make install-git-hooks
 
 commit_msg_file=$1
@@ -7,4 +11,52 @@ commit_msg_file=$1
 
 . "$(dirname "$0")/strip-cursor-trailers-lib.sh"
 strip_cursor_trailers_from_file "$commit_msg_file"
+
+# Drop comment lines (# ...) and trailing blank lines for validation.
+tmp=$(mktemp) || exit 1
+trap 'rm -f "$tmp"' EXIT
+grep -v '^#' "$commit_msg_file" | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' >"$tmp" || true
+# Keep at least subject line even if empty after strip.
+[ -s "$tmp" ] || { echo "commit-msg: empty commit message" >&2; exit 1; }
+
+subject=$(sed -n '1p' "$tmp" | tr -d '\r')
+case "$subject" in
+Merge\ *)
+	exit 0
+	;;
+esac
+
+print_format() {
+	cat >&2 <<'EOF'
+commit-msg: expected format:
+
+  <type>: <one short English sentence>
+
+  - <what changed>
+  - <what changed>
+
+Types: feat, fix, docs, refactor, test, chore.
+No trailing period on the subject. Merge commits are exempt.
+EOF
+}
+
+echo "$subject" | grep -Eq '^(feat|fix|docs|refactor|test|chore): .+' || {
+	print_format
+	echo "commit-msg: bad subject: $subject" >&2
+	exit 1
+}
+
+echo "$subject" | grep -Eq '\.$' && {
+	print_format
+	echo "commit-msg: subject must not end with a period" >&2
+	exit 1
+}
+
+# Body must include at least one bullet line starting with "- ".
+if ! awk 'NR>1 && /^- / { found=1; exit } END { exit !found }' "$tmp"; then
+	print_format
+	echo "commit-msg: body must include at least one \"- \" bullet line" >&2
+	exit 1
+fi
+
 exit 0

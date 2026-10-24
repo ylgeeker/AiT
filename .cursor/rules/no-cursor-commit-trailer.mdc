@@ -16,7 +16,7 @@ Local repo hooks (run once per clone): `make install-git-hooks`
 
 | Hook | Role |
 |------|------|
-| `prepare-commit-msg` / `commit-msg` | Strip trailers in the message file |
+| `prepare-commit-msg` / `commit-msg` | Strip trailers in the message file; `commit-msg` also enforces [commit-message.mdc](commit-message.mdc) |
 | `post-commit` | Rewrite commit when Cursor used `git commit --trailer` (runs after `commit-msg`) |
 
 **IDE (required):** Cursor desktop defaults attribution **on** (`attributeCommitsToAgent: true`). Disable **Settings → Agent → Attribution** (commit and PR attribution off). CLI-only `~/.cursor/cli-config.json` attribution false does **not** disable IDE commits.

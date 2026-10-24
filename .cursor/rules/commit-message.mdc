@@ -1,0 +1,38 @@
+---
+description: Commit message format — type prefix, one English sentence, bullet list
+alwaysApply: true
+---
+
+# Commit message format
+
+When creating a git commit (after the user asks to commit), write the message as:
+
+```text
+<type>: <one short English sentence>
+
+- <what changed>
+- <what changed>
+```
+
+## Rules
+
+- **Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore` only.
+- **Subject:** one short English sentence after the type; no trailing period.
+- **Body:** one or more lines starting with `- ` (space after the dash).
+- **Merge** commits (`Merge …`) are exempt.
+- Do **not** add Cursor attribution trailers; see [no-cursor-commit-trailer.mdc](no-cursor-commit-trailer.mdc).
+
+Local hook (after `make install-git-hooks`): `scripts/git-hooks/commit-msg` rejects messages that do not match this shape.
+
+Pass the message via HEREDOC:
+
+```bash
+git commit -m "$(cat <<'EOF'
+feat: add session list number column
+
+- Show a 1-based # column in aitssh session --list.
+- Accept pick-by-number in session --load when TTY.
+
+EOF
+)"
+```

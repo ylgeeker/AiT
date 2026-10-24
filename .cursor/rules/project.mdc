@@ -34,5 +34,5 @@ Go CLI **toolbox** (**AiT**; binaries: **ait**, **aitssh**, **aitimg**, **aitlog
 - No drive-by refactors; no new markdown unless asked
 - Do not commit unless the user requests it
 - Do not edit `.git/` or add secrets
-- Git commits: no `Co-authored-by: Cursor` / `Made-with: Cursor` ([no-cursor-commit-trailer.mdc](no-cursor-commit-trailer.mdc)); run `make install-git-hooks` once per clone to strip IDE-injected trailers
+- Git commits: format in [commit-message.mdc](commit-message.mdc) (`feat`/`fix`/`docs`/… + English sentence + `- ` bullets); no `Co-authored-by: Cursor` / `Made-with: Cursor` ([no-cursor-commit-trailer.mdc](no-cursor-commit-trailer.mdc)); run `make install-git-hooks` once per clone to strip trailers and enforce the message format
 - **No personal infra in the repo**: do not add real personal hostnames, FQDNs, SSH ports, or IP addresses to code, tests, docs, or project `.cursor/rules`. Use fictional placeholders (`*.example.com`, Host alias `devhost`, port `2222`). Real sandbox/E2E hosts belong in **user-level** Cursor rules (`~/.cursor/rules/`), skills, or local notes — never in the AiT tree.
