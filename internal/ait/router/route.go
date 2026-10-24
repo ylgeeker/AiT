@@ -92,6 +92,9 @@ func routeShell(ctx context.Context, args []string, stdout, stderr io.Writer, d 
 
 func routeAgent(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 	plain, rest := pkghelpdoc.TakePlainFlag(args)
+	if pkghelpdoc.HelpRequested(rest) {
+		return agent.WriteAIHelp(stdout)
+	}
 	if len(rest) == 0 {
 		return runLoop(ctx, "", plain, stdout, stderr)
 	}

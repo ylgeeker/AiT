@@ -406,6 +406,26 @@ func TestExecuteWriters_AgentModelList(t *testing.T) {
 	}
 }
 
+// TestExecuteWriters_AgentHelpWithoutConfig prints ait agent --help when AI is not configured.
+func TestExecuteWriters_AgentHelpWithoutConfig(t *testing.T) {
+	t.Setenv("AIT_HOME", t.TempDir())
+	for _, arg := range []string{"--help", "-h", "help"} {
+		var out, errOut bytes.Buffer
+		if err := ait.ExecuteWriters([]string{"agent", arg}, &out, &errOut); err != nil {
+			t.Fatalf("%s: %v\nstderr: %s", arg, err, errOut.String())
+		}
+		s := out.String()
+		for _, sub := range []string{"Usage:", "provider", "ollama", "model", "connect"} {
+			if !strings.Contains(s, sub) {
+				t.Fatalf("%s help missing %q: %q", arg, sub, s)
+			}
+		}
+		if strings.Contains(errOut.String(), "AI not configured") {
+			t.Fatalf("%s help required AI config: %s", arg, errOut.String())
+		}
+	}
+}
+
 // TestExecuteWriters_ShellHelp (AT51) ait shell --help is toolbox REPL help, not Agent root help.
 func TestExecuteWriters_ShellHelp(t *testing.T) {
 	resetPlugins(t)
