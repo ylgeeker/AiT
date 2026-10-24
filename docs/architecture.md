@@ -15,7 +15,7 @@ Shipped tools (binary / plugin command; docs may use legacy product titles such 
 - `aitssh` (`ssh`): SSH client with session persistence, transfer support, and shell/meta workflows (**no AI subtree**); Go package `aissh`.
 - `aitimg` (`img`): Image metadata extractor (EXIF device/time/GPS + Nominatim reverse-geocoded address).
 - `aitlog` (`log`): System log viewer and search (Linux/macOS/Windows) with native tools and built-in fallbacks.
-- `aithost` (`host`): Live host CPU, memory, disk, network, and process monitor (Bubble Tea dashboard).
+- `aithost` (`host`): Live host CPU, memory, disk, network, TCP/UDP/ARP/ICMP, and process monitor (Bubble Tea dashboard).
 - `aitkeep` (`keep`): Process supervisor with `GET /ping` and CPU, memory, and disk limits.
 
 Shared capabilities (not separate binaries) live under `internal/pkg/` and are consumed by tools. Agent Loop kernel is `internal/pkg/agentcore` (engine: `internal/pkg/ai`; ops toolbox: `agentops` + `tooldispatch`; wire: `agentwire`; UI: `agentui`). Admin CLI and connect live in `internal/ait/agent`; routing in `internal/ait/router`.

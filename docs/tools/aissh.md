@@ -46,14 +46,14 @@ aitssh                                          # no args: root help (not SSH co
 aitssh [ssh-options] destination [command ...] [--save] [--alias NAME] [--password] [--tmux]
         # OpenSSH-compatible: -p -l -i -F -J -o, etc.; destination is [user@]host or a config Host alias
         # Requires local OpenSSH client (ssh -G) for config resolution; data plane is Go x/crypto/ssh
-        # Persists to SQLite with --save (bookmark by id) or --alias (named save; implies --save)
+        # Persists to SQLite with --save, --alias (named save; implies --save), or --tmux (implies --save)
         # Also updates an existing empty-alias row when the connection key matches (refreshes auth TTL)
         # With command: one-shot execution (similar to ssh host cmd); new hosts need --save or --alias
         # Legacy --host/--user remain supported for backward compatibility
 aitssh session --list [-v]   # # column for pick-by-number; -v adds FULL_ID (complete UUID)
-aitssh session --load [<id|alias>] [--tmux] [--password]   # Omit id to pick; id must be alias or full UUID (not list ID)
+aitssh session --load [<id|alias>] [--tmux] [--password]   # Omit id to pick on a TTY; id must be alias or full UUID (not list ID)
 aitssh session --suspend         # Local CLI only; inside SSH use !ait suspend
-aitssh session --switch [id|alias] [--tmux] [--password] [--force]  # Switch session; omit id to pick
+aitssh session --switch [id|alias] [--tmux] [--password] [--force]  # Switch session; omit id to pick on a TTY
 aitssh session --delete <id|alias|all> [--force]                     # Delete one or all saved sessions
 aitssh get [ssh-flags] <paths...>   # OpenSSH flags; paths/order like default SSH connect
 aitssh put [ssh-flags] <paths...>
@@ -77,15 +77,15 @@ aitssh config init|view|edit|validate|set|get ...   # YAML config; edit uses $VI
 
 ```mermaid
 flowchart TD
-  connect[connect opts] --> hasSaveAlias{save or alias?}
-  hasSaveAlias -->|yes| hasAlias{opts.Alias set?}
+  connect[connect opts] --> hasPersist{"save, alias, or tmux?"}
+  hasPersist -->|yes| hasAlias{opts.Alias set?}
   hasAlias -->|yes| getByAlias[GetSession alias]
   getByAlias -->|found| updateAliasRow[reuse alias row id]
   getByAlias -->|not found| findKey[FindSessionByKey u,h,port,alias]
-  hasAlias -->|no save only| findKey
+  hasAlias -->|no, save or tmux| findKey
   findKey -->|found| reuseKey[reuse matching id]
   findKey -->|not found| newID[new UUID]
-  hasSaveAlias -->|no| findEmpty[FindSessionByKey u,h,port empty alias]
+  hasPersist -->|no| findEmpty[FindSessionByKey u,h,port empty alias]
   findEmpty -->|found| reuseEmpty[reuse and extend TTL]
   findEmpty -->|not found| ephemeral[plan.persist=false]
 ```
@@ -94,7 +94,7 @@ flowchart TD
 
 - Session identity key is `username + host + port + alias`.
 - Empty alias and named alias rows are distinct records.
-- `--alias` implies save behavior.
+- `--alias` and `--tmux` each imply save behavior.
 - `login_destination` stores the original destination form (for example an ssh config host alias).
 - Plain `aitssh user@host` only updates an existing matching **empty-alias** row; otherwise it is ephemeral.
 
@@ -141,9 +141,9 @@ Optional template bootstrap:
 
 ```bash
 ./bin/aitssh config init
-# Or manually copy:
+# Or, from the repository root, copy the example:
 mkdir -p ~/.local/share/ait
-cp ../../configs/ait.example.yaml ~/.local/share/ait/config.yaml
+cp configs/ait.example.yaml ~/.local/share/ait/config.yaml
 ```
 
 ---
@@ -152,12 +152,12 @@ cp ../../configs/ait.example.yaml ~/.local/share/ait/config.yaml
 
 | Command | Description |
 |---------|-------------|
-| `aitssh shell` | Interactive local REPL (`AiT>`): builtins first, then `<AppRoot>/bin`, then `aitssh` CLI, then PATH, then narrow connect routing |
-| `aitssh [flags] destination` | OpenSSH-style connect (`aitssh user@host`, `aitssh -J jump final`); `--save` or `--alias` persists |
+| `aitssh shell` | Interactive local REPL (`AiT>`): builtins first, then `<AppRoot>/bin`, then `aitssh` CLI, then PATH, then narrow connect routing. Connect and load are blocked while a session is active |
+| `aitssh [flags] destination` | OpenSSH-style connect (`aitssh user@host`, `aitssh -J jump final`); `--save`, `--alias`, or `--tmux` persists |
 | `aitssh session --list` | List saved sessions (`#` display column; use `-v` for `FULL_ID`) |
-| `aitssh session --load [<id\|alias>]` | Restore session; omit id to pick; use alias or full UUID, not short list ID |
+| `aitssh session --load [<id\|alias>]` | Restore session; omit id to pick on a TTY (scripts pass an alias or full UUID); use alias or full UUID, not short list ID |
 | `aitssh session --suspend` | Local CLI suspend; in-session use `!ait suspend` |
-| `aitssh session --switch [id\|alias]` | Switch session; blocked if current is active unless `--force` |
+| `aitssh session --switch [id\|alias]` | Switch session; omit id to pick on a TTY; blocked if current is active unless `--force` |
 | `aitssh session --delete <id\|alias>` | Delete one session |
 | `aitssh session --delete all` | Delete all sessions (confirmation unless `--force`) |
 | `aitssh get [flags] <paths...>` | Download one file |
@@ -165,12 +165,12 @@ cp ../../configs/ait.example.yaml ~/.local/share/ait/config.yaml
 | `aitssh config init [--dry-run]` | Create/merge `config.yaml` with missing keys |
 | `aitssh config view` | Print config YAML (creates when missing) |
 | `aitssh config edit` | Open editor (`$VISUAL`/`$EDITOR`) and validate |
-| `aitssh config validate` | Validate syntax and values; exits non-zero on errors |
+| `aitssh config validate` | Validate YAML and session/SSH values; exits non-zero on errors. `ai.*` semantic checks use `ait agent config validate` |
 | `aitssh config set/get <key>` | Get/set session config values |
 
 Common flags:
 
-- `--tmux` remote keep-alive mode
+- `--tmux` remote keep-alive mode (implies `--save`)
 - `--port`, `--identity`, `--password`, `--alias`
 - `session --switch --force` for switching while current session is still active
 
@@ -255,7 +255,7 @@ Credential storage model:
 
 ## AI configuration note
 
-`aitssh` does **not** run AI. Use **`ait`** / **`ait agent`** for the Agent Loop and **`ait agent connect`** for remote sessions. Configure `ai.*` with **`ait agent config`** (see the quick start above and [`ait.md`](ait.md)). AI is on by default. Turn it off with `ai.experimental.enabled false` or `AIT_AI_EXPERIMENTAL=0`.
+`aitssh` does **not** run AI. Use **`ait`** / **`ait agent`** for the Agent Loop and **`ait agent connect`** for remote sessions. Configure `ai.*` with **`ait agent config`** (see the quick start above and [`ait.md`](ait.md)). AI is on by default. Turn it off with `ait agent config set ai.experimental.enabled false` or `AIT_AI_EXPERIMENTAL=0`. `aitssh config set` rejects `ai.*` keys.
 
 ---
 
@@ -316,7 +316,7 @@ Operational notes:
 - `aitssh config init` creates/merges missing config keys.
 - `aitssh config view` prints current config (creates file if missing).
 - `aitssh config edit` opens editor and validates on save.
-- `aitssh config validate` checks syntax and value constraints.
+- `aitssh config validate` checks that the file unmarshals and that session/SSH values are valid. A type error anywhere in the file (for example `ai.experimental.enabled: "not-a-bool"`) fails this command. Semantic checks on `ai.*` (provider URL, agent timeout, and similar) run under `ait agent config validate`. A bad `session.remote_prompt.path` fails `aitssh config validate` and is ignored by `ait agent config validate`.
 
 ---
 

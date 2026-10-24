@@ -36,11 +36,31 @@ var ErrNonInteractivePick = errhint.NewSentinel(errNonInteractiveTerminal)
 var ErrPickCancelled = errhint.NewSentinel(errPickCancelled)
 
 // CheckInteractiveStdin returns ErrNonInteractivePick when stdin is not a terminal.
-// Used before interactive session pick for aissh session --load or --switch without a target.
+// The Try block names session --load. Used before an interactive load pick.
 func CheckInteractiveStdin() error {
 	if stdinIsTerminal() {
 		return nil
 	}
+	return loadPickErr()
+}
+
+// StdinIsTerminal reports whether os.Stdin is a TTY.
+func StdinIsTerminal() bool {
+	return term.IsTerminal(int(os.Stdin.Fd()))
+}
+
+func checkInteractiveStdinSwitch() error {
+	if stdinIsTerminal() {
+		return nil
+	}
+	return switchPickErr()
+}
+
+func stdinIsTerminal() bool {
+	return StdinIsTerminal()
+}
+
+func loadPickErr() error {
 	return errhint.WithTry(ErrNonInteractivePick,
 		hintNonInteractivePickExplain,
 		tryLoadByAlias(),
@@ -50,22 +70,35 @@ func CheckInteractiveStdin() error {
 	)
 }
 
-// StdinIsTerminal reports whether os.Stdin is a TTY.
-func StdinIsTerminal() bool {
-	return term.IsTerminal(int(os.Stdin.Fd()))
-}
-
-func stdinIsTerminal() bool {
-	return StdinIsTerminal()
+func switchPickErr() error {
+	return errhint.WithTry(ErrNonInteractivePick,
+		hintNonInteractivePickExplain,
+		trySwitchByAlias(),
+		trySwitchByFullID(),
+		trySwitchInteractive(),
+		trySessionHelp(),
+	)
 }
 
 // PickSessionInteractiveTTY lists sessions and reads a selection with raw TTY line editing.
-// Used after SSH chain actions and standalone aissh session --load/--switch pickers.
+// Used after SSH chain load and standalone aissh session --load pickers.
 // Shell REPL callers should use PickSessionFrom directly while already in raw mode.
+// Returns ErrNonInteractivePick when stdin is not a TTY (Try lines name session --load),
+// ErrPickCancelled on Ctrl+C, or invalid-selection / store errors from the picker.
+func (m *Manager) PickSessionInteractiveTTY() (string, error) {
+	return m.pickSessionTTY(CheckInteractiveStdin)
+}
+
+// PickSessionSwitchTTY lists sessions for session --switch and reads a selection.
+// When stdin is not a terminal, the error Try block names session --switch.
 // Returns ErrNonInteractivePick when stdin is not a TTY, ErrPickCancelled on Ctrl+C,
 // or invalid-selection / store errors from the picker.
-func (m *Manager) PickSessionInteractiveTTY() (string, error) {
-	if err := CheckInteractiveStdin(); err != nil {
+func (m *Manager) PickSessionSwitchTTY() (string, error) {
+	return m.pickSessionTTY(checkInteractiveStdinSwitch)
+}
+
+func (m *Manager) pickSessionTTY(check func() error) (string, error) {
+	if err := check(); err != nil {
 		return "", err
 	}
 

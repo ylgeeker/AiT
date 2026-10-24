@@ -41,7 +41,7 @@ func formatRootSubcommands(entries []RootCommandEntry) string {
 
 // WriteRootHelp prints aissh --help to w using entries for the command list.
 func WriteRootHelp(w io.Writer, entries []RootCommandEntry) error {
-	introMain := "AiT SSH client with session management and optional tmux persistence. AI features are experimental and on by default."
+	introMain := "AiT SSH client with session management and optional tmux persistence."
 	introHint := fmt.Sprintf("Run '%s <command> --help' for command-specific usage and examples.", toolname.CLI(""))
 	usage := RootUsageLine() + "\n  " + toolname.CLI("") + " [command]"
 

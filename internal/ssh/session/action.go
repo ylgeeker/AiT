@@ -194,7 +194,7 @@ func execSessionLoad(
 	if err != nil {
 		return err
 	}
-	target, err = pickSessionIfEmpty(mgr, target)
+	target, err = pickSessionIfEmpty(mgr, target, false)
 	if err != nil {
 		return err
 	}
@@ -222,7 +222,7 @@ func execSessionSwitch(
 	if err != nil {
 		return err
 	}
-	target, err = pickSessionIfEmpty(mgr, target)
+	target, err = pickSessionIfEmpty(mgr, target, true)
 	if err != nil {
 		return err
 	}
@@ -230,9 +230,13 @@ func execSessionSwitch(
 }
 
 // pickSessionIfEmpty prompts the user to pick a session when target is empty.
-func pickSessionIfEmpty(mgr *pkgsession.Manager, target string) (string, error) {
+// switchPick selects session --switch Try lines when stdin is not a terminal.
+func pickSessionIfEmpty(mgr *pkgsession.Manager, target string, switchPick bool) (string, error) {
 	if target != "" {
 		return target, nil
+	}
+	if switchPick {
+		return mgr.PickSessionSwitchTTY()
 	}
 	return mgr.PickSessionInteractiveTTY()
 }

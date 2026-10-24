@@ -40,11 +40,11 @@ type manageHelpSpec struct {
 var manageHelpTopics = map[string]manageHelpSpec{
 	aitplugin.CmdInstall: {
 		usage: "install [plugin...]",
-		desc:  "Install official plugins (ssh, log, img, host) from the latest GitHub Release.",
+		desc:  "Install official plugins (ssh, log, img, host, keep) from the latest GitHub Release.",
 		lines: []string{
 			"install",
 			"install ssh",
-			"install ssh log",
+			"install ssh keep",
 		},
 	},
 	aitplugin.CmdUpdate: {

@@ -66,10 +66,10 @@ Ensure `$(go env GOPATH)/bin` is on your PATH.
 
 ### Install official plugins (`ssh`, `log`, `img`, `host`, `keep`)
 
-After a [GitHub Release](https://github.com/os-artificer/AiT/releases) is available, use the **ait** REPL (no separate `go install` for plugins):
+After a [GitHub Release](https://github.com/os-artificer/AiT/releases) is available, open the toolbox REPL with `ait shell` (bare `ait` starts the Agent Loop, or exits with the not-configured hint when AI is unset):
 
 ```bash
-ait
+ait shell
 ```
 
 ```text
@@ -91,7 +91,7 @@ make build
 ./bin/ait --help
 ```
 
-For local development, `make build` also produces `bin/aitssh`, `bin/aitimg`, `bin/aitlog`, `bin/aithost`, and `bin/aitkeep`. To install plugins into `bin/` without a Release, run `make install` or use `ait> install` once a Release exists. See [CONTRIBUTING.md](CONTRIBUTING.md).
+For local development, `make build` also produces `bin/aitssh`, `bin/aitimg`, `bin/aitlog`, `bin/aithost`, and `bin/aitkeep`. To install plugins into `bin/` without a Release, run `make install`. Once a Release exists, run `ait shell` and then `install` at the `ait>` prompt. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Documentation
 

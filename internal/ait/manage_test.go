@@ -83,8 +83,12 @@ func TestWriteManageHelp_Install(t *testing.T) {
 	if exit {
 		t.Fatal("unexpected exit")
 	}
-	if !strings.Contains(buf.String(), "Usage:") || !strings.Contains(buf.String(), "install") {
-		t.Fatalf("help=%q", buf.String())
+	help := buf.String()
+	if !strings.Contains(help, "Usage:") || !strings.Contains(help, "install") {
+		t.Fatalf("help=%q", help)
+	}
+	if !strings.Contains(help, "keep") {
+		t.Fatalf("install help must list keep: %q", help)
 	}
 }
 

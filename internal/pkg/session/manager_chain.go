@@ -80,7 +80,7 @@ func (m *Manager) runChainSwitch(ctx context.Context, argv []string) error {
 	}
 
 	if needPick {
-		target, err = m.pickSessionForChain()
+		target, err = m.pickSessionForChainSwitch()
 		if err != nil {
 			return err
 		}
@@ -105,4 +105,8 @@ func (m *Manager) switchFromChain(ctx context.Context, target string, useTmux bo
 
 func (m *Manager) pickSessionForChain() (string, error) {
 	return m.PickSessionInteractiveTTY()
+}
+
+func (m *Manager) pickSessionForChainSwitch() (string, error) {
+	return m.PickSessionSwitchTTY()
 }

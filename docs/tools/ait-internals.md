@@ -25,9 +25,11 @@ cmd/ait → internal/ait (package ait: Run, Execute, help)
 | argv | Route |
 |------|--------|
 | (empty) | `loop.Run` — Agent Loop |
-| `agent …` | admin verb → `agent.RunAdmin`; else Loop with optional `--plain` |
+| `version` / `-V` / `--version` | version line |
+| `agent …` | admin verb → `agent.RunAdmin`; `ait agent <destination>` → `connect`; else Loop with optional `--plain` and the remaining text as the goal |
 | `shell` | toolbox REPL (`shell.RunREPL`) |
-| `ssh`, `log`, `img`, `host`, `keep`, … | `dispatch.RunPlugin` (legacy aliases via `ResolvePluginName` / `LegacyPluginNames`) |
+| `ssh`, `log`, `img`, `host`, `keep`, … | `dispatch.RunPlugin` when the name resolves (legacy aliases via `ResolvePluginName` / `LegacyPluginNames`) |
+| other first token | `loop.Run` with the joined argv as the initial goal (for example `ait list files`) |
 | `help` / `-h` | `WriteRootHelp` |
 
 ## Key types
@@ -35,7 +37,7 @@ cmd/ait → internal/ait (package ait: Run, Execute, help)
 | Piece | Role |
 |-------|------|
 | `aitplugin.Manifest` | v1 JSON schema (`apiVersion`, `name`, `binary`, `flags` for help only) |
-| `aitplugin.Discover` | `sync.Once` scan of `InstallDir/plugins/<id>/` + PATH builtin fill |
+| `aitplugin.Discover` | `sync.Once` scan of `InstallDir/plugins/<manifest.name>/` (for example `plugins/ssh/aitssh`) + PATH builtin fill |
 | `tooldispatch.Exec` | Lookup plugin + `pluginbin.ExecPath` (stdin/stdout/stderr) |
 | `shell.ExecuteLine` | one REPL line; swallows bare `*exec.ExitError` (AT14) |
 | `aitrelease.Execute` | install/update/upgrade from GitHub Release |

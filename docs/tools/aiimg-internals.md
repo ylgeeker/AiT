@@ -4,7 +4,7 @@
 
 ```text
 cmd/img/main.go                → thin main; delegates to aiimg.Run
-internal/aiimg                   → Run, ExecuteWriters (route), WriteRootHelp
+internal/img                     → package aiimg: Run, ExecuteWriters (route), WriteRootHelp
 internal/img/registry          → TopLevel Register / AttachRoot / IsRegistered
 internal/img/registry/all      → blank-imports command registrars
 internal/img/extract           → default route (not registry.Register); package name ≠ CLI verb
@@ -12,7 +12,7 @@ internal/img/set               → registered `aiimg set` (JPEG EXIF write)
 internal/img/clear             → registered `aiimg clear` (JPEG EXIF clear)
 internal/img/outpath           → set/clear destination resolve (AutoName, -o, confirm); not a command
 internal/img/version           → VERSION + ldflags + registered `aiimg version`
-internal/pkg/toolname             → AIImg (and AISsh) SSOT
+internal/pkg/toolname             → binary constants AITImg and AITSSH
 internal/pkg/imgmeta              → Extract + Patch/PatchTo + Clear/ClearTo (JPEG write) + formatters
 internal/pkg/geocode              → Nominatim HTTP reverse geocode
 ```
@@ -73,6 +73,7 @@ Command names that collide with common filenames (e.g. `version`) take precedenc
 | `format_human.go` / `format_helpers.go` | locked summary fields |
 | `format_json.go` | JSON array (+ optional nested `"exif"`) |
 | `format_full.go` / helpers | `--all` Field/Value tables |
+| `format_full_structured.go` | structured string expansion inside `--all` |
 
 ### `internal/pkg/geocode`
 

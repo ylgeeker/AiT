@@ -193,8 +193,8 @@ func TestSessionCmd_LoadPickNonTTY(t *testing.T) {
 	if !errors.Is(err, session.ErrNonInteractivePick) {
 		t.Fatalf("err=%v", err)
 	}
-	if !strings.Contains(err.Error(), "Try:") {
-		t.Fatalf("expected Try block, got %v", err)
+	if !strings.Contains(err.Error(), "Try:") || !strings.Contains(err.Error(), "session --load") {
+		t.Fatalf("expected load Try block, got %v", err)
 	}
 }
 
@@ -250,6 +250,12 @@ func TestSessionCmd_SwitchPickNonTTY(t *testing.T) {
 	}
 	if !errors.Is(err, session.ErrNonInteractivePick) {
 		t.Fatalf("err=%v", err)
+	}
+	if !strings.Contains(err.Error(), "session --switch <alias>") {
+		t.Fatalf("expected switch Try block, got %v", err)
+	}
+	if strings.Contains(err.Error(), "session --load") {
+		t.Fatalf("switch pick must not suggest load: %v", err)
 	}
 }
 

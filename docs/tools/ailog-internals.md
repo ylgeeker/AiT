@@ -45,4 +45,4 @@ Interactive raw-TTY viewer with progressive vs bounded modes. Non-TTY / `--no-pa
 
 ## Acceptance IDs
 
-See change-acceptance.mdc: **LG1–LG22**, **PG1–PG9**, **FB1–FB12**, **BI1–BI4**.
+See change-acceptance.mdc: **LG1–LG22**, **PG1–PG3**, **FB1–FB4**, **BI1–BI4**.

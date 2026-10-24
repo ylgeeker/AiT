@@ -534,19 +534,22 @@ Database file: `<AppRoot>/ait.db`.
 
 ```sql
 CREATE TABLE sessions (
-  id              TEXT PRIMARY KEY,
-  alias           TEXT UNIQUE,
-  host            TEXT NOT NULL,
-  port            INTEGER NOT NULL DEFAULT 22,
-  username        TEXT NOT NULL,
-  identity_path   TEXT,
-  auth_method     TEXT NOT NULL,       -- key | password | agent
-  auth_expires_at INTEGER NOT NULL,    -- unix seconds
-  tmux_enabled    INTEGER NOT NULL DEFAULT 0,
-  tmux_session    TEXT,
-  created_at      INTEGER NOT NULL,
-  updated_at      INTEGER NOT NULL,
-  status          TEXT NOT NULL        -- active | suspended
+  id                TEXT PRIMARY KEY,
+  alias             TEXT UNIQUE,
+  host              TEXT NOT NULL,
+  port              INTEGER NOT NULL DEFAULT 22,
+  username          TEXT NOT NULL,
+  identity_path     TEXT,
+  auth_method       TEXT NOT NULL,       -- key | password | agent
+  auth_expires_at   INTEGER NOT NULL,    -- unix seconds
+  tmux_enabled      INTEGER NOT NULL DEFAULT 0,
+  tmux_session      TEXT,
+  login_destination TEXT,
+  proxy_jump        TEXT,
+  proxy_command     TEXT,
+  created_at        INTEGER NOT NULL,
+  updated_at        INTEGER NOT NULL,
+  status            TEXT NOT NULL        -- active | suspended
 );
 
 CREATE TABLE session_state (
@@ -566,7 +569,7 @@ CREATE TABLE app_meta (
 
 Core fields and meanings:
 
-- `login_destination`: persisted in session metadata for reconnect resolution parity
+- `login_destination`: `sessions.login_destination`, the original destination form used to re-resolve on reconnect
 - `auth_expires_at`: credential-free reconnect window cutoff
 - `tmux_enabled` + `tmux_session`: remote keep-alive configuration
 - `status`: `active` / `suspended`

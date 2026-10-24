@@ -31,8 +31,15 @@ func TrySessionLoadFullID() string {
 func TrySessionLoadPick() string {
 	return toolname.CLI("session --load") + "       pick by # interactively"
 }
-func TrySessionSwitchID() string        { return toolname.CLI("session --switch <id|alias>") }
-func TrySessionSwitch() string          { return toolname.CLI("session --switch") }
+func TrySessionSwitchID() string    { return toolname.CLI("session --switch <id|alias>") }
+func TrySessionSwitchAlias() string { return toolname.CLI("session --switch <alias>") }
+func TrySessionSwitch() string      { return toolname.CLI("session --switch") }
+func TrySessionSwitchFullID() string {
+	return toolname.CLI("session --list -v") + "    then " + toolname.CLI("session --switch <FULL_ID>")
+}
+func TrySessionSwitchPick() string {
+	return toolname.CLI("session --switch") + "       pick by # interactively"
+}
 func TrySessionSwitchForce() string     { return toolname.CLI("session --switch <id|alias> --force") }
 func TrySessionHelp() string            { return toolname.CLI("session --help") }
 func TryConnectSave() string            { return toolname.CLI("--save <destination>") }

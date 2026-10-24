@@ -1,6 +1,6 @@
 # ait — Agent interaction entry
 
-**`ait`** is the unified Agent interaction entry for AiT. Bare **`ait`** (or **`ait agent`**) starts the interactive Agent Loop. Plugin tools run as top-level dispatch (`ait ssh`, `ait log`, …). The toolbox REPL for install/update/upgrade is **`ait shell`**.
+**`ait`** is the unified Agent interaction entry for AiT. Bare **`ait`** (or **`ait agent`**) starts the interactive Agent Loop. When AI is not configured, bare `ait` exits and prints `AI not configured` with a `Try:` block for `ait agent config set`. Plugin tools run as top-level dispatch (`ait ssh`, `ait log`, …). The toolbox REPL for install/update/upgrade is **`ait shell`** (prompt `ait>`).
 
 ## Usage
 

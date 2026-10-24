@@ -2,7 +2,7 @@
 
 AiT acceptance tests that need an **external** environment (sshd, OpenAI-compatible chat, Ollama `/api/tags`, Nominatim reverse geocode) use loopback mocks checked into this repository. They do **not** require a real host, API key, or personal infrastructure.
 
-GitHub Releases for `ait> install` already have a separate mock: [`mock/testrelease`](../mock/testrelease) and [`mock/aitrelease-mock`](../mock/aitrelease-mock). The stub archive lists every official plugin binary, including `aitkeep` / `plugins/keep`, and builds a zip when the requested asset is Windows. This document covers SSH/SFTP and HTTP.
+GitHub Releases for `install` inside `ait shell` (`ait>` prompt) already have a separate mock: [`mock/testrelease`](../mock/testrelease) and [`mock/aitrelease-mock`](../mock/aitrelease-mock). The stub archive lists every official plugin binary, including `aitkeep` / `plugins/keep`, and builds a zip when the requested asset is Windows. This document covers SSH/SFTP and HTTP.
 
 ## Packages
 

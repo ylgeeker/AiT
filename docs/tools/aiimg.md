@@ -30,6 +30,8 @@ aitimg clear --gps --make photo.jpg
 aitimg clear --all --inplace photo.jpg
 ```
 
+With no files, `aitimg` prints root help and exits 0.
+
 `aitimg version` prints build version (and takes precedence over a file named `version`).
 
 ### set / clear (JPEG only)

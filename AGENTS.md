@@ -50,7 +50,7 @@ Project structure: [`docs/architecture.md`](docs/architecture.md). ait: [`docs/t
 | `cmd/host/main.go` | Thin `main` — delegates to `aihost.Run` (binary `aithost`) |
 | `cmd/keep/main.go` | Thin `main` — delegates to `keepalive.Run` (binary `aitkeep`) |
 | `internal/ait/` | `ait` entry (package **`ait`**: `Run`, `Execute`, router); **`ait/agent`** Loop + admin CLI |
-| `internal/pkg/aitplugin/` | Plugin Manifest v1, Discover (`plugins/<binary>/`), embedded SSOT manifests |
+| `internal/pkg/aitplugin/` | Plugin Manifest v1, Discover (`plugins/<plugin-command>/`, e.g. `plugins/ssh/aitssh`), embedded SSOT manifests |
 | `internal/pkg/aitrelease/` | GitHub Release fetch/extract/apply for REPL `install` / `update` / `upgrade` |
 | `mock/testrelease/` | httptest GitHub Releases fixture (`mock/aitrelease-mock`) |
 | `mock/testenv-mock/` | Test-only loopback SSH+HTTP mock daemon (JSON banner, SIGINT) |
@@ -176,12 +176,12 @@ Package-level helpers live in `*_helpers.go` (not mixed with struct methods in t
 ## CLI quick reference
 
 ```text
-ait                                      # ait> REPL (no one-shot plugin exec)
+ait                                      # Agent Loop; unconfigured AI exits with Try: ait agent config set
+ait agent [--plain] [goal...]            # interactive Agent Loop (TTY default TUI)
+ait shell                                # ait> toolbox REPL (install/update/upgrade)
 ait> install [plugin...]                 # GitHub Release → install dir (all official plugins if no args)
 ait> update [plugin...]                  # update installed official plugins only
 ait> upgrade                             # update ait + installed official plugins (no extra args)
-ait agent [--plain] [goal...]            # interactive Agent Loop (TTY default TUI)
-ait> agent [goal...]                     # nested Loop from toolbox REPL
 aitssh shell                             # AiT> REPL: ssh-style connect, session --list/--load, history, help, exit
 aitssh [ssh-options] destination [cmd ...] [--save] [--alias] [--tmux] [--password]
 # ssh-options: -p -l -i -F -J -o ... ; legacy --host/--user still supported
@@ -200,7 +200,7 @@ aitssh put [ssh-flags] <paths...>
 aitssh config init|view|edit|validate|set|get <key> [<value>]
 ```
 
-Prompts: `AiT>` (`aitssh shell` / `ait`), Agent Loop via `ait agent` / `ait agent connect` (plain or TUI; confirm `y`/`c`/`s`/`n`; read-only auto-run). Native shell PS1 for SSH remote interactive; `AiT Local>` (`!ait local`). In SSH (`aitssh`): `!ait help`; `!ait <subcmd>` for local CLI; **no** `!ait ai` / `!!` AI entry — use `ait agent connect` or `ait agent`. Also `!ait local` / `remote`; `!ait suspend`; `!ait chain [on|off]` for PTY-pipe injection over multiple SSH hops. Use `aitssh shell` for nested connect/`load` (returns to `AiT>` after remote `exit`). Merge gate: [change-acceptance.mdc](.cursor/rules/change-acceptance.mdc) (**OA\***, **AG\***, **AC-V4\***, **R1–R14**, **D\***, **S\***, **B1–B7**, **H0a–H4d**).
+Prompts: `ait>` (`ait shell`); Agent Loop via bare `ait` / `ait agent` / `ait agent connect` (plain or TUI; confirm `y`/`c`/`s`/`n`; read-only auto-run); `AiT>` (`aitssh shell`). Native shell PS1 for SSH remote interactive; `AiT Local>` (`!ait local`). In SSH (`aitssh`): `!ait help`; `!ait <subcmd>` for local CLI; **no** `!ait ai` / `!!` AI entry — use `ait agent connect` or `ait agent`. Also `!ait local` / `remote`; `!ait suspend`; `!ait chain [on|off]` for PTY-pipe injection over multiple SSH hops. Use `aitssh shell` for nested connect/`load` (returns to `AiT>` after remote `exit`). Merge gate: [change-acceptance.mdc](.cursor/rules/change-acceptance.mdc) (**OA\***, **AG\***, **AC-V4\***, **R1–R14**, **D\***, **S\***, **B1–B7**, **H0a–H4d**).
 
 ## Pitfalls
 

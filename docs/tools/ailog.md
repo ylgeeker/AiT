@@ -20,6 +20,8 @@ aitlog sources [--json] [--backend auto|native|builtin]
 aitlog version
 ```
 
+With no arguments, `aitlog` prints root help and exits 0. Viewing or searching requires flags and/or keywords (for example `aitlog -n 50`).
+
 Default route views or searches logs. Keywords are case-insensitive **AND** matches against the message. Use `aitlog search …` when a keyword would collide with a subcommand name (for example `version`).
 
 Use `--expr` for boolean matching (`&`/`|`/`!` or `AND`/`OR`/`NOT`, parentheses, `"phrases"`). Shell-quote the value so `|` and `!` are not interpreted by the shell. `--expr` cannot be combined with positional keywords or `-e/--regex`.

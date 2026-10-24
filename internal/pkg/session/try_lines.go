@@ -20,14 +20,19 @@ import "github.com/os-artificer/AiT/internal/pkg/clihints"
 
 // Re-export Try-block lines from clihints (avoids import cycle with ssh/client).
 
-func TrySessionList() string            { return clihints.TrySessionList() }
-func TrySessionLoadAlias() string       { return clihints.TrySessionLoadAlias() }
-func TrySessionLoad() string            { return clihints.TrySessionLoad() }
-func TrySessionLoadOptional() string    { return clihints.TrySessionLoadOptional() }
-func TrySessionLoadFullID() string      { return clihints.TrySessionLoadFullID() }
-func TrySessionLoadPick() string        { return clihints.TrySessionLoadPick() }
-func TrySessionSwitchID() string        { return clihints.TrySessionSwitchID() }
-func TrySessionSwitch() string          { return clihints.TrySessionSwitch() }
+func TrySessionList() string         { return clihints.TrySessionList() }
+func TrySessionLoadAlias() string    { return clihints.TrySessionLoadAlias() }
+func TrySessionLoad() string         { return clihints.TrySessionLoad() }
+func TrySessionLoadOptional() string { return clihints.TrySessionLoadOptional() }
+func TrySessionLoadFullID() string   { return clihints.TrySessionLoadFullID() }
+func TrySessionLoadPick() string     { return clihints.TrySessionLoadPick() }
+func TrySessionSwitchID() string     { return clihints.TrySessionSwitchID() }
+func TrySessionSwitchAlias() string  { return clihints.TrySessionSwitchAlias() }
+func TrySessionSwitch() string       { return clihints.TrySessionSwitch() }
+func TrySessionSwitchFullID() string {
+	return clihints.TrySessionSwitchFullID()
+}
+func TrySessionSwitchPick() string      { return clihints.TrySessionSwitchPick() }
 func TrySessionSwitchForce() string     { return clihints.TrySessionSwitchForce() }
 func TrySessionHelp() string            { return clihints.TrySessionHelp() }
 func TryConnectSave() string            { return clihints.TryConnectSave() }
@@ -42,9 +47,14 @@ func TryConnectTmuxSaveDevhost() string { return clihints.TryConnectTmuxSaveDevh
 func tryLoadByAlias() string     { return clihints.TrySessionLoadAlias() }
 func tryLoadByFullID() string    { return clihints.TrySessionLoadFullID() }
 func tryLoadInteractive() string { return clihints.TrySessionLoadPick() }
-func trySessionHelp() string     { return clihints.TrySessionHelp() }
-func tryLoadFromLocal() string   { return clihints.TrySessionLoadOptional() }
-func trySwitchForce() string     { return clihints.TrySessionSwitchForce() }
-func tryConnectSave() string     { return clihints.TryConnectSave() }
-func tryConnectAlias() string    { return clihints.TryConnectAlias() }
-func tryConnectHelp() string     { return clihints.TryConnectHelp() }
+func trySwitchByAlias() string   { return clihints.TrySessionSwitchAlias() }
+func trySwitchByFullID() string  { return clihints.TrySessionSwitchFullID() }
+func trySwitchInteractive() string {
+	return clihints.TrySessionSwitchPick()
+}
+func trySessionHelp() string   { return clihints.TrySessionHelp() }
+func tryLoadFromLocal() string { return clihints.TrySessionLoadOptional() }
+func trySwitchForce() string   { return clihints.TrySessionSwitchForce() }
+func tryConnectSave() string   { return clihints.TryConnectSave() }
+func tryConnectAlias() string  { return clihints.TryConnectAlias() }
+func tryConnectHelp() string   { return clihints.TryConnectHelp() }
