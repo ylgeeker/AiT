@@ -176,13 +176,14 @@ func TestSortConnStats_StableOrder(t *testing.T) {
 
 func TestFormatConnTable_HeadersAndIPv6(t *testing.T) {
 	age := int64(75)
+	created := time.Date(2026, 3, 1, 12, 0, 0, 0, time.Local)
 	out := FormatConnTable([]ConnStat{{
 		Proto: ConnProtoTCP, Status: ConnStatusEstablished,
 		LocalIP: "127.0.0.1", LocalPort: 1,
 		RemoteIP: "::1", RemotePort: 443,
-		PID: 42, Process: "curl", AgeSeconds: &age,
+		PID: 42, Process: "curl", AgeSeconds: &age, CreatedAt: &created,
 	}})
-	if !strings.Contains(out, "PROTO") || !strings.Contains(out, "AGE") {
+	if !strings.Contains(out, "PROTO") || !strings.Contains(out, "AGE") || !strings.Contains(out, "CREATED") {
 		t.Fatalf("missing headers: %s", out)
 	}
 	if !strings.Contains(out, "[::1]:443") {
@@ -191,26 +192,36 @@ func TestFormatConnTable_HeadersAndIPv6(t *testing.T) {
 	if !strings.Contains(out, "1m15s") {
 		t.Fatalf("want compact age: %s", out)
 	}
+	if !strings.Contains(out, created.Local().Format(connCreatedFmt)) {
+		t.Fatalf("want created: %s", out)
+	}
 }
 
 func TestFormatConnTable_HeaderAlignsColumns(t *testing.T) {
 	age := int64(5)
+	created := time.Date(2026, 3, 1, 12, 0, 5, 0, time.Local)
+	createdCell := created.Local().Format(connCreatedFmt)
 	out := FormatConnTable([]ConnStat{{
 		Proto: "tcp", Status: "LISTEN",
 		LocalIP: "1.1.1.1", LocalPort: 80,
-		PID: 1, Process: "a", AgeSeconds: &age,
+		PID: 1, Process: "a", AgeSeconds: &age, CreatedAt: &created,
 	}})
 	lines := strings.Split(strings.TrimSuffix(out, "\n"), "\n")
 	if len(lines) < 2 {
 		t.Fatalf("lines=%v", lines)
 	}
 	headerAge := strings.Index(lines[0], "AGE")
-	dataAge := strings.LastIndex(lines[1], "5s")
-	if headerAge < 0 || dataAge < 0 {
-		t.Fatalf("missing AGE cells:\n%s", out)
+	dataAge := strings.Index(lines[1], "5s")
+	headerCreated := strings.Index(lines[0], "CREATED")
+	dataCreated := strings.Index(lines[1], createdCell)
+	if headerAge < 0 || dataAge < 0 || headerCreated < 0 || dataCreated < 0 {
+		t.Fatalf("missing AGE/CREATED cells:\n%s", out)
 	}
 	if headerAge != dataAge {
 		t.Fatalf("AGE misaligned: header=%d data=%d\n%s", headerAge, dataAge, out)
+	}
+	if headerCreated != dataCreated {
+		t.Fatalf("CREATED misaligned: header=%d data=%d\n%s", headerCreated, dataCreated, out)
 	}
 }
 
@@ -287,7 +298,37 @@ func TestWriteConnectionsJSON_NullAge(t *testing.T) {
 	if err := WriteConnectionsJSON(&buf, time.Now(), []ConnStat{{Proto: "tcp"}}); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(buf.String(), `"age_seconds": null`) {
-		t.Fatalf("want null age_seconds: %s", buf.String())
+	got := buf.String()
+	if !strings.Contains(got, `"age_seconds": null`) {
+		t.Fatalf("want null age_seconds: %s", got)
+	}
+	if !strings.Contains(got, `"created_at": null`) {
+		t.Fatalf("want null created_at: %s", got)
+	}
+}
+
+func TestFormatConnCreated(t *testing.T) {
+	if FormatConnCreated(nil) != "-" {
+		t.Fatal("nil created")
+	}
+	ts := time.Date(2026, 3, 1, 12, 0, 0, 0, time.Local)
+	want := ts.Local().Format(connCreatedFmt)
+	if got := FormatConnCreated(&ts); got != want {
+		t.Fatalf("got %q want %q", got, want)
+	}
+}
+
+func TestProcessDisplayName_Fallback(t *testing.T) {
+	if got := processDisplayName("nginx", []string{"/usr/sbin/nginx"}); got != "nginx" {
+		t.Fatalf("name wins: %q", got)
+	}
+	if got := processDisplayName("", []string{"/usr/bin/python3", "app.py"}); got != "python3" {
+		t.Fatalf("cmdline basename: %q", got)
+	}
+	if got := processDisplayName("", nil); got != "" {
+		t.Fatalf("empty: %q", got)
+	}
+	if got := processDisplayName("", []string{""}); got != "" {
+		t.Fatalf("empty argv0: %q", got)
 	}
 }

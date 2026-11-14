@@ -47,13 +47,13 @@ func TestParseConntrackLine_NoDelta(t *testing.T) {
 	}
 }
 
-func TestAgeFromFD_PidZeroSkipped(t *testing.T) {
-	if age := ageFromFD(0, 3, time.Now()); age != nil {
-		t.Fatalf("want nil for pid 0, got %v", age)
+func TestCreatedAtFromFD_PidZeroSkipped(t *testing.T) {
+	if got := createdAtFromFD(0, 3); got != nil {
+		t.Fatalf("want nil for pid 0, got %v", got)
 	}
 }
 
-func TestAgeFromFD_SelfFD(t *testing.T) {
+func TestCreatedAtFromFD_SelfFD(t *testing.T) {
 	p := filepath.Join(t.TempDir(), "x")
 	if err := os.WriteFile(p, []byte("hi"), 0o600); err != nil {
 		t.Fatal(err)
@@ -66,12 +66,53 @@ func TestAgeFromFD_SelfFD(t *testing.T) {
 
 	pid := int32(os.Getpid())
 	fd := uint32(f.Fd())
-	age := ageFromFD(pid, fd, time.Now().Add(time.Second))
-	if age == nil {
-		t.Fatal("expected age from self fd")
+	created := createdAtFromFD(pid, fd)
+	if created == nil {
+		t.Fatal("expected created time from self fd")
 	}
-	if *age < 0 {
-		t.Fatalf("age=%d", *age)
+	if created.IsZero() {
+		t.Fatal("created is zero")
+	}
+}
+
+func TestEnrichConnAge_FDAndConntrackDerived(t *testing.T) {
+	p := filepath.Join(t.TempDir(), "x")
+	if err := os.WriteFile(p, []byte("hi"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	f, err := os.Open(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+
+	// now must be after fd ctime so applyFDConnAge accepts the instant.
+	now := time.Now().Add(2 * time.Second)
+
+	fdRow := ConnStat{
+		Proto: ConnProtoTCP, PID: int32(os.Getpid()), Fd: uint32(f.Fd()),
+		LocalIP: "127.0.0.1", LocalPort: 9,
+	}
+	trackRow := ConnStat{
+		Proto: ConnProtoTCP, PID: 0, Fd: 0,
+		LocalIP: "10.0.0.1", LocalPort: 1, RemoteIP: "1.2.3.4", RemotePort: 443,
+	}
+	track := map[connTuple]int64{
+		{proto: "tcp", lip: "10.0.0.1", rip: "1.2.3.4", lport: 1, rport: 443}: 90,
+	}
+
+	conns := []ConnStat{fdRow, trackRow}
+	enrichConnAgeWith(conns, now, track)
+
+	if conns[0].CreatedAt == nil || conns[0].AgeSeconds == nil {
+		t.Fatalf("fd row: created=%v age=%v", conns[0].CreatedAt, conns[0].AgeSeconds)
+	}
+	if conns[1].CreatedAt == nil || conns[1].AgeSeconds == nil || *conns[1].AgeSeconds != 90 {
+		t.Fatalf("track row: created=%v age=%v", conns[1].CreatedAt, conns[1].AgeSeconds)
+	}
+	wantCreated := now.Add(-90 * time.Second)
+	if !conns[1].CreatedAt.Equal(wantCreated) {
+		t.Fatalf("derived created=%v want %v", conns[1].CreatedAt, wantCreated)
 	}
 }
 

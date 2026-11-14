@@ -212,7 +212,7 @@ func TestCLI_NetHelp(t *testing.T) {
 		t.Fatal(err)
 	}
 	got := out.String()
-	for _, want := range []string{"--conn", "AGE", "Examples:", "nf_conntrack", "delta-time", "TCP LISTEN"} {
+	for _, want := range []string{"--conn", "AGE", "CREATED", "Examples:", "nf_conntrack", "delta-time", "TCP LISTEN", "--port", "8080"} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("missing %q in:\n%s", want, got)
 		}
@@ -225,10 +225,21 @@ func TestCLI_NetConn(t *testing.T) {
 		t.Fatalf("err=%v stderr=%s", err, errBuf.String())
 	}
 	got := out.String()
-	for _, want := range []string{"PROTO", "STATE", "LOCAL", "REMOTE", "PID", "AGE"} {
+	for _, want := range []string{"PROTO", "STATE", "LOCAL", "REMOTE", "PID", "PROCESS", "AGE", "CREATED"} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("missing %q in:\n%s", want, got)
 		}
+	}
+}
+
+func TestCLI_NetConnPort(t *testing.T) {
+	var out, errBuf bytes.Buffer
+	if err := aihost.ExecuteWriters([]string{"net", "--conn", "--port", "1", "--limit", "5"}, &out, &errBuf); err != nil {
+		t.Fatalf("err=%v stderr=%s", err, errBuf.String())
+	}
+	got := out.String()
+	if !strings.Contains(got, "CREATED") {
+		t.Fatalf("missing CREATED header:\n%s", got)
 	}
 }
 

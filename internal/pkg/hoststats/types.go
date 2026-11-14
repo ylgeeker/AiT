@@ -162,7 +162,10 @@ type ConnStat struct {
 	PID        int32  `json:"pid"`
 	Fd         uint32 `json:"fd"`
 	Process    string `json:"process"`
-	// AgeSeconds is socket fd lifetime on Linux when known; omit/null when unknown.
+	// CreatedAt is absolute create/start time on Linux when known (fd Ctim, or derived from conntrack age).
+	// Paired with AgeSeconds; both null when unknown. No omitempty so JSON emits null.
+	CreatedAt *time.Time `json:"created_at"`
+	// AgeSeconds is relative lifetime in seconds when known; paired with CreatedAt.
 	AgeSeconds *int64 `json:"age_seconds"`
 }
 

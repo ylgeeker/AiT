@@ -19,6 +19,7 @@ package hoststats
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 	"syscall"
@@ -291,8 +292,23 @@ func lookupProcessName(ctx context.Context, pid int32) string {
 		return ""
 	}
 	name, err := p.NameWithContext(ctx)
+	if err == nil && name != "" {
+		return name
+	}
+	cmdline, err := p.CmdlineSliceWithContext(ctx)
 	if err != nil {
+		return processDisplayName(name, nil)
+	}
+	return processDisplayName(name, cmdline)
+}
+
+// processDisplayName prefers a non-empty process name; otherwise uses cmdline[0] basename.
+func processDisplayName(name string, cmdline []string) string {
+	if name != "" {
+		return name
+	}
+	if len(cmdline) == 0 || cmdline[0] == "" {
 		return ""
 	}
-	return name
+	return filepath.Base(cmdline[0])
 }

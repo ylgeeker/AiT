@@ -32,8 +32,8 @@ func TestWriteHelp_IncludesConn(t *testing.T) {
 	}
 	out := buf.String()
 	for _, want := range []string{
-		"--conn", "AGE", "Usage:", "Examples:", "net --conn",
-		"TCP LISTEN", "UDP",
+		"--conn", "AGE", "CREATED", "Usage:", "Examples:", "net --conn",
+		"TCP LISTEN", "UDP", "--port", "8080",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("missing %q in:\n%s", want, out)
@@ -50,7 +50,7 @@ func TestRunConnections_TableHeaders(t *testing.T) {
 		t.Fatal(err)
 	}
 	got := out.String()
-	for _, want := range []string{"PROTO", "STATE", "LOCAL", "REMOTE", "PID", "PROCESS", "AGE"} {
+	for _, want := range []string{"PROTO", "STATE", "LOCAL", "REMOTE", "PID", "PROCESS", "AGE", "CREATED"} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("missing %q in:\n%s", want, got)
 		}

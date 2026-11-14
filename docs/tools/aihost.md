@@ -44,7 +44,7 @@ Some flags apply only to specific subcommands:
 | `--proto` | `net --conn` only: `tcp` (default), `udp`, or `all` (inet sockets; not unix). Unrelated to `aithost proto` |
 | `--state` | `net --conn` only: comma-separated states (exclusive with `--listen`) |
 | `--listen` | `net --conn` only: TCP LISTEN sockets (UDP binds are not included) |
-| `--port` | `net --conn` only: match local or remote port (1–65535) |
+| `--port` | `net --conn` only: match local or remote port (1–65535); default `--proto` is tcp (use `udp`/`all` for non-TCP) |
 | `--pid` | `net --conn` only: filter by process id |
 
 ## Examples
@@ -55,6 +55,7 @@ aithost snapshot --json
 aithost proc --limit 5 --sort mem
 aithost proto --json
 aithost net --conn
+aithost net --conn --port 8080
 aithost net --conn --listen --json
 aithost cpu --json
 aithost sources
@@ -66,7 +67,7 @@ aithost top --interval 2s --limit 10
 - Per-process **network** rates are best-effort and may be `0` on some platforms.
 - Disk IO, network, and protocol rates need at least two samples for meaningful values (`--watch` / live `top`).
 - Protocol counters (TCP/UDP/ARP/ICMP) are best-effort and may be partial on some OSes.
-- `net --conn` AGE prefers Linux socket **fd lifetime** via `/proc/<pid>/fd`. On Lstat failure it may fall back to nf_conntrack `delta-time` (flow lifetime, a different clock). Non-Linux, unreadable fds, or no match show `-` / `age_seconds: null`.
+- `net --conn` AGE/CREATED prefer Linux socket **fd lifetime** via `/proc/<pid>/fd`. On Lstat failure they may fall back to nf_conntrack `delta-time` (flow lifetime; CREATED is then approximate as now−delta). Non-Linux, unreadable fds, or no match show `-` / `age_seconds` and `created_at` null. `--port` defaults to TCP sockets unless `--proto udp|all`.
 - Cross-platform (`CGO_ENABLED=0`): Linux, macOS, and Windows share the same CLI and dashboard. Collectors differ by OS:
 
 | Area | Linux | macOS | Windows |

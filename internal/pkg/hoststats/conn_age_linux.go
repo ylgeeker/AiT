@@ -29,8 +29,15 @@ import (
 )
 
 const (
-	nfConntrackPath = "/proc/net/nf_conntrack"
-	deltaTimeKey    = "delta-time="
+	nfConntrackPath      = "/proc/net/nf_conntrack"
+	procFDPathFmt        = "/proc/%d/fd/%d"
+	conntrackScanBufInit = 64 * 1024
+	conntrackScanBufMax  = 1024 * 1024
+	deltaTimeKey         = "delta-time="
+	srcKey               = "src="
+	dstKey               = "dst="
+	sportKey             = "sport="
+	dportKey             = "dport="
 )
 
 type connTuple struct {
@@ -39,50 +46,91 @@ type connTuple struct {
 	lport, rport uint32
 }
 
-// enrichConnAge sets AgeSeconds from /proc/<pid>/fd/<fd> Ctim when Pid > 0.
-// On Lstat failure, tries nf_conntrack delta-time for the 4-tuple.
+// enrichConnAge sets CreatedAt and AgeSeconds from /proc/<pid>/fd/<fd> Ctim when possible.
+// On failure, tries nf_conntrack delta-time (AgeSeconds + derived CreatedAt).
 func enrichConnAge(conns []ConnStat) {
 	if len(conns) == 0 {
 		return
 	}
+
 	now := time.Now()
-	var track map[connTuple]int64
+	enrichConnAgeWith(conns, now, nil)
 	for i := range conns {
-		age := ageFromFD(conns[i].PID, conns[i].Fd, now)
-		if age == nil {
-			if track == nil {
-				track = loadConntrackAges()
-			}
-			if track != nil {
-				age = ageFromConntrack(track, conns[i])
-			}
+		if conns[i].CreatedAt == nil {
+			enrichConnAgeWith(conns, now, loadConntrackAges())
+			return
 		}
-		conns[i].AgeSeconds = age
 	}
 }
 
-func ageFromFD(pid int32, fd uint32, now time.Time) *int64 {
+// enrichConnAgeWith applies fd then optional track enrichment (for tests with an injected map).
+func enrichConnAgeWith(conns []ConnStat, now time.Time, track map[connTuple]int64) {
+	for i := range conns {
+		if applyFDConnAge(&conns[i], now) {
+			continue
+		}
+		applyConntrackConnAge(&conns[i], now, track)
+	}
+}
+
+func applyFDConnAge(c *ConnStat, now time.Time) bool {
+	created := createdAtFromFD(c.PID, c.Fd)
+	if created == nil || created.After(now) {
+		return false
+	}
+
+	t := *created
+	c.CreatedAt = &t
+	c.AgeSeconds = ageSecondsSince(t, now)
+	return true
+}
+
+func applyConntrackConnAge(c *ConnStat, now time.Time, track map[connTuple]int64) {
+	if track == nil {
+		return
+	}
+	age := ageFromConntrack(track, *c)
+	if age == nil || *age < 0 {
+		return
+	}
+	sec := *age
+	c.AgeSeconds = &sec
+	t := now.Add(-time.Duration(sec) * time.Second)
+	c.CreatedAt = &t
+}
+
+// createdAtFromFD returns the fd create/mtime instant from /proc/<pid>/fd/<fd>.
+// Returns nil when pid <= 0, Lstat fails, or the timestamp is zero.
+func createdAtFromFD(pid int32, fd uint32) *time.Time {
 	if pid <= 0 {
 		return nil
 	}
-	path := fmt.Sprintf("/proc/%d/fd/%d", pid, fd)
+
+	path := fmt.Sprintf(procFDPathFmt, pid, fd)
 	fi, err := os.Lstat(path)
 	if err != nil {
 		return nil
 	}
 	st, ok := fi.Sys().(*syscall.Stat_t)
 	if !ok {
-		return ageFromModTime(fi.ModTime(), now)
+		return nonZeroTime(fi.ModTime())
 	}
 	sec, nsec := st.Ctim.Unix()
 	if sec == 0 && nsec == 0 {
 		sec, nsec = st.Mtim.Unix()
 	}
-	created := time.Unix(sec, nsec)
-	return ageFromModTime(created, now)
+	return nonZeroTime(time.Unix(sec, nsec))
 }
 
-func ageFromModTime(created, now time.Time) *int64 {
+func nonZeroTime(t time.Time) *time.Time {
+	if t.IsZero() {
+		return nil
+	}
+	return &t
+}
+
+// ageSecondsSince returns whole seconds from created to now, or nil if invalid.
+func ageSecondsSince(created, now time.Time) *int64 {
 	if created.IsZero() || created.After(now) {
 		return nil
 	}
@@ -108,7 +156,6 @@ func ageFromConntrack(track map[connTuple]int64, c ConnStat) *int64 {
 		v := age
 		return &v
 	}
-	// Try swapped direction (conntrack may store reply first).
 	key.lip, key.rip = key.rip, key.lip
 	key.lport, key.rport = key.rport, key.lport
 	if age, ok := track[key]; ok {
@@ -127,7 +174,7 @@ func loadConntrackAges() map[connTuple]int64 {
 
 	out := map[connTuple]int64{}
 	sc := bufio.NewScanner(f)
-	sc.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+	sc.Buffer(make([]byte, 0, conntrackScanBufInit), conntrackScanBufMax)
 	for sc.Scan() {
 		t, age, ok := parseConntrackLine(sc.Text())
 		if !ok {
@@ -142,7 +189,6 @@ func loadConntrackAges() map[connTuple]int64 {
 }
 
 // parseConntrackLine extracts a 4-tuple and delta-time when present.
-// Exported for tests via the same package.
 func parseConntrackLine(line string) (connTuple, int64, bool) {
 	if !strings.Contains(line, deltaTimeKey) {
 		return connTuple{}, 0, false
@@ -151,13 +197,8 @@ func parseConntrackLine(line string) (connTuple, int64, bool) {
 	if len(fields) < 5 {
 		return connTuple{}, 0, false
 	}
-	proto := strings.ToLower(fields[0])
-	if proto != ConnProtoTCP && proto != ConnProtoUDP {
-		// Some kernels prefix with ipv4/ipv6; proto is then fields[2].
-		if len(fields) > 2 {
-			proto = strings.ToLower(fields[2])
-		}
-	}
+
+	proto := conntrackProto(fields)
 	if proto != ConnProtoTCP && proto != ConnProtoUDP {
 		return connTuple{}, 0, false
 	}
@@ -167,35 +208,52 @@ func parseConntrackLine(line string) (connTuple, int64, bool) {
 	var age int64
 	haveAge := false
 	for _, f := range fields {
-		switch {
-		case strings.HasPrefix(f, "src="):
-			if src == "" {
-				src = strings.TrimPrefix(f, "src=")
-			}
-		case strings.HasPrefix(f, "dst="):
-			if dst == "" {
-				dst = strings.TrimPrefix(f, "dst=")
-			}
-		case strings.HasPrefix(f, "sport="):
-			if sport == 0 {
-				sport = parseUint32Field(f, "sport=")
-			}
-		case strings.HasPrefix(f, "dport="):
-			if dport == 0 {
-				dport = parseUint32Field(f, "dport=")
-			}
-		case strings.HasPrefix(f, deltaTimeKey):
-			v, err := strconv.ParseInt(strings.TrimPrefix(f, deltaTimeKey), 10, 64)
-			if err == nil {
-				age = v
-				haveAge = true
-			}
-		}
+		src = firstConntrackKV(src, f, srcKey)
+		dst = firstConntrackKV(dst, f, dstKey)
+		sport = firstConntrackUint32(sport, f, sportKey)
+		dport = firstConntrackUint32(dport, f, dportKey)
+		age, haveAge = firstConntrackDelta(age, haveAge, f)
 	}
 	if !haveAge || src == "" || dst == "" {
 		return connTuple{}, 0, false
 	}
 	return connTuple{proto: proto, lip: src, rip: dst, lport: sport, rport: dport}, age, true
+}
+
+func conntrackProto(fields []string) string {
+	proto := strings.ToLower(fields[0])
+	if proto == ConnProtoTCP || proto == ConnProtoUDP {
+		return proto
+	}
+	if len(fields) > 2 {
+		return strings.ToLower(fields[2])
+	}
+	return proto
+}
+
+func firstConntrackKV(cur, f, key string) string {
+	if cur != "" || !strings.HasPrefix(f, key) {
+		return cur
+	}
+	return strings.TrimPrefix(f, key)
+}
+
+func firstConntrackUint32(cur uint32, f, key string) uint32 {
+	if cur != 0 || !strings.HasPrefix(f, key) {
+		return cur
+	}
+	return parseUint32Field(f, key)
+}
+
+func firstConntrackDelta(age int64, have bool, f string) (int64, bool) {
+	if !strings.HasPrefix(f, deltaTimeKey) {
+		return age, have
+	}
+	v, err := strconv.ParseInt(strings.TrimPrefix(f, deltaTimeKey), 10, 64)
+	if err != nil {
+		return age, have
+	}
+	return v, true
 }
 
 func parseUint32Field(f, prefix string) uint32 {

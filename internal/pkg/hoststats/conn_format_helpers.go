@@ -24,21 +24,26 @@ import (
 	"time"
 )
 
+var connTableFmt = fmt.Sprintf("%%-%ds  %%-%ds  %%-%ds  %%-%ds  %%-%ds  %%-%ds  %%-%ds  %%-%ds",
+	connColProto, connColState, connColAddr, connColAddr, connColPID, connColProcess, connColAge, connColCreated)
+
 const (
 	connColProto   = 5
 	connColState   = 12
 	connColAddr    = 24
 	connColPID     = 7
 	connColProcess = 18
+	connColAge     = 10
+	connColCreated = 19
 	connDashHuman  = "-"
-	connTableFmt   = "%-5s  %-12s  %-24s  %-24s  %-7s  %-18s  %s"
+	connCreatedFmt = "2006-01-02 15:04:05"
 )
 
 // FormatConnTable returns a human-readable connection table including the header.
 func FormatConnTable(conns []ConnStat) string {
 	var b strings.Builder
 	b.WriteString(fmt.Sprintf(connTableFmt,
-		"PROTO", "STATE", "LOCAL", "REMOTE", "PID", "PROCESS", "AGE",
+		"PROTO", "STATE", "LOCAL", "REMOTE", "PID", "PROCESS", "AGE", "CREATED",
 	))
 	b.WriteByte('\n')
 	for _, c := range conns {
@@ -50,6 +55,7 @@ func FormatConnTable(conns []ConnStat) string {
 			formatConnPID(c.PID),
 			formatConnProcess(c.Process),
 			FormatConnAge(c.AgeSeconds),
+			FormatConnCreated(c.CreatedAt),
 		)
 	}
 	return b.String()
@@ -104,6 +110,14 @@ func FormatConnAge(age *int64) string {
 		}
 		return fmt.Sprintf("%dd%dh", d, h)
 	}
+}
+
+// FormatConnCreated renders CreatedAt as local wall time, or "-" when nil.
+func FormatConnCreated(t *time.Time) string {
+	if t == nil {
+		return connDashHuman
+	}
+	return t.Local().Format(connCreatedFmt)
 }
 
 func formatConnEndpoint(ip string, port uint32) string {
