@@ -150,6 +150,36 @@ type ProcStat struct {
 	Logs []ProcLog `json:"logs,omitempty"`
 }
 
+// ConnStat is one local network connection row for `aithost net --conn`.
+type ConnStat struct {
+	Proto      string `json:"proto"`
+	Family     string `json:"family"`
+	Status     string `json:"status"`
+	LocalIP    string `json:"local_ip"`
+	LocalPort  uint32 `json:"local_port"`
+	RemoteIP   string `json:"remote_ip"`
+	RemotePort uint32 `json:"remote_port"`
+	PID        int32  `json:"pid"`
+	Fd         uint32 `json:"fd"`
+	Process    string `json:"process"`
+	// AgeSeconds is socket fd lifetime on Linux when known; omit/null when unknown.
+	AgeSeconds *int64 `json:"age_seconds"`
+}
+
+// ConnQuery filters and truncates ListConnections results.
+type ConnQuery struct {
+	// Proto is tcp (default), udp, or all (maps to gopsutil "inet").
+	Proto string
+	// States, when non-empty, keeps rows whose Status matches (case-insensitive).
+	States []string
+	// Port, when >0, matches local or remote port.
+	Port int
+	// PID, when >0, scopes the OS query and filters to that process.
+	PID int32
+	// Limit caps rows after filter/sort (default DefaultConnLimit; max MaxConnLimit).
+	Limit int
+}
+
 // ProcessQuery controls process list sorting and truncation.
 type ProcessQuery struct {
 	// Limit is max rows (default DefaultProcessLimit; capped at MaxProcessLimit).
