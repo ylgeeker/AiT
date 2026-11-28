@@ -35,7 +35,7 @@ func WriteShellHelp(w io.Writer) error {
 	b := pkghelpdoc.NewBody(w)
 	if err := b.WriteIntro(
 		"AiT toolbox shell (install/update/upgrade).",
-		"Opens the interactive REPL for plugin management. Agent Loop: run ait with no arguments.",
+		"Opens the interactive REPL for plugin management. Bare ait and ait shell both open this REPL; Agent Loop: ait agent.",
 	); err != nil {
 		return err
 	}

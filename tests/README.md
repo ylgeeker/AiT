@@ -45,7 +45,7 @@ Optional environment overrides:
 | `AIT_TEST_SSH_INNER_HOST` | Override `ssh.inner.host` |
 | `AIT_TEST_DEEPSEEK_KEY` | Override `ai.deepseek_key` |
 | `AIT_KEYRING_FILE_PASSWORD` | Keyring file backend password |
-| `AIT_AI_EXPERIMENTAL` | Legacy env (optional); Agent is on by default via `ait` / `ait agent` |
+| `AIT_AI_EXPERIMENTAL` | Legacy env (optional); Agent is on by default via `ait agent` |
 | `AIT_TEST_USE_MOCK` | Inject in-repo `testenv-mock` as `ssh.primary` and run `@ssh` against it |
 
 ## Run

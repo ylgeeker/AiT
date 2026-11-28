@@ -28,9 +28,15 @@ import (
 	"github.com/os-artificer/AiT/internal/ait/dispatch"
 	"github.com/os-artificer/AiT/internal/ait/loop"
 	"github.com/os-artificer/AiT/internal/pkg/aitplugin"
+	"github.com/os-artificer/AiT/internal/pkg/clihints"
 	"github.com/os-artificer/AiT/internal/pkg/errhint"
 	pkghelpdoc "github.com/os-artificer/AiT/internal/pkg/helpdoc"
 	"github.com/os-artificer/AiT/internal/pkg/toolname"
+)
+
+const (
+	unknownCmdMsg           = "unknown command"
+	unknownCmdExplAgentLoop = "Agent Loop starts with ait agent. Use a plugin name or ait shell for the toolbox REPL."
 )
 
 // RouteDeps holds callbacks from package ait for help, shell REPL, and version.
@@ -45,7 +51,7 @@ type RouteDeps struct {
 // Route runs the top-level ait CLI for args after experimental-flag stripping.
 func Route(ctx context.Context, args []string, stdout, stderr io.Writer, d RouteDeps) error {
 	if len(args) == 0 {
-		return runLoop(ctx, "", false, stdout, stderr)
+		return routeShell(ctx, nil, stdout, stderr, d)
 	}
 
 	if pkghelpdoc.HelpRequested(args) {
@@ -73,7 +79,7 @@ func Route(ctx context.Context, args []string, stdout, stderr io.Writer, d Route
 		return execPlugin(ctx, argv, stdout, stderr)
 	}
 
-	return runLoop(ctx, strings.Join(args, " "), false, stdout, stderr)
+	return routeUnknown(args)
 }
 
 func routeShell(ctx context.Context, args []string, stdout, stderr io.Writer, d RouteDeps) error {
@@ -107,6 +113,22 @@ func routeAgent(ctx context.Context, args []string, stdout, stderr io.Writer) er
 	}
 
 	return runLoop(ctx, strings.Join(rest, " "), plain, stdout, stderr)
+}
+
+func routeUnknown(args []string) error {
+	first := args[0]
+	goalTry := toolname.AITCLI("agent") + " " + strings.Join(args, " ")
+	if first == pkghelpdoc.PlainArg {
+		goalTry = toolname.AITCLI("agent --plain")
+	}
+
+	return errhint.WithTryMsg(
+		unknownCmdMsg+": "+first,
+		unknownCmdExplAgentLoop,
+		clihints.TryAitAgent(),
+		goalTry,
+		toolname.AITCLI("shell"),
+	)
 }
 
 func runLoop(ctx context.Context, goal string, plain bool, stdout, stderr io.Writer) error {

@@ -11,7 +11,7 @@ Go module path: `github.com/os-artificer/AiT`.
 
 Shipped tools (binary / plugin command; docs may use legacy product titles such as aissh):
 
-- `ait`: Agent interaction entry — bare `ait` / `ait agent` starts the Agent Loop; `ait shell` is the toolbox REPL; top-level plugin dispatch (`ait ssh`, `ait log`, …).
+- `ait`: toolbox entry — bare `ait` / `ait shell` opens the toolbox REPL; `ait agent` starts the Agent Loop; top-level plugin dispatch (`ait ssh`, `ait log`, …).
 - `aitssh` (`ssh`): SSH client with session persistence, transfer support, and shell/meta workflows (**no AI subtree**); Go package `aissh`.
 - `aitimg` (`img`): Image metadata extractor (EXIF device/time/GPS + Nominatim reverse-geocoded address).
 - `aitlog` (`log`): System log viewer and search (Linux/macOS/Windows) with native tools and built-in fallbacks.

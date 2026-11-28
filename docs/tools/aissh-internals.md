@@ -194,7 +194,7 @@ AiT product behavior should remain in `internal/*`.
 - Keep the root package exception: directory `internal/ssh`, package `aissh`.
 - Keep the connect-route exception: `internal/ssh/connect` for default SSH route.
 - Avoid `*cmd` package suffixes.
-- Agent Loop UX lives under `internal/pkg/agentcore` (shared); the Ops AI adapter is `internal/ait/agent`, **not** under `aissh`. Interactive Loop entry is bare `ait` or `ait agent`.
+- Agent Loop UX lives under `internal/pkg/agentcore` (shared); the Ops AI adapter is `internal/ait/agent`, **not** under `aissh`. Interactive Loop entry is `ait agent` (bare `ait` is the toolbox shell).
 
 ### Nested subcommands
 
@@ -226,7 +226,7 @@ Keep command-specific flags and user-facing semantics inside the owning command 
 
 Special case:
 
-- Agent admin (`ait agent model list`, `ait agent connect`; Loop via bare `ait`) is owned by `internal/ait/agent` — see [`ait-internals.md`](ait-internals.md).
+- Agent admin (`ait agent model list`, `ait agent connect`; Loop via `ait agent`) is owned by `internal/ait/agent` — see [`ait-internals.md`](ait-internals.md).
 
 ### `clihints` as shared try-lines source
 
@@ -636,7 +636,7 @@ Core fields and meanings:
 | Modify shell dispatch precedence | `../../internal/ssh/shell/exec_dispatch.go` |
 | Adjust root argv routing | `../../internal/ssh/cli_root.go` and `../../internal/pkg/cliroute/route.go` |
 | Agent / agentcore | [`ait-internals.md`](ait-internals.md); `../../internal/ait/agent/`; `../../internal/pkg/agentcore/` |
-| AI experimental config (legacy SSOT) | `../../internal/pkg/config/ai_experimental.go` (optional; Agent enabled by default via `ait`) |
+| AI experimental config (legacy SSOT) | `../../internal/pkg/config/ai_experimental.go` (optional; Agent enabled by default via `ait agent`) |
 | Understand transfer backend decisions | `../../internal/pkg/ssh/client/transfer_route.go` |
 | Understand prompt setup and repaint | `../../internal/pkg/ssh/client/client_init_helpers.go` and prompt helpers |
 

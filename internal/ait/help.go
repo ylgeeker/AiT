@@ -28,18 +28,19 @@ import (
 	"github.com/os-artificer/AiT/internal/pkg/toolname"
 )
 
-// WriteRootHelp prints ait --help to w (Agent entry + plugin dispatch).
+// WriteRootHelp prints ait --help to w (toolbox shell, Agent, and plugin dispatch).
 func WriteRootHelp(w io.Writer) error {
 	plugins := aitplugin.Discover(context.Background())
 
 	b := pkghelpdoc.NewBody(w)
 	if err := b.WriteIntro(
-		"AiT Agent interaction entry.",
-		"Run without arguments to start the Agent Loop. Plugin tools run as "+toolname.AIT+" <name> (e.g. "+toolname.AIT+" "+toolname.SSH+").",
+		"AiT toolbox entry and Ops AI Agent.",
+		"Run without arguments to open the toolbox shell (ait>). Agent Loop: "+toolname.AITCLI("agent")+
+			". Plugin tools run as "+toolname.AIT+" <name> (e.g. "+toolname.AIT+" "+toolname.SSH+").",
 	); err != nil {
 		return err
 	}
-	if err := b.WriteUsage(toolname.AIT + " [goal]"); err != nil {
+	if err := b.WriteUsage(toolname.AIT + " [command]"); err != nil {
 		return err
 	}
 	cmdSection := formatAgentRootCommands(plugins)
@@ -60,6 +61,7 @@ func WriteRootHelp(w io.Writer) error {
 
 	if err := b.WriteExamples(
 		toolname.AIT,
+		toolname.AITCLI("agent"),
 		toolname.AITCLI("agent connect user@host.example.com"),
 		toolname.AITCLI("agent model list"),
 		toolname.AIT+" ssh user@host.example.com",
@@ -72,11 +74,11 @@ func WriteRootHelp(w io.Writer) error {
 
 func formatAgentRootCommands(plugins []aitplugin.Plugin) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "  %-12s %s\n", aitplugin.CmdAgent, "Agent Loop (default) and admin subcommands")
+	fmt.Fprintf(&b, "  %-12s %s\n", aitplugin.CmdAgent, "Agent Loop and admin subcommands")
 	for _, p := range plugins {
 		fmt.Fprintf(&b, "  %-12s %s\n", p.Manifest.Name, p.Manifest.Short)
 	}
-	fmt.Fprintf(&b, "  %-12s %s\n", aitplugin.CmdShell, "toolbox REPL (install/update/upgrade)")
+	fmt.Fprintf(&b, "  %-12s %s\n", aitplugin.CmdShell, "toolbox REPL (install/update/upgrade; same as bare ait)")
 	fmt.Fprintf(&b, "  %-12s %s\n", aitplugin.CmdVersion, "print ait version")
 	return b.String()
 }

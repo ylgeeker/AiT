@@ -31,10 +31,13 @@ import (
 	"time"
 
 	"github.com/os-artificer/AiT/internal/ait"
+	pkgai "github.com/os-artificer/AiT/internal/pkg/ai"
 	"github.com/os-artificer/AiT/internal/pkg/aitplugin"
 	"github.com/os-artificer/AiT/internal/pkg/errhint"
 	"github.com/os-artificer/AiT/internal/pkg/pluginbin"
 	"github.com/os-artificer/AiT/internal/pkg/toolname"
+
+	"golang.org/x/term"
 )
 
 func TestExecuteWriters_Help(t *testing.T) {
@@ -374,19 +377,48 @@ func installBuiltinPlugin(t *testing.T, binary string) string {
 	return abs
 }
 
-// TestExecuteWriters_BareAitRoutesLoop (AT1/AT49) empty argv starts Agent Loop route (not shell REPL).
-func TestExecuteWriters_BareAitRoutesLoop(t *testing.T) {
+// TestExecuteWriters_BareAitRoutesShell (AT1) empty argv opens the toolbox shell (EOF ends non-TTY REPL).
+func TestExecuteWriters_BareAitRoutesShell(t *testing.T) {
+	if term.IsTerminal(int(os.Stdin.Fd())) {
+		t.Skip("stdin is a TTY; AT1 hard gate is TestRoute_EmptyArgsRunsShell")
+	}
+	t.Setenv("AIT_HOME", t.TempDir())
 	err := ait.ExecuteWriters(nil, &bytes.Buffer{}, &bytes.Buffer{})
-	if err != nil && strings.Contains(strings.ToLower(err.Error()), "experimental") {
-		t.Fatalf("bare ait must not be experimental-gated: %v", err)
+	if err != nil {
+		if errors.Is(err, pkgai.ErrNotConfigured) {
+			t.Fatal("bare ait must not require AI config")
+		}
+		t.Fatalf("bare ait shell: %v", err)
 	}
 }
 
-// TestExecuteWriters_AgentAliasRoutesLoop (AT49) ait agent is a silent alias for the Loop.
-func TestExecuteWriters_AgentAliasRoutesLoop(t *testing.T) {
+// TestExecuteWriters_AgentRoutesLoop (AT49/AG-1) ait agent enters the Loop (NotConfigured when AI unset).
+func TestExecuteWriters_AgentRoutesLoop(t *testing.T) {
+	t.Setenv("AIT_HOME", t.TempDir())
 	err := ait.ExecuteWriters([]string{"agent"}, &bytes.Buffer{}, &bytes.Buffer{})
-	if err != nil && strings.Contains(strings.ToLower(err.Error()), "experimental") {
+	if err == nil {
+		t.Fatal("expected AI not configured")
+	}
+	if !errors.Is(err, pkgai.ErrNotConfigured) {
+		t.Fatalf("want ErrNotConfigured, got %v", err)
+	}
+	if strings.Contains(strings.ToLower(err.Error()), "experimental") {
 		t.Fatalf("ait agent must not be experimental-gated: %v", err)
+	}
+}
+
+// TestExecuteWriters_FreeFormUnknown (AT57) top-level free-form text is unknown, not a Loop goal.
+func TestExecuteWriters_FreeFormUnknown(t *testing.T) {
+	err := ait.ExecuteWriters([]string{"list", "files"}, &bytes.Buffer{}, &bytes.Buffer{})
+	if err == nil {
+		t.Fatal("expected unknown command")
+	}
+	s := err.Error()
+	if !strings.Contains(s, "unknown command: list") || !strings.Contains(s, "Try:") {
+		t.Fatalf("err = %v", err)
+	}
+	if !strings.Contains(s, toolname.AITCLI("agent")) {
+		t.Fatalf("missing ait agent Try: %v", err)
 	}
 }
 
@@ -437,8 +469,8 @@ func TestExecuteWriters_ShellHelp(t *testing.T) {
 	if !strings.Contains(s, "install") || !strings.Contains(s, "toolbox") {
 		t.Fatalf("shell help = %q", s)
 	}
-	if strings.Contains(s, "Agent interaction entry") {
-		t.Fatal("shell help must not duplicate Agent root intro")
+	if strings.Contains(s, "toolbox entry and Ops AI Agent") {
+		t.Fatal("shell help must not duplicate root intro")
 	}
 }
 

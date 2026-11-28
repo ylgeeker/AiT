@@ -37,7 +37,7 @@ One package per top-level command owns: `Name`, `flags.go`, `parse.go`, `cmd.go`
 - **`loop/`** — starts Agent Loop (`agent.RunLoop` wrapper).
 - **`dispatch/`** — top-level plugin execution (`tooldispatch`).
 - **`agent/`** — `ait agent` Cobra admin subtree (`connect`, `model`, `provider`, `ollama`, `config`).
-- Root package **`ait`** — `Run`, `Execute`, shell REPL, help; Agent Loop via `ait` / `ait agent` (**no** standalone `cmd/ai` binary).
+- Root package **`ait`** — `Run`, `Execute`, shell REPL (bare `ait` / `ait shell`), help; Agent Loop via `ait agent` (**no** standalone `cmd/ai` binary).
 
 ## `helpdoc`
 

@@ -4,7 +4,7 @@
 
 **Tools:**
 
-- [`ait`](cmd/ait) — Agent interaction entry (Loop by default; `ait agent` admin; `ait shell` toolbox REPL). Guide: [ait](docs/tools/ait.md).
+- [`ait`](cmd/ait) — toolbox entry (bare `ait` / `ait shell` REPL; `ait agent` Loop and admin). Guide: [ait](docs/tools/ait.md).
 - [`aitssh`](cmd/ssh) — SSH client (product docs: [aissh](docs/tools/aissh.md); plugin command `ssh`; Go package `aissh`; **no AI**).
 - [`aitimg`](cmd/img) — image metadata extractor (EXIF, GPS, reverse-geocoded address). Guide: [aiimg](docs/tools/aiimg.md) (plugin `img`).
 - [`aitlog`](cmd/log) — system log viewer and search (Linux/macOS/Windows). Guide: [ailog](docs/tools/ailog.md) (plugin `log`).
@@ -17,7 +17,7 @@
 - Session bookmarks: `--alias`, `session --load`, `session --switch`
 - In-session `!ait` meta commands (suspend, chain hop, transfer)
 - Default AiT-managed remote prompt (`AiT user@host:…>`); set `AIT_REMOTE_SYSTEM_PROMPT=1` for the native shell prompt
-- Ops AI Agent via **`ait`** / **`ait agent`** (Agent Loop, connect, model, provider, ollama, config); `aitssh` has no AI subtree
+- Ops AI Agent via **`ait agent`** (Agent Loop, connect, model, provider, ollama, config); bare **`ait`** is the toolbox shell; `aitssh` has no AI subtree
 - `!ait get` / `!ait put` on the live SSH session, standalone `aitssh get` / `put` via SFTP
 - Optional `--tmux` to keep remote shells alive after disconnect
 - Local `aitssh shell` REPL with history and UTF-8 line editing
@@ -33,10 +33,11 @@ aitssh session --load prod
 # 2) Jump host in one command (same as ssh -J; Host aliases resolve via ssh -G)
 aitssh -J bastion app.internal
 
-# 3) Agent Loop and remote connect via ait
+# 3) Toolbox shell and Agent Loop via ait
+ait                              # toolbox shell (ait>)
 ait agent config init
 ait agent model list
-ait                              # local Agent Loop
+ait agent                        # local Agent Loop
 ait agent connect user@host      # remote Agent
 
 # 4) Transfer over the current session (single-arg defaults to ./basename)
@@ -66,10 +67,11 @@ Ensure `$(go env GOPATH)/bin` is on your PATH.
 
 ### Install official plugins (`ssh`, `log`, `img`, `host`, `keep`)
 
-After a [GitHub Release](https://github.com/os-artificer/AiT/releases) is available, open the toolbox REPL with `ait shell` (bare `ait` starts the Agent Loop, or exits with the not-configured hint when AI is unset):
+After a [GitHub Release](https://github.com/os-artificer/AiT/releases) is available, open the toolbox REPL with bare `ait` or `ait shell` (Agent Loop is `ait agent`; unconfigured AI only affects that path):
 
 ```bash
-ait shell
+ait
+# or: ait shell
 ```
 
 ```text

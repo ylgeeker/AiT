@@ -106,7 +106,7 @@ Agent 完成实现后须实际运行上述命令；失败须修复后再交付�
 
 | ID | 验收行为 | 自动化测试 | 手动烟雾 |
 |----|----------|------------|----------|
-| AG-1 | Loop 仅经 `ait` / `ait agent` | `TestOpsAI_DefaultShowsHelp`；ait agent 入口测例 | `./bin/ait` 或 `./bin/ait agent` 进 Loop |
+| AG-1 | Loop 仅经 `ait agent` | `TestExecuteWriters_AgentRoutesLoop`；ait agent 入口测例 | `./bin/ait agent` 进 Loop；裸 `./bin/ait` 进 shell |
 | AG-2 | 只读命令自动放行（不提示） | `TestPolicy_ReadAutoRun` | Agent：「列出文件」→ `ls` 无确认 |
 | AG-3 | 低危写命令需确认 | `TestPolicy_WriteConfirm` | Agent：`cp a b` → 确认 |
 | AG-4 | 高危在 session trust 下仍确认 | `TestPolicy_HighAlwaysConfirm` | Agent：`rm -rf /tmp/x` 每次确认 |
@@ -395,7 +395,7 @@ raw 模式 TTY（`term.MakeRaw` 期间）下 `OPOST/ONLCR` 关闭，bare `\n` �
 | Y6 | 不存在路径 → errhint + `Try:` | `TestShellLL_NotFoundHint` | `ll /nope` |
 | Y7 | 多余参数 → usage errhint | `TestShellLL_TooManyArgs` | `ll a b` |
 | Y8 | `make test-cross` 编译 `dirlist` | merge gate | — |
-| Y9 | Agent Loop 中 `ll` 非 shell builtin | shell 侧 Y1–Y8 | `./bin/ait` 无 shell builtin `ll`；`aitssh shell` → `ll` 仍可用 |
+| Y9 | `ait` / `ait agent` 均无 `ll` builtin（`ll` 仅 `aitssh shell`） | shell 侧 Y1–Y8 | `./bin/ait` 与 `./bin/ait agent` 无 `ll`；`aitssh shell` → `ll` 仍可用 |
 | Y10 | 顶层 `aitssh ll` → unknown command | `TestTopLevelLLUnknown` | `./bin/aitssh ll` 报错 |
 
 ### T* 明细（统一 get/put 路由 + lrzsz 安装）
@@ -773,7 +773,7 @@ Loopback mocks for required external services (no real hosts or personal infra).
 
 | ID | 验收行为 | 自动化测试 |
 |----|----------|------------|
-| AT1 | 无参进 REPL；非 TTY 喂 `exit` 结束 | `TestExecuteWriters_REPLExit` |
+| AT1 | 无参进 REPL（与 `ait shell` 相同）；非 TTY EOF/`exit` 结束 | `TestRoute_EmptyArgsRunsShell`、`TestExecuteWriters_BareAitRoutesShell`、`TestRunREPL_Exit` |
 | AT2 | OS help：Usage/Commands/Examples；无 SSH connect 段 | `TestExecuteWriters_Help` |
 | AT3 | `-V`/`version` 打 ait 版本 | `TestExecuteWriters_Version`、`TestExecuteLine_VersionBuiltin` |
 | AT4 | OS `ait ssh …` → interactive only | `TestExecuteWriters_InteractiveOnly` |
@@ -813,6 +813,8 @@ Loopback mocks for required external services (no real hosts or personal infra).
 | AT46 | root/help install 文案 | `TestWriteRootHelp_IncludesManageCmds`、`TestWriteManageHelp_Install` |
 | AT47 | `OfficialPluginNames` == embed manifests | `TestOfficialPluginNames_ManifestsAligned` |
 | AT48 | release sentinel `errors.Is` | `TestReleaseErr_IsSentinel` |
+| AT49 | `ait agent` 进 Loop（未配置 AI → `ErrNotConfigured`） | `TestExecuteWriters_AgentRoutesLoop` |
+| AT57 | 顶层非插件首词 → unknown + Try（含自由文本与 `--plain`） | `TestRoute_UnknownFirstToken`、`TestExecuteWriters_FreeFormUnknown` |
 | AP1–AP5 | Validate / Discover json·manifest·bad·reserved·dedupe | `internal/pkg/aitplugin` tests |
 | AP6 | 分层无违规 import | 包边界 + 编译 |
 | AP8 | plugins 根散落文件不发现 | `TestDiscover_ScatterFileIgnored` |
@@ -838,7 +840,8 @@ Loopback mocks for required external services (no real hosts or personal infra).
 - [ ] R17 未回退（`aitssh models` unknown；`TestTopLevelModelsRemoved`；`models_dir`/`OLLAMA_MODELS` 测试通过）
 - [ ] RO-1…RO-2：`ai ask`/`ai agent` unknown + Try `ait agent`；无 `aichat` / `agentcore.RunOnce`
 - [ ] R18a–b / R18c–f / R19 / RA*：**已删除**；由 RO-1 / OA20–OA22 覆盖负向
-- [ ] AG-1：Loop 仅经 `ait` / `ait agent`（`TestOpsAI_DefaultShowsHelp`）
+- [ ] AG-1：Loop 仅经 `ait agent`（`TestExecuteWriters_AgentRoutesLoop`）；裸 `ait` 进 shell（AT1）
+- [ ] AT49 / AT57：`ait agent`→Loop；顶层自由文本/`--plain`→errhint
 - [ ] AG-2：只读自动放行（`TestPolicy_ReadAutoRun`）
 - [ ] AG-3：低危写需确认（`TestPolicy_WriteConfirm`）
 - [ ] AG-4：高危始终确认（`TestPolicy_HighAlwaysConfirm`）
@@ -910,7 +913,8 @@ Loopback mocks for required external services (no real hosts or personal infra).
 
 ```bash
 ./bin/aitssh shell   # list → Up/Down；Ctrl+A/E；Left 编辑
-./bin/ait            # Agent Loop；确认后 Up 不应出现 y/n
+./bin/ait agent      # Agent Loop；确认后 Up 不应出现 y/n
+./bin/ait            # toolbox shell（ait>）
 ```
 
 手动烟雾（history / Ctrl+R，K10–K22）：
@@ -920,9 +924,11 @@ Loopback mocks for required external services (no real hosts or personal infra).
 # list → history → history 2 → history -d 1 → history -c
 # Ctrl+R 搜 list；Ctrl+G 取消；双按 Ctrl+R 更旧匹配
 # exit 再进 shell → Up 可见（K14 持久化）
-./bin/ait
+./bin/ait agent
 # run echo hi → 确认 y → history 不含 y（K20）
 # Ctrl+R 搜 run；clear 后 history 仍有输入行（K19）
+./bin/ait
+# history         # toolbox shell 输入历史（ait_repl_history）
 ```
 
 手动烟雾（raw-TTY CRLF，K23–K24）：
@@ -931,8 +937,8 @@ Loopback mocks for required external services (no real hosts or personal infra).
 ./bin/aitssh shell
 # load            # K24：编号列表 + Select session 提示每行起于列 0
 # exit
-./bin/ait
-# history         # 本地 AI REPL；每条 entry 起于列 0
+./bin/ait agent
+# history         # Agent Loop；每条 entry 起于列 0
 ```
 
 手动烟雾（负向 aitssh 去 AI，OA20–OA22）：
@@ -946,8 +952,8 @@ Loopback mocks for required external services (no real hosts or personal infra).
 
 ```bash
 # 本机
-./bin/ait                    # AG-1：进 Loop
-./bin/ait agent             # AG-1：进 Loop
+./bin/ait                    # AT1：进 ait> shell（非 Loop）
+./bin/ait agent             # AG-1 / AT49：进 Loop
 # 自然语言：列出文件          # AG-2：ls 自动执行无确认
 # 自然语言：查看进程          # AG-2
 run cp a b                  # AG-3：写命令仍需确认
@@ -1092,7 +1098,8 @@ aitssh hostA                    # 无 --save
 | FB* | `ailog` 无外部工具时 builtin 兜底 | `TestResolver_BuiltinNoLookPath`、`TestFileSource_Builtin`、`TestBuildJournalctlArgs` |
 | BI* | `internal/pkg/buildinfo` 三工具 version 共用 | `TestFormat_LdflagsWin`、`TestShort_DevFallback` |
 | KP* | `aitkeep` 常驻与资源限制 | `TestPing_PongAndNotFound`、`TestDecide_MemoryDoesNotThrottle`、`TestWatch_BudgetAndStableReset`、`TestReconcile_StaleGenerationKeepsRunning`、`TestCLI_Manifest` |
-| AG* | Agent Loop / agentcore（替代 A20–A22；含 AG-7…13 安全门） | `TestOpsAI_DefaultShowsHelp`、`TestPolicy_*`、`TestClassify_Chained*`、`TestRunBoundedCapture_*`、`TestWaitContinueOrExit_*`、`TestSetGetKey_AgentCommandTimeout` |
+| AG* | Agent Loop / agentcore（替代 A20–A22；含 AG-7…13 安全门） | `TestExecuteWriters_AgentRoutesLoop`、`TestPolicy_*`、`TestClassify_Chained*`、`TestRunBoundedCapture_*`、`TestWaitContinueOrExit_*`、`TestSetGetKey_AgentCommandTimeout` |
+| AT49 / AT57 | `ait agent`→Loop；顶层自由文本/`--plain`→errhint | `TestExecuteWriters_AgentRoutesLoop`、`TestRoute_UnknownFirstToken`、`TestExecuteWriters_FreeFormUnknown` |
 | AC-V4* | v4 边界（无 aimode；agentcore 无产品 import） | `TestRepo_NoAimodeImport`、`TestAgentcore_NoProductImports` |
 | agentcore risk/approve | Classify / Confirm（AG-2…11 支撑） | `TestClassify_Read`、`TestClassify_GitRead`、`TestClassify_GitWrite`、`TestClassify_ChainedDestructiveNotRead`、`TestClassify_PipeToShellHigh`、`TestConfirm_ReadAutoApproves`、`TestClassify_Low` |
 | W* | 远程提示符 cwd + Git + 目录显示模式 + nested ssh + login stdout flush | `TestRemoteFormat_WithAndWithoutBranch`、`TestFinishRemoteSetup_RefreshOnly`、`TestFinishRemoteSetup_EmitsBufferedPromptStdout`、`TestFinishRemoteSetup_RefreshPromptReachStdout`、`TestRemotePromptInitialCommands_LoginLoadSamePath`、`TestForwardStdin_SSHTriggersNestedPrompt`、`TestParseSSHCommandLine_PortAndUserHost`、`TestSingleHopPromptIdentityEqualsDial` |

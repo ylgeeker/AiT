@@ -1,6 +1,6 @@
 # AiT — Agent orientation
 
-**AiT** is a Go **toolbox** (module `github.com/os-artificer/AiT`). Shipped binaries: **`ait`** (Agent interaction entry + toolbox shell), **`aitssh`** (SSH; plugin `ssh`; docs/package name aissh; **no AI**), **`aitimg`** / **`aitlog`** / **`aithost`**, and **`aitkeep`** (plugin `keep`). Layout follows [golang-standards/project-layout](https://github.com/golang-standards/project-layout).
+**AiT** is a Go **toolbox** (module `github.com/os-artificer/AiT`). Shipped binaries: **`ait`** (toolbox shell by default; `ait agent` Loop), **`aitssh`** (SSH; plugin `ssh`; docs/package name aissh; **no AI**), **`aitimg`** / **`aitlog`** / **`aithost`**, and **`aitkeep`** (plugin `keep`). Layout follows [golang-standards/project-layout](https://github.com/golang-standards/project-layout).
 
 ## Build and test
 
@@ -12,8 +12,9 @@ make fmt         # go fmt ./...
 make test-cross  # five-platform go build ./... (linux/darwin/windows)
 make test-e2e-smoke  # pytest @smoke including in-repo testenv-mock (no real hosts)
 make test-e2e-mock   # GitHub CI full e2e against testenv-mock (`AIT_TEST_USE_MOCK=1`)
-./bin/ait           # Agent Loop (default) or plugin dispatch
-./bin/ait shell     # toolbox REPL (install/update/upgrade)
+./bin/ait           # toolbox shell (ait>) or plugin dispatch
+./bin/ait shell     # same toolbox REPL (install/update/upgrade)
+./bin/ait agent     # Agent Loop
 ./bin/aitssh       # run SSH tool
 ./bin/aitimg       # run image metadata tool
 ./bin/aitlog       # run log viewer tool
@@ -28,7 +29,7 @@ Requires **Go 1.25+** (see `go.mod`). Windows cross-compile: `GOOS=windows GOARC
 - **SSH sessions**: default OpenSSH-style connect (`aitssh [flags] destination`), `shell`, `session` (`--list`, `--load`, `--suspend`, `--switch`, `--delete`)
 - **Persistence**: SQLite (`internal/pkg/store`); scrollback/cwd on suspend; auth TTL via `session.auth_ttl` (default 7d; keyring for secrets); default `AppRoot` is `~/.local/share/ait` (Linux), `~/Library/Application Support/ait` (macOS), `%LOCALAPPDATA%\ait` (Windows); override with `AIT_HOME`
 - **Optional tmux**: `--tmux` on connect/`load`/`switch` for remote shell keep-alive (`internal/pkg/tmux`); `--tmux` implies `--save` and stores `login_destination` for ssh config Host aliases
-- **Ops AI Agent (`ait` / `ait agent`)**: Agent Loop kernel: `internal/pkg/agentcore` (`agentops`, `agentui`, `agentwire`); admin CLI under `internal/ait/agent` (`connect`, `model`, `provider`, `ollama`, `config`). Bare **`ait`** and **`ait agent`** start the interactive Loop; **`ait agent model list`**, **`ait agent connect user@host`**, etc. Multi-provider routing via `internal/pkg/ai`; `ai.*` config via **`ait agent config`** (not `aitssh config`). **`aitssh` has zero AI** (no `aitssh ai`, no in-session AI meta).
+- **Ops AI Agent (`ait agent`)**: Agent Loop kernel: `internal/pkg/agentcore` (`agentops`, `agentui`, `agentwire`); admin CLI under `internal/ait/agent` (`connect`, `model`, `provider`, `ollama`, `config`). Bare **`ait`** / **`ait shell`** open the toolbox REPL; **`ait agent`** starts the interactive Loop; **`ait agent model list`**, **`ait agent connect user@host`**, etc. Multi-provider routing via `internal/pkg/ai`; `ai.*` config via **`ait agent config`** (not `aitssh config`). **`aitssh` has zero AI** (no `aitssh ai`, no in-session AI meta).
 - **Transfer**: `aitssh get` / `aitssh put` — SFTP single-file transfer (`internal/pkg/transfer`); `!ait get` / `!ait put` reuse live SSH (unified router: lrzsz/ZMODEM first, SFTP fallback on direct hop, chain auto-install when missing lrzsz)
 - **Proxy chain support**: `!ait chain [on|off]` — PTY-pipe ZMODEM file transfer and tmux when SSH'd beyond the directly connected host (`internal/pkg/ssh/client/inject.go`, `transfer_zmodem.go`; `internal/pkg/tmux/remote_pty.go`)
 - **OpenSSH config**: default connect and `load` resolve `~/.ssh/config` via `ssh -G` (`internal/pkg/ssh/args`); data plane is Go `x/crypto/ssh`
@@ -132,7 +133,7 @@ Prefer extending `internal/pkg/*` and `internal/ssh` over new top-level director
 | `config` | `cmd.go`, `help.go`, `subregistry/`, `shared/`; nested `set`, `get`, `init`, `view`, `edit`, `validate` |
 | `meta` | `exec.go` — `Execute`, `SetExecutorWriters` (wired from `init_hooks.go`; CRLF stdout in SSH) |
 
-Ops AI admin lives under **`internal/ait/agent/`** (not `internal/ssh`). Agent Loop kernel: **`internal/pkg/agentcore`**; interactive entry: **`ait`** / **`ait agent`** via **`internal/ait/router`** + **`internal/ait/loop`**.
+Ops AI admin lives under **`internal/ait/agent/`** (not `internal/ssh`). Agent Loop kernel: **`internal/pkg/agentcore`**; interactive Loop entry: **`ait agent`** via **`internal/ait/router`** + **`internal/ait/loop`** (bare **`ait`** is the toolbox shell).
 
 ### `internal/pkg/ssh/client` file layout
 
@@ -176,8 +177,8 @@ Package-level helpers live in `*_helpers.go` (not mixed with struct methods in t
 ## CLI quick reference
 
 ```text
-ait                                      # Agent Loop; unconfigured AI exits with Try: ait agent config set
-ait agent [--plain] [goal...]            # interactive Agent Loop (TTY default TUI)
+ait                                      # ait> toolbox REPL (same as ait shell)
+ait agent [--plain] [goal...]            # interactive Agent Loop (TTY default TUI; unconfigured AI → Try)
 ait shell                                # ait> toolbox REPL (install/update/upgrade)
 ait> install [plugin...]                 # GitHub Release → install dir (all official plugins if no args)
 ait> update [plugin...]                  # update installed official plugins only
@@ -200,7 +201,7 @@ aitssh put [ssh-flags] <paths...>
 aitssh config init|view|edit|validate|set|get <key> [<value>]
 ```
 
-Prompts: `ait>` (`ait shell`); Agent Loop via bare `ait` / `ait agent` / `ait agent connect` (plain or TUI; confirm `y`/`c`/`s`/`n`; read-only auto-run); `AiT>` (`aitssh shell`). Native shell PS1 for SSH remote interactive; `AiT Local>` (`!ait local`). In SSH (`aitssh`): `!ait help`; `!ait <subcmd>` for local CLI; **no** `!ait ai` / `!!` AI entry — use `ait agent connect` or `ait agent`. Also `!ait local` / `remote`; `!ait suspend`; `!ait chain [on|off]` for PTY-pipe injection over multiple SSH hops. Use `aitssh shell` for nested connect/`load` (returns to `AiT>` after remote `exit`). Merge gate: [change-acceptance.mdc](.cursor/rules/change-acceptance.mdc) (**OA\***, **AG\***, **AC-V4\***, **R1–R14**, **D\***, **S\***, **B1–B7**, **H0a–H4d**).
+Prompts: `ait>` (bare `ait` / `ait shell`); Agent Loop via `ait agent` / `ait agent connect` (plain or TUI; confirm `y`/`c`/`s`/`n`; read-only auto-run); `AiT>` (`aitssh shell`). Native shell PS1 for SSH remote interactive; `AiT Local>` (`!ait local`). In SSH (`aitssh`): `!ait help`; `!ait <subcmd>` for local CLI; **no** `!ait ai` / `!!` AI entry — use `ait agent connect` or `ait agent`. Also `!ait local` / `remote`; `!ait suspend`; `!ait chain [on|off]` for PTY-pipe injection over multiple SSH hops. Use `aitssh shell` for nested connect/`load` (returns to `AiT>` after remote `exit`). Merge gate: [change-acceptance.mdc](.cursor/rules/change-acceptance.mdc) (**OA\***, **AG\***, **AC-V4\***, **R1–R14**, **D\***, **S\***, **B1–B7**, **H0a–H4d**).
 
 ## Pitfalls
 

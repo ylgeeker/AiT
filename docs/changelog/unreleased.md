@@ -1,3 +1,5 @@
 # Unreleased
 
-No product changes yet. When you ship a user-visible change, add a heading for the tool and one sentence prefixed with 【Added】, 【Changed】, or 【Fixed】. See [CHANGELOG.md](../../CHANGELOG.md).
+## ait
+
+- 【Changed】Bare `ait` (and `ait --ai-experimental` with no remaining argv) opens the toolbox shell (`ait>`), same as `ait shell`. Agent Loop starts only with `ait agent`. Top-level free-form text (for example `ait list files`) and a leading `--plain` without `agent` return an unknown-command hint with `Try: ait agent`.

@@ -41,7 +41,7 @@ def ait_bin(test_config: TestConfig) -> str:
 
 @pytest.fixture(scope="session")
 def toolbox_bin(test_config: TestConfig) -> str:
-    """`bin/ait` — Agent entry and toolbox shell."""
+    """`bin/ait` — toolbox shell; Agent Loop via `ait agent`."""
     path = test_config.binary.parent / "ait"
     if not path.is_file():
         pytest.skip(f"Binary not found: {path}; run make build")

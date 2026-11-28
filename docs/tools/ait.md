@@ -1,26 +1,26 @@
-# ait — Agent interaction entry
+# ait — toolbox entry and Ops AI Agent
 
-**`ait`** is the unified Agent interaction entry for AiT. Bare **`ait`** (or **`ait agent`**) starts the interactive Agent Loop. When AI is not configured, bare `ait` exits and prints `AI not configured` with a `Try:` block for `ait agent config set`. Plugin tools run as top-level dispatch (`ait ssh`, `ait log`, …). The toolbox REPL for install/update/upgrade is **`ait shell`** (prompt `ait>`).
+**`ait`** is the AiT toolbox entry. Bare **`ait`** (or **`ait shell`**) opens the toolbox REPL (prompt `ait>`). The interactive Agent Loop starts only with **`ait agent`**. When AI is not configured, `ait agent` exits with `AI not configured` and a `Try:` block for `ait agent config set`. Plugin tools run as top-level dispatch (`ait ssh`, `ait log`, …). Unknown top-level tokens print an errhint with `Try: ait agent`.
 
 ## Usage
 
 ```bash
-ait                              # Agent Loop (default)
-ait agent [goal...]              # same Loop; optional initial goal
+ait                              # toolbox shell (ait>)
+ait shell                        # same toolbox REPL
+ait agent [goal...]              # Agent Loop; optional initial goal
 ait agent --plain [goal...]      # plain UI
 ait agent connect user@host      # remote Agent Loop
 ait agent model list             # list configured models
 ait agent config set ai.foo bar  # AI-scoped config (not aitssh config)
 ait ssh user@host.example.com    # plugin dispatch (no REPL)
 ait log search error             # plugin log → binary aitlog
-ait shell                        # toolbox REPL (install/update/upgrade)
-ait -h                           # Agent entry help
+ait -h                           # toolbox + Agent root help
 ait shell -h                     # toolbox REPL help
 ```
 
-Natural-language text after flags is treated as an Agent goal (e.g. `ait list files`).
+Natural-language goals belong after `ait agent` (for example `ait agent list files`). A bare free-form first token (for example `ait list files`) is an unknown command.
 
-## Toolbox shell (`ait shell`)
+## Toolbox shell (`ait` / `ait shell`)
 
 ```text
 ait> help
@@ -32,7 +32,7 @@ ait> log search error
 ait> exit
 ```
 
-Reserved builtins in the shell REPL: `help`, `exit`/`quit`, `version`, `history`, `clear`, `install`, `update`, `upgrade`. Agent Loop is **not** started from the shell REPL — use bare `ait` or `ait agent`.
+Reserved builtins in the shell REPL: `help`, `exit`/`quit`, `version`, `history`, `clear`, `install`, `update`, `upgrade`. Agent Loop is **not** started from the shell REPL — use `ait agent`.
 
 ## Plugin command → binary
 
@@ -48,6 +48,6 @@ Legacy install names such as `aissh` / `ailog` still map to these plugin command
 
 ## install / update / upgrade
 
-From **`ait shell`**, download official binaries from the latest [GitHub Release](https://github.com/os-artificer/AiT/releases). Official plugins: `ssh`, `log`, `img`, `host`, `keep`.
+From the toolbox shell (`ait` or `ait shell`), download official binaries from the latest [GitHub Release](https://github.com/os-artificer/AiT/releases). Official plugins: `ssh`, `log`, `img`, `host`, `keep`.
 
 See [ait-internals.md](ait-internals.md) for routing and package layout.

@@ -14,7 +14,7 @@
  * limitations under the License.
 **/
 
-// Package loop starts the interactive Agent task loop for bare ait / ait agent.
+// Package loop starts the interactive Agent task loop for ait agent.
 package loop
 
 import (

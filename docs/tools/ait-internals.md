@@ -4,7 +4,7 @@
 
 ```text
 cmd/ait → internal/ait (package ait: Run, Execute, help)
-         → internal/ait/router     (top-level argv: Loop, agent admin, plugins, shell)
+         → internal/ait/router     (top-level argv: shell default, agent/Loop, plugins)
          → internal/ait/loop       (local Agent Loop)
          → internal/ait/dispatch   (plugin exec via tooldispatch)
          → internal/ait/shell      (toolbox REPL: install/update/upgrade)
@@ -24,12 +24,12 @@ cmd/ait → internal/ait (package ait: Run, Execute, help)
 
 | argv | Route |
 |------|--------|
-| (empty) | `loop.Run` — Agent Loop |
+| (empty) | toolbox REPL (`shell.RunREPL`; same as `ait shell`) |
 | `version` / `-V` / `--version` | version line |
 | `agent …` | admin verb → `agent.RunAdmin`; `ait agent <destination>` → `connect`; else Loop with optional `--plain` and the remaining text as the goal |
 | `shell` | toolbox REPL (`shell.RunREPL`) |
 | `ssh`, `log`, `img`, `host`, `keep`, … | `dispatch.RunPlugin` when the name resolves (legacy aliases via `ResolvePluginName` / `LegacyPluginNames`) |
-| other first token | `loop.Run` with the joined argv as the initial goal (for example `ait list files`) |
+| other first token | errhint unknown command + Try `ait agent` / `ait shell` (not Loop) |
 | `help` / `-h` | `WriteRootHelp` |
 
 ## Key types
